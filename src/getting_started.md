@@ -8,12 +8,6 @@
 
 如果你的背景包括另一种声明式语言（Lisp、Prolog、Haskell、Scheme 等），咱们就可以直接编写 Erlang 代码，不过掌握如何利用容错与并发，则还需要一段时间。
 
-> **译注**：
->
-> <sup>1</sup>，
->
-> 参考：[What is the difference between declarative and imperative paradigm in programming?](https://stackoverflow.com/questions/1784664/what-is-the-difference-between-declarative-and-imperative-paradigm-in-programmin#:~:text=Declarative%20programming%20is%20when%20you%20say%20what%20you,i%20in%20range%2820%29%3A%20if%20i%20%3C%205%3A%20small_nums.append%28i%29)
-
 
 ## 如何学习 Erlang？
 
@@ -87,3 +81,16 @@ Erlang shell 的工作原理是读取 Erlang 表达式，对其进行求值，�
 `io:fwrite()` 函数做了两件事。他打印出 "hello world"，并返回值 `ok`。
 
 因此，当咱们在 shell 中执行 `io:fwrite("hello, world\n")` 时，`fwrite` 函数会打印第一行，同时 shell 会打印返回值 `ok`。[不使用 shell 运行 Erlang ](https://www.erlang.org/faq/how_do_i#noshell) 可避免这种情况。
+
+
+> **译注**：
+>
+> <sup>1</sup>，命令式编程语言，与声明式编程语言不同
+>
+> <sup>2</sup>, read-eval-print loop, REPL
+>
+> 参考：
+>
+> 1. [What is the difference between declarative and imperative paradigm in programming?](https://stackoverflow.com/questions/1784664/what-is-the-difference-between-declarative-and-imperative-paradigm-in-programmin#:~:text=Declarative%20programming%20is%20when%20you%20say%20what%20you,i%20in%20range%2820%29%3A%20if%20i%20%3C%205%3A%20small_nums.append%28i%29)
+>
+> 2. [Read–eval–print loop](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop)
