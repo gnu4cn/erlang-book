@@ -215,4 +215,213 @@ loop(Dir) ->
 ```
 
 
-这就是我们编写 Erlang 中无限循环的方式。其中变量 Dir 包含着文件服务器的当前工作目录。在这个循环中，我们等待接收一条命令；在我们接收到一条命令后，我们会遵从该命令，然后再次调用咱们自己，以接收下一命令。
+这就是我们在 Erlang 中编写无限循环的方式。其中变量 `Dir`  包含着文件服务器当前的工作目录。在这个循环中，我们等待接收一条命令；在我们收到一条命令时，我们会遵从该命令，然后再次调用咱们自己，接收下一命令。
+
+*好奇者请注意*：请不要担心我们做的最后一件事是调用自己；我们不会耗尽堆栈空间，stack space。Erlang  会对代码进行所谓的尾调用优化，tail-call optimization，这意味着该函数将在恒定空间内运行。这是 Erlang 中编写循环的标准方法。只需将调用自己，作为咱们最后做的事情即可。
+
+
+要注意的另一点是，`loop` 是没有返回值的函数。在顺序编程语言中，我们必须非常小心地避免无限循环；我们只有一个控制线程，若这个线程陷入循环，我们就麻烦了。而在 Erlang 中，就不存在这类问题。服务器只是个在无限循环中，为请求提供服务的程序，他与我们要执行的任何其他任务，一起并行运行。
+
+*知识点*：
+
+- stack space
+- tail-call optimization
+
+
+现在，让我们仔细看看那个接收语句；为提醒大家，他看起来是这样的：
+
+
+
+
+[`afile_server.erl`](http://media.pragprog.com/titles/jaerlang2/code/afile_server.erl)
+
+
+
+```erlang
+    receive
+        {Client, list_dir} ->
+            Client ! {self(), file:list_dir(Dir)};
+        {Client, {get_file, File}} ->
+            Full = filename:join(Dir, File),
+            Client ! {self(), file:read_file(Full)}
+    end,
+```
+
+这段代码表示，在我们接收到消息 `{Client,list_dir}` 时，应回复一个文件列表；若我们接收到消息 `{Client,{get_file,File}}`，则应回复该文件。在收到消息时，作为模式匹配过程的一部分，变量 `Client` 会被绑定。
+
+这段代码非常紧凑，因此很容易忽略其中的细节。关于这段代码，有三个要点值得注意。
+
+
+- *回复对象*
+
+所有收到的消息，都包含着变量  `Client`；这是发送请求进程的进程标识符，回复应发送给该进程。
+
+若咱们打算回复某条消息，那么最好说明该回复要发往的对象。这就像在信件中写上咱们的姓名和地址一样；若咱们未说明信件来自于谁，那么咱们就永远不会收到回复。
+
+- *`self()` 的使用*
+
+
+由服务器发送的回复，包含了参数 `self()`（这里的 `self()` 是服务器的进程标识符）。该标识符被添加到消息中，以便客户端可以检查其收到的消息，是否来自该服务器，而不是其他进程。
+
+
+- *用于选择消息的模式匹配*
+
+
+这个接收语句内有两个 *模式*。我们可以这样写：
+
+
+```erlang
+receive
+    Pattern1 ->
+      Actions1;
+    Pattern2 ->
+      Actions2 ->
+    ...
+end
+```
+
+
+Erlang 编译器和运行时系统会在收到消息时，正确确定出如何运行相应的代码。我们不必编写任何的 `if-then-else` 或 `switch` 语句，来确定要做什么。这正是模式匹配的乐趣之一，他将为咱们节省大量的工作。
+
+
+我们可在 shell 中编译和测试这段代码，如下所示：
+
+
+```console
+1> c(afile_server).
+{ok,afile_server}
+2> FileServer = afile_server:start(".").
+<0.91.0>
+3> FileServer ! {self(), list_dir}.
+{<0.84.0>,list_dir}
+4> receive X -> X end.
+{<0.91.0>,
+ {ok,[".afile_server.erl.swp","afile_server.beam",
+      "afile_server.erl","hello.beam","hello.erl"]}}
+```
+
+
+我们来看看其中细节。
+
+
+```console
+1> c(afile_server).
+{ok,afile_server}
+```
+
+
+我们编译了文件 `afile_server.erl` 中的 `afile_server` 模组。编译成功了，因此 “编译” 函数 `c` 的返回值为 `{ok, afile_server}`。
+
+
+```console
+2> FileServer = afile_server:start(".").
+<0.91.0>
+```
+
+`afile_server:start(Dir)` 会调用 `spawn(afile_server,loop,[Dir])`。这会创建一个新的、计算函数 `afile_server:loop(Dir)` 的并行进程，并返回一个可用于与该进程通信的 *进程标识符*。
+
+其中 `<0.91.0>` 便是这个文件服务器进程的进程标识符。他被显示为三个整数，中间用句点隔开，并包含在一对尖括号中。*请注意*：每次咱们运行该程序时，这个进程标识符都会变化。因此，不同会话中的像是 `<0.91.0>` 这样的 数字会有所不同。
+
+
+```console
+3> FileServer ! {self(), list_dir}.
+{<0.84.0>,list_dir}
+```
+
+这会向文件服务器进程，发送一条 `{self(), list_dir}` 的消息。`Pid ！Message` 的返回值 *被定义* 为了 `Message`，因此 shell 会打印出 `{self(), list_dir}` 的值，即 `{<0.84.0>, list_dir}`。其中 `<0.84.0>` 是这个 Erlang shell 本身的进程标识符；他包含在消息中，以便文件服务器知道该回复谁。
+
+
+```console
+4> receive X -> X end.
+{<0.91.0>,
+ {ok,[".afile_server.erl.swp","afile_server.beam",
+      "afile_server.erl","hello.beam","hello.erl"]}}
+```
+
+`receive X -> X end` 会接收由文件服务器发送的回复。他会返回元组 `{<0.91.0>, {ok, ...}`。该元组中第一个元素是 `<0.91.0>`，即文件服务器的进程标识符。第二个参数是函数 `file:list_dir(Dir)` 的返回值，该函数是在文件服务器进程的接收循环中求值的。
+
+
+### 客户端代码
+
+
+文件服务器是经由一个名为 `afile_client` 客户端模组访问的。该模组的主要目的，是隐藏底层通信协议的细节。客户端代码的用户，可通过调用在这个客户端模组中导出的 `ls` 和 `get_file` 函数传输文件。这赋予了我们在不改变客户端代码 API 细节下，改变底层协议的自由。
+
+
+[`afile_client.erl`](http://media.pragprog.com/titles/jaerlang2/code/afile_client.erl)
+
+```erlang
+-module(afile_client).
+-export([ls/1, get_file/2]).
+
+ls(Server) ->
+    Server ! {self(), list_dir},
+    receive
+        {Server, FileList} ->
+            FileList
+    end.
+
+get_file(Server, File) ->
+    Server ! {self(), {get_file, File}},
+    receive
+        {Server, Content} ->
+            Content
+    end.
+```
+
+若咱们比较一下 `afile_client` 和 `afile_server` 的代码，就会发现两者之间有种美丽的对称。期间在客户端中有个 `Server ！...`，服务器中就会有个 `receive` 模式，反之亦然。
+
+
+```erlang
+receive
+    {Client, Pattern} ->
+        ...
+end
+```
+
+
+现在，我们将重启 shell，重新编译一切，并展示客户端和服务器一起工作。
+
+
+
+```console
+1> c(afile_server).
+{ok,afile_server}
+2> c(afile_client).
+{ok,afile_client}
+3> FileServer = afile_server:start(".").
+<0.96.0>
+4> afile_client:get_file(FileServer, "missing").
+{error,enoent}
+5> afile_client:get_file(FileServer, "afile_server.erl").
+{ok,<<"-module(afile_server).\n-export([start/1, loop/1]).\n\nstart(Dir) -> spawn(afile_server, loop, [Dir]).\nloop(Dir"...>>}
+```
+
+我们在 shell 中运行的代码，与之前代码的唯一区别是，我们抽象出了接口例程，并将其放入了一个单独模组中。我们隐藏了客户端和服务器之间消息传递的细节，因为其他程序对这些细节不感兴趣。
+
+
+咱们目前看到的，是个完整文件服务器的基础，但他还没有完成。与启动和停止服务器、连接到套接字等相关的细节还有很多，这里就不一一介绍了。
+
+
+在 Erlang 的视角，咱们如何启动与停止服务器、连接到套接字、从错误中恢复等等，都是无关紧要的细节。问题的 *本质* 在于创建并行进程，以及发送及接收消息。
+
+
+*知识点*：
+
+
+- the *essence* of the problem, 问题的本质
+
+
+
+在 Erlang 中，我们使用进程,架构出问题的解决方案。对进程结构的思考（换句话说，哪些进程相互了解），与对进程间所发送消息及消息所包含信息的思考，是我们思维方式及编程方式的核心。
+
+
+### 改进这个文件服务器
+
+
+我们开发的这个文件服务器，涉及运行在同一台机器上的两个通信进程，并展示了编写并发程序所需的几个构件。在真正的服务器中，客户端和服务器将运行在不同机器上，因此我们必须以某种方式，安排好进程间消息传递不仅可在同一 Erlang 节点中的进程间进行，还可以在物理上分离的机器上 Erlang 进程间进行。
+
+在 [第 17 章 “使用套接字编程”](../part-iv/Ch17-programming_with_sockets.md) 中，我们将了解如何将 TCP 传输层用于进程通信，而 [“文件服务器回顾”](../part-iii/Ch14-distributed_programming.md#文件服务器回顾) 中，我们将了解如何在分布式 Erlang 中，直接实现这个文件服务器。
+
+
+
+
