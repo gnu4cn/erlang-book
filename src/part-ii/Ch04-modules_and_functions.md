@@ -417,4 +417,130 @@ cost(milk) -> 7.
 ```
 
 
+其中函数 `cost/1` 由五个子句组成。每个子句的头部，都包含一种模式（在此情形下是种非常简单的模式，只是个原子）。当我们计算 `shop:cost(X)` 时，系统就会尝试将 `X` 与这些子句中的每种模式匹配。在找到某个匹配时，`->` 箭头右边的代码就会被求值。
+
+
+我们来测试一下这段代码。我们将在 Erlang shell 中编译并运行这个程序。
+
+
+```erlang
+1> c(shop).
+{ok,shop}
+2> shop:cost(apples).
+2
+3> shop:cost(oranges).
+5
+4> shop:cost(socks).
+** exception error: no function clause matching shop:cost(socks) (shop.erl:4)
+```
+在第 1 行种，我们编译了 `shop.erl` 文件中的模组。在第 2 和第 3 行中，我们询问了 `apples` 和 `oranges` 的开支（结果 `2` 和 `5` 是以开支单位表示）。在第 4 行中，我们询问了 `socks` 的开支，不过没有任何子句匹配，因此我们得到一个模式匹配报错，系统打印了一条错误消息，其中包含着发生错误处的文件名及行号。
+
+
+回到购物清单。假设我们有个这样的购物清单：
+
+```erlang
+1> Buy = [{oranges,4},{newspaper,1},{apples,10},{pears,6},{milk,3}].
+[{oranges,4},{newspaper,1},{apples,10},{pears,6},{milk,3}]
+```
+
+并想要计算该列表中，所有项目的总价值。一种方法是如下定义一个函数 `shop1:total/1`：
+
+
+[`shop1.erl`](http://media.pragprog.com/titles/jaerlang2/code/shop1.erl)
+
+
+```erlang
+-module(shop1).
+-export([total/1]).
+
+total([{What, N}|T]) -> shop:cost(What) * N + total(T);
+total([]) -> 0.
+```
+
+我们来以这段代码实验一下：
+
+```erlang
+2> c(shop1).
+{ok,shop1}
+3> shop1:total([]).
+0
+```
+
+
+这里返回了 `0`，因为 `total/1` 的第二个子句是 `total([]) -> 0`。
+
+
+下面是个更复杂的查询：
+
+
+```erlang
+4> shop1:total([{milk,3}]).
+21
+```
+
+
+这条命令原理如下。调用 `shop1:total([{milk,3}])` 以绑定 `What = milk`、`N = 3` 及 `T = []`，与以下子句匹配：
+
+
+```erlang
+total([{What, N}|T]) -> shop:cost(What) * N + total(T);
+```
+
+
+在此之下，该函数主题中的代码就会被求值，因此我们必须计算这个表达式。
+
+
+```erlang
+shop:cost(milk) * 3 + total([]);
+```
+
+`shop:cost(milk)` 为 `7`，而 `total([])` 为 `0`，因此最终返回值为 `21`。
+
+
+我们可以一个更复杂的参数，测试这个函数（`shop1:total/1`）。
+
+```erlang
+5> shop1:total([{pears,6},{milk,3}]).
+75
+```
+
+同样，第 5 行以绑定 `What = pears`、`N = 6` 及 `T = [{milk,3}]`，匹配了函数 `total/1` 的第一个子句。
+
+
+```erlang
+total([{What, N}|T]) -> shop:cost(What) * N + total(T);
+```
+
+
+变量 `What`、`N` 与 `T`，就被替换到该子句的主体中，而 `shop:cost(pears) * 6 + total([{milk,3}])` 被会被求值，结果变为 `9 * 6 + total([{milk,3}])`。
+
+而我们之前已经计算出了 `total([{milk,3}])` 是 `21`，所以最终结果是 `9*6 + 21 = 75`。
+
+
+最后：
+
+
+```erlang
+6> shop1:total(Buy).
+123
+```
+
+
+在告别这个小节前，我们应更详细地了解一下这个函数 `total`。`total(L)` 的工作原理，是对参数 `L` 进行情况分析。有两种可能的情况；`L` 是个非空的列表，或者 `L` 是个空列表。我们为每种可能情形，分别编写了个子句，就像这样：
+
+
+```erlang
+total([Head|Tail]) ->
+    some_function_of(Head) + total(Tail);
+total([]) ->
+    0.
+```
+
+
+在我们的例子中，`Head` 为模式 `{What,N}`。当第一个子句匹配到一个非空列表时，他会挑出该列表中的头部，对这个头部完成一些操作，然后调用自身处理该列表的尾部。在列表已缩减为空列表（`[]`）时，第二个子句就会匹配。
+
+
+这个函数 `total/1` 实际上完成了两件不同事情。他查找了该列表中每个元素的价格，然后对将所有价格与所购买物品数量的乘积求和。我们可以将查找单个物品价值，与价值求和分开的方式，重写这个 `total` 函数。得到的代码将更加清晰易懂。为此，我们将编写两个名为 `sum` 和 `map` 的小的列表处理函数。要编写 `map`，我们必须引入 `funs` 的概念。之后，我们将在模组 `shop2.erl` 中，编写一个改进版的 `total` 函数，咱们可在 [4.4 节 “简单的列表处理”](#简单的列表处理) 末尾处，找到这个模组。
+
+
 
