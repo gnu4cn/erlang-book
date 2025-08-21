@@ -80,3 +80,341 @@ area({square, Side})			 ->	Side * Side.
 - module declaration
 - export declaration
 - the arity of the function, [Wikipedia: Arity](https://en.wikipedia.org/wiki/Arity)
+
+
+模组中导出的函数，只能在模组内调用。导出的函数等同于面向对象编程语言（OOPL）中的公共方法；未导出的函数则相当于 OOPL 中的私有方法。
+
+
+上面的函数 `area` 由两个 *子句* 组成。子句间以分号隔开，最后子句以点空白结束。每个子句都有个 *头* 和一个 *躯干*，由箭头 (`->`) 分隔。头部由函数名称，及零个或多个模式组成，躯干由一个表达式序列组成（表达式在 [8.13 小节 表达式与表达式序列](Ch08-the_rest_of_sequential_erlang.md#表达式与表达式序列)），在头部中模式与调用参数成功匹配时，该表达式序列即会被计算求值。各子句会以其在函数定义中出现顺序，逐一尝试。
+
+
+
+请注意，我们曾在 shell 示例中用到的模式，已成为这个 `area` 函数定义的一部分。每个模式准确对应了一个子句。`area` 函数的第一个子句：
+
+
+```erlang
+area({rectangle, Width, Height}) -> Width * Height;
+```
+
+告诉我们如何计算某个矩形的面积。当我们计算函数 `geometry:area({rectangle,10,5})` 时，`area/1` 下的第一个子句，就会以 `Width = 10` 及 `Height = 5` 匹配。在该次匹配后，箭头 `->` 后面的代码就会被求值。这就是 `Width * Height`，即 `10*5` 或 `50`。请注意，这个函数没有显式返回语句；该函数的返回值，就是子句躯干中，最后那个表达式的值。
+
+
+现在我们将编译这个模组并运行他。
+
+
+```erlang
+1> c(geometry).
+{ok,geometry}
+2> geometry:area({rectangle,10,5}).
+50
+3> geometry:area({square,3}).
+9
+```
+
+
+在第 1 行，我们下达了 `c(geometry)` 这个命令，其会编译文件 `geometry.erl` 中的代码。编译器返回了表示编译成功，以及这个 `geometry` 模组已被编译并加载的 `{ok,geometry}`。编译器将在当前目录下，创建出一个名为 `geometry.beam` 的目标代码模组。在第 2 和第 3 行中，我们调用了 `geometry` 这个模组中的函数。请注意，我们需要将模组名字与函数名字放在一起，以便准确识别到我们打算调用的函数。
+
+
+### 常见错误
+
+
+需要提醒的是：`c(geometry).`（前面用到）这样的命令，只在 shell 中有效，而不能放入模组中。有些读者将源码清单中的代码片段，错误地输入到 shell 中。这些都不是有效的 shell 命令，当咱们尝试这样做时，就将得到一些非常奇怪的错误消息。所以，请不要这样做。
+
+
+当咱们不小心选择了与某个系统模组相冲突的模组名字时，那么在咱们编译该模组时，咱们将收到一条提示咱们无法加载某个位于粘滞目录中模组的奇怪消息。只要重命名这个模组，并删除咱们编译模组时，可能生成的 `.beam` 文件即可。
+
+
+### 目录与代码路径
+
+
+若咱们下载了本书中的代码示例，或想编写咱们自己的示例，咱们必须确保在咱们于 shell 中运行编译器时，处于正确目录中，这样系统才能找到咱们的文件。
+
+
+Erlang shell 有许多查看和更改当前工作目录的内建命令。
+
+
+- `pwd()` 会打印当前工作目录；
+- `ls()` 会列出当前工作目录下的文件名字；
+- `cd(Dir)` 会将当前工作目录，改变到 `Dir`。
+
+
+### 将测试添加到咱们的代码
+
+
+在此阶段，我们可将一些简单测试，添加到咱们的模组。我们来将该模组重命名为 `geometry1.erl`，并添加一些测试代码。
+
+
+[`geometry1.erl`](http://media.pragprog.com/titles/jaerlang2/code/geometry1.erl)
+
+
+```erlang
+-module(geometry1).
+-export([test/0, area/1]).
+
+
+test() ->
+    12 = area({rectangle, 3, 4}),
+    144 = area({square, 12}),
+    test_worked.
+
+area({rectangle, Width, Height}) -> Width * Height;
+area({square, Side})			 ->	Side * Side.
+```
+
+
+```erlang
+1> c(geometry1).
+{ok,geometry1}
+2> geometry1:test().
+test_worked
+```
+
+
+`12 = area({rectangle, 3, 4})` 这行代码，就是个测试。当 `area({rectangle, 3, 4})` 没有返回 `12` 时，这个模式匹配就会失败，而我们就会得到一条错误消息。在我们运行 `geometry1:test()`，并看到结果 `tests_worked` 时，我们就可以得出结论：`test/0` 函数主体中的所有测试都成功了。
+
+
+> **译注**：若我们修改一下 `geometry1.erl` 中的代码如下：
+
+```erlang
+-module(geometry1).
+-export([test/0, area/1]).
+
+
+test() ->
+    12 = area({rectangle, 3, 4}),
+    144 = area({square, 12}),
+    test_worked.
+
+area({rectangle, Width, Height}) -> Width * Height * 2;
+area({square, Side})			 ->	Side * Side.
+```
+
+> 测试就不会通过，报出如下错误：
+
+```erlang
+4> geometry1:test().
+** exception error: no match of right hand side value 24
+     in function  geometry1:test/0 (geometry1.erl:6)
+```
+
+
+在无需任何额外工具下，我们就能轻松添加测试，并进行测试驱动的开发。我们需要的只是模式匹配与 `=`。虽然这对于快速测试来说已经足够，但对生产代码来说，最好使用功能齐全的测试框架，比如通用测试框架或单元测试框架；详情请阅读 [Erlang 文档](http://www.erlang.org/doc) 中的测试部分。
+
+
+*知识点*：
+
+- clause
+- the head of a function
+- the body of a function
+- the calling arguments
+- the system modules
+- a sticky directory
+- test-driven development
+- quick-and-dirty testing
+- the common test framework
+- the unit test framework
+
+
+### 扩展这个程序
+
+
+现在，设想我们打算通过把圆添加到我们的几何对象，扩展我们的程序。我们可以这样写：
+
+
+```erlang
+area({rectangle, Width, Height}) -> Width * Height;
+area({square, Side})			 ->	Side * Side;
+area({circle, Radius})	         -> 3.14159 * Radius * Radius.
+```
+
+或这样：
+
+
+```erlang
+area({rectangle, Width, Height}) -> Width * Height;
+area({circle, Radius})	         -> 3.14159 * Radius * Radius;
+area({square, Side})			 ->	Side * Side.
+```
+
+
+请注意在这个示例中，子句的顺序并不重要；无论子句如何排序，该程序的含义都是同样的。这是因为子句中的模式是互斥的。这使得编写及扩展程序变得非常容易 -- 我们只要添加更多的模式。不过，一般来说，子句顺序确实重要。当某个函数被输入时，子句将按照调用参数在文件中出现的顺序，进行模式匹配。
+
+在继续后面内容前，咱们应该注意以下有关这个 `area` 函数书写方式的内容：
+
+
+- 这个函数 `area` 由几个不同子句组成。在我们调用这个函数时，执行将从与调用参数匹配的首个子句开始；
+- 我们的函数不会处理没有模式匹配的情形 -- 我们的程序会以一个运行时错误失败。这是故意的。这正是我们在 Erlang 下编程的方式。
+
+
+> **译注**：在没有没有与调用参数匹配的模式时，报错如下所示：
+
+
+```erlang
+1> geometry:area({diamond, 12, 15}).
+** exception error: no function clause matching geometry:area({diamond,12,15}) (geometry.erl:4)
+```
+
+
+许多编程语言，比如 C，的每个函数，都只有一个入口点。若我们用 C 编写这个程序，代码可能如下：
+
+
+```c
+enum ShapeType { Rectangle, Circle, Square };
+
+struct Shape {
+    enum ShapeType kind;
+
+    union {
+        struct { int width, height; } rectangleData;
+        struct { int radius; }	      circleData;
+        struct { int side;}	          squareData;
+    } shapeData;
+};
+
+
+double area(struct Shape* s) {
+    if( s->kind == Rectangle ) {
+        int width, ht;
+        width = s->shapeData.rectangleData.width;
+        ht	  = s->shapeData.rectangleData.height;
+        return width * ht;
+    } else if ( s->kind == Circle ) {
+      ...
+```
+
+这段 C 代码本质上对这个函数参数，执行了一次模式匹配操作，但程序员必须编写出模式匹配代码，并确保其正确无误。
+
+
+在 Erlang 的等价代码中，我们只需编写出模式，Erlang 的编译器会生成为程序选取正确入口点的最佳模式匹配代码。
+
+
+下面显示的是 Java 下的等价代码 <sup>1</sup>：
+
+
+```java
+abstract class Shape {
+    abstract double area();
+}
+
+class Circle extends Shape {
+    final double radius;
+    Circle(double radius) { this.radius = radius; }
+    double area() { return Math.PI * radius*radius; }
+}
+
+class Rectangle extends Shape {
+    final double ht;
+    final double width;
+    Rectangle(double width, double height) {
+        this.ht = height;
+        this.width = width;
+    }
+    double area() { return width * ht; }
+}
+
+class Square extends Shape {
+    final double side;
+    Square(double side) {
+        this.side = side;
+    }
+    double area() { return side * side; }
+}
+```
+
+> 注 <sup>1<sup>：[http://java.sun.com/developer/Books/shiftintojava/page1.html](https://web.archive.org/web/*/http://java.sun.com/developer/Books/shiftintojava/page1.html) 
+
+若咱们将 Erlang 的代码与 Java 代码进行比较，就会发现在 Java 程序中，`area` 的代码位于三个位置。而在 Erlang 程序中，`area` 的所有代码都在同一个地方。
+
+
+### 分号的位置
+
+
+在离开这个 `geometry` 示例前，我们再看一下这段代码，这次要看的是标点符号。这次我们要仔细观察代码，找一下逗号、分号和句点的位置。
+
+
+[`geometry.erl`](http://media.pragprog.com/titles/jaerlang2/code/geometry.erl)
+
+
+```erlang
+-module(geometry).
+-export([area/1]).
+
+area({rectangle, Width, Height}) -> Width * Height;
+area({circle, Radius})	         -> 3.14159 * Radius * Radius;
+area({square, Side})			 ->	Side * Side.
+```
+
+
+咱们将看到下面这些：
+
+- *逗号*（`,`）分隔了函数调用、数据构造器及模式中的那些参数；
+- *分号*（`;`）分隔了 *子句*。我们可以在多种上下文中找到子句，即函数定义与 `case`、`if`、`try...catch` 及 `receive` 表达式等中的子句；
+- *句点*（`.`）（后跟空白符）分隔了 shell 中的整个函数与表达式。
+
+
+有种简单的记忆方法 -- *想想英语*。句号分隔句子，分号分隔子句，而逗号则分隔了从句。逗号是个短距符号，分号是个中距符号，句号是个长距符号。
+
+
+*知识点*：
+
+- sentence
+- clause
+- subordinate clause
+- short-range symbol
+- medium-range symbol
+- long-range symbol
+
+
+每当我们看到表达式后有一组模式时，我们就会看到作为分隔符的分号。下面就是个示例：
+
+
+```erlang
+case f(...) of
+    Pattern1 ->
+        Expressions1;
+    Pattern2 ->
+        Expressions2;
+
+    ...
+
+    LastPattern ->
+        LastExpression
+end
+```
+
+请注意，最后的表达式（紧接 `end` 关键字前的那个）没有分号。
+
+
+理论到此为止。我们来继续学习一些代码；稍后我们再讨论控制结构。
+
+
+## 回到购物的示例
+
+
+在 [“定义列表” 小节](Ch03-basic_concepts.md#定义列表) 中，我们有过这样一个购物清单：
+
+
+```erlang
+[{oranges,4},{newspaper,1},{apples,6},{pears,6},{milk,3}]
+```
+
+
+现在假设我们想要知道咱们购物的花费。为此，我们需要知道咱们购物清单中，每件物品要用多少钱。我们假设此信息是在一个名为 `shop` 的模组中计算出来的，其定义如下：
+
+
+[`shop.erl`](http://media.pragprog.com/titles/jaerlang2/code/shop.erl)
+
+
+```erlang
+-module(shop).
+-export([cost/1]).
+
+cost(oranges) -> 5;
+cost(newspaper) -> 8;
+cost(apples) -> 2;
+cost(pears) -> 9;
+cost(milk) -> 7.
+```
+
+
+
