@@ -543,4 +543,498 @@ total([]) ->
 这个函数 `total/1` 实际上完成了两件不同事情。他查找了该列表中每个元素的价格，然后对将所有价格与所购买物品数量的乘积求和。我们可以将查找单个物品价值，与价值求和分开的方式，重写这个 `total` 函数。得到的代码将更加清晰易懂。为此，我们将编写两个名为 `sum` 和 `map` 的小的列表处理函数。要编写 `map`，我们必须引入 `funs` 的概念。之后，我们将在模组 `shop2.erl` 中，编写一个改进版的 `total` 函数，咱们可在 [4.4 节 “简单的列表处理”](#简单的列表处理) 末尾处，找到这个模组。
 
 
+## `funs`：抽象的基本单元
+
+
+Erlang 是门函数式编程语言。除开其他方面，这意味着函数可被用作其他函数的参数，且函数可返回函数。操作函数的函数，被称做 *高阶函数*，同时 Erlang 中表示函数的数据类型，称为 `fun`。
+
+高阶函数是函数式编程语言的精髓--函数式程序不仅可以操作常规数据结构，还可以操作转换数据的函数。咱们一旦学会使用他们，就会爱上他们。今后我们将看到更多的高阶函数。
+
+`funs` 可依以下方式使用：
+
+- 对列表中的每个元素，执行同样操作。在这种情况下，我们将 `funs` 作为参数传递给诸如 `lists:map/2`、`lists:filter/2` 等函数。`funs` 的这种用法相当常见；
+- 创建咱们自己的控制抽象。这种技术非常有用。例如，Erlang 没有 `for` 循环。但我们可以轻松创建我们自己的 `for` 循环。创建我们自己的控制抽象的好处,是我们可以让他们刚好做我们想做的事，而不是依赖预定义的一组，行为可能不完全符合我们要求的控制抽象；
+- 实现诸如可重入解析代码、解析器组合器，或惰性求值器等物件。在这种情况下，我们会编写一些返回 `funs` 的函数。这是一种非常强大的技术，但可能造成难以调试的程序。
+
+
+*知识点*：
+
+
+- functional programming language
+- higher-order function
+- functions be used as arguments to functions
+- functions returned by functions
+- the data type which represents a function, `fun`
+- control abstraction
+- reentrant parsing code
+- parser combinator
+- lazy evaluators
+
+
+`funs` 是一些 “匿名” 函数。之所以这么叫，是因为他们没有名字。在其他编程语言中，咱们可能看到他们被称为 *lambda 抽象*。我们来开始试验；首先，我们将定义一个 `fun`，并将其赋值给一个变量。
+
+```erlang
+1> Double = fun(X) -> 2*X end.
+#Fun<erl_eval.42.113135111>
+```
+
+
+在我们定义某个 `fun` 时，Erlang shell 会打印 `#Fun<erl_eval.N.M>`，其中 `N` 和 `M` 是些奇怪数字。现在不用担心这个。
+
+我们只能用 `fun` 做一件事，那就是将其应用到某个参数，就像这样：
+
+
+```erlang
+2> Double(2).
+4
+```
+
+
+`funs` 可以有任意数量的参数。我们可以写个计算直角三角形斜边的函数，就像这样：
+
+
+```erlang
+3> Hypot = fun(X, Y) -> math:sqrt(X*X + Y*Y) end.
+#Fun<erl_eval.41.113135111>
+4> Hypot(3,4).
+5.0
+5> Hypot(5).
+** exception error: interpreted function with arity 2 called with one argument
+```
+
+其中的错误信息告诉我们，`Hypot` 需要两个参数，而我们只提供了一个。请记住，`arity` 为某个函数接受参数的个数。
+
+
+`funs` 可以有多个不同子句。下面是个在华氏温度和摄氏温度之间进行转换的函数：
+
+
+```erlang
+6> TempConvert = fun({c, C}) -> {f, 32 + C*9/5};
+   ({f, F}) -> {c, (F-32)*5/9}
+   end.
+#Fun<erl_eval.42.113135111>
+7> TempConvert({c,100}).
+{f,212.0}
+8> TempConvert({f,212}).
+{c,100.0}
+9> TempConvert({c,0}).
+{f,32.0}
+```
+
+*注意*：第 6 行中的表达式跨了好几行。在我们输入这个表达式时，每输入一行，shell 就会重复提示 ` .. `。这意味着表达式不完整，shell 希望输入更多内容。
+
+
+### 以函数作为其参数的函数
+
+
+标准库中的 `lists` 模组，导出了数个参数为 `funs` 的函数。其中最有用的是 `lists:map(F,L)`。这是个通过将 `fun` `F`，应用于列表 `L` 中的每个元素，从而返回一个列表的函数。
+
+
+```erlang
+10> L = [1,2,3,4].
+[1,2,3,4]
+11> lists:map(fun(X) -> 2*X end, L).
+[2,4,6,8]
+```
+
+
+另一有用函数，则是返回一个其中包含 `L` 中，`P(E)` 为 `true` 的所有元素新列表的 `lists:filter(P,L)`。
+
+
+我们来定义一个在 `X` 是个偶数时为 `true` 的函数 `Even(X)`。
+
+
+```erlang
+12> Even = fun(X) -> (X rem 2) =:= 0 end.
+#Fun<erl_eval.42.113135111>
+```
+
+
+这里 `X rem 2` 计算的是 `X` 除以 `2` 后的余数，而 `=:=` 则是相等测试。现在我们可以测试 `Even`，然后将其作为 `map` 与 `filter` 的参数。
+
+
+```erlang
+12> Even(8).
+true
+13> Even(7).
+false
+14> lists:map(Even, [1,2,3,4,5,6,8]).
+[false,true,false,true,false,true,true]
+15> lists:filter(Even, [1,2,3,4,5,6,8]).
+[2,4,6,8]
+```
+
+我们将诸如 `map` 和 `filter` 这样的，在一次函数调用中，对整个列表执行一些处理的操作，称为 *list-at-a-time* 操作。使用这些  list-at-a-time 操作，可使我们的程序变得小巧易懂；他们之所以易懂，是因为我们可将对整个列表的每次操作，视为咱们程序中的单个概念性步骤。否则，我们就必须把对列表元素的单个操作，视为咱们程序中的单个步骤。
+
+
+### 返回 `funs` 的函数
+
+
+`funs` 不仅可用作函数（如 `map` 和 `filter`）的参数，而且函数也可以 *返回* `funs`。
+
+
+下面是个示例 -- 假设我有个清单，比如水果：
+
+```erlang
+1> Fruit = [apple,pear,orange].
+[apple,pear,orange]
+```
+
+
+现在，我可以定义一个将某事物列表 (`L`)， 转化为一个检查其参数，是否在该列表 `L` 中的测试函数的函数 `MakeTest(L)`。
+
+
+```erlang
+2> MakeTest = fun(L) -> (fun(X) -> lists:member(X, L) end) end.
+#Fun<erl_eval.42.113135111>
+3> IsFruit = MakeTest(Fruit).
+#Fun<erl_eval.42.113135111>
+```
+
+当 `X` 是列表 `L` 的成员时，`lists:member(X, L)` 会返回 `true`；否则返回 `false`。现在我们就已构建了个测试函数，可以试试看。
+
+
+```erlang
+4> IsFruit(pear).
+true
+5> IsFruit(apple).
+true
+6> IsFruit(dog).
+false
+```
+
+
+我们还可将其用作 `lists:filter/2` 的一个参数。
+
+
+```erlang
+7> lists:filter(IsFruit, [dog,orange,cat,apple,bear]).
+[orange,apple]
+```
+
+
+返回 `funs` 的 `funs` 这种写法，需要一点时间来适应，因此我们来剖析一下这种写法，以便更清楚地了解发生了什么。返回某个 “正常”  值的函数是这样的：
+
+
+```erlang
+1> Double = fun(X) -> (X * 2) end.
+#Fun<erl_eval.42.113135111>
+2> Double(5).
+10
+```
+
+其中括号内的代码（换句话说，`2 * X`），明显就是该函数的 “返回值”。现在我们来试着将一个 `fun` 放入这对括号。
+
+
+请记住，括号里的内容，*即为* 返回值。
+
+
+```erlang
+3> Mult = fun(Times) -> ( fun(X) -> X * Times end ) end.
+#Fun<erl_eval.42.113135111>
+```
+
+其中括号内的 `fun` 为 `fun(X) -> X * Times end`；这就是个 `X` 的函数，`Times` 属于 “外层” `fun` 的参数。
+
+
+对 `Mult(3)` 求值，会返回 `fun(X) -> X * 3 end`，即以 `3` 替换 `Times` 后的那个内部 `fun` 的主体。现在我们可以测试这点。
+
+
+```erlang
+4> Triple = Mult(3).
+#Fun<erl_eval.42.113135111>
+5> Triple(5).
+15
+```
+
+这样来看，`Mult` 是 `Double` 的一种 *泛化*。与其计算某个值，*他返回了个在调用时，将计算所要求值的函数*。
+
+
+### 定义咱们自己的控制抽象
+
+
+到目前为止，我们还没看到任何 `if` 语句、`switch` 语句、`for` 语句或 `while` 语句，但这似乎并不重要。一切都使用模式匹配及高阶函数编写出来。
+
+
+当我们需要额外控制结构时，我们可以构造咱们自己的。下面是个示例；Erlang 没有 `for` 循环，所以我们来构造一个：
+
+
+[`lib_misc.erl`](http://media.pragprog.com/titles/jaerlang2/code/lib_misc.erl)
+
+
+```erlang
+for(Max, Max, F) -> [F(Max)];
+for(I, Max, F) -> [F(I)|for(I+1, Max, F)].
+```
+
+
+那么，比如对 `for(1,10,F)` 求值，就会创建处一个列表 `[F(1)，F(2)，...，F(10)]`。
+
+现在我们有了个简单的 `for` 循环。我们可以用他构造一个从 `1` 到 `10` 的整数列表。
+
+
+```erlang
+1> lib_misc:for(1,10,fun(I) -> I end).
+[1,2,3,4,5,6,7,8,9,10]
+```
+
+或者，我们可计算出 `1` 到 `10` 的整数平方。
+
+
+```erlang
+2> lib_misc:for(1,10,fun(I) -> I*I end).
+[1,4,9,16,25,36,49,64,81,100]
+```
+
+
+随着咱们更有经验，就会发现创建咱们自己控制结构的能力，可以大大减小咱们程序的大小，并有时还会使他们更加清晰。这是因为咱们可以创建出刚好解决咱们问题所需的控制结构，而且咱们不受编程语言自带的一小套固定控制结构约束。
+
+
+## 简单的列表处理
+
+既然我们已介绍了 `funs`，咱们就可以继续编写 `sum` 和 `map` 了，我们改进版的 `total` 就需要他们（我相信你一定没有忘记！）。
+
+我们将从 `sum` 开始，他会计算某个列表中元素的总和。
+
+
+
+[`mylists.erl`](http://media.pragprog.com/titles/jaerlang2/code/mylists.erl)
+
+```erlang
+sum([H|T]) -> H + sum(T);
+sum([])	   -> 0.
+```
+
+
+请注意 `sum` 中两个子句的顺序并不重要。这是因为第一个子句会匹配某个非空列表，同时第二个子句匹配的是个空列表，而这两种情况是互斥的。我们可以如下测试 `sum`：
+
+
+```erlang
+1> c(mylists).
+{ok,mylists}
+2> L = [1,3,10].
+[1,3,10]
+3> mylists:sum(L).
+14
+```
+
+
+第 1 行编译了 `mylists` 这个 模组。从现在起，我（作者）会经常省略编译模组的命令，所以咱们必须记住自己完成这件事。要理解这段代码是如何工作很容易。我们来跟踪一下执行过程。
+
+
+1. `sum([1,3,10])`；
+2. `sum([1,3,10]) = 1 + sum([3,10])`（按照第一个子句 `sum([H|T]) -> H + sum(T)`）；
+3. `= 1 + 3 + sum([10])`（按照第一个子句）；
+4. `= 1 + 3 + 10 + sum([])`（按照第一个子句）；
+5. `= 1 + 3 + 10 + 0`（按照第二个子句）；
+6. `= 14`
+
+
+最后，我们来看看我们前面曾见过的 `map/2`。下面是他的定义：
+
+
+[`mylists.erl`](http://media.pragprog.com/titles/jaerlang2/code/mylists.erl)
+
+
+```erlang
+map(_, [])	    -> [];
+map(F, [H|T])	-> [F(H)|map(F, T)].
+```
+
+
+1. 其首个子句说的是如何处理空列表。在空列表（什么也没有！）的元素上映射任何函数，都会产生一个空列表；
+2. 第二个子句是一条有关如何处理有着头部 `H`、尾部 `T` 的某个列表的规则。仅构建出一个头部为 `F(H)`，尾部为 `map(F,T)` 的列表。
+
+
+*注意*：`map/2` 的定义，是从标准库模组 `lists` 复制到 `mylists` 的。咱们可随意修改 `mylists.erl` 中的代码。在任何情况下，都不要尝试创建咱们自己的 `lists` 模组 -- 若咱们在 `lists` 中犯了任何错误，都很可能会严重破坏系统。
+
+
+我们可使用一些将列表中的元素加倍及平方的函数，运行这个 `map`，如下所示：
+
+
+```erlang
+1> L = [1,2,3,4,5].
+[1,2,3,4,5]
+2> mylists:map(fun(X) -> 2*X end, L).
+[2,4,6,8,10]
+3> mylists:map(fun(X) -> X*X end, L).
+[1,4,9,16,25]
+```
+
+
+稍后，我们将在 [26.3 节 “并行化顺序代码” 中](../part-v/Ch26-programming_multicore_CPUs.md#并行序列代码)，展示使用列表综合，编写的一个更简短版本的 `map`，我们将展示咱们如何以 *并行* 方式，计算映射 的所有元素（这将加快我们程序在多核计算机上的运行速度） -- 但这已太超前。既然我们已经知道了 `sum` 和 `map`，咱们就可以用这两个函数，重写 `total` 了：
+
+
+[`shop2.erl`](http://media.pragprog.com/titles/jaerlang2/code/shop2.erl)
+
+```erlang
+-module(shop2).
+-export([total/1]).
+-import(lists, [map/2, sum/1]).
+
+total(L) ->
+    sum(map(fun({What, N}) -> shop:cost(What) * N end, L)).
+```
+
+
+通过查看涉及到那些步骤，我们就可以了解这个函数的工作原理。
+
+
+```erlang
+1> Buy = [{oranges,4},{newspaper,1},{apples,10},{pears,6},{milk,3}].
+[{oranges,4},{newspaper,1},{apples,10},{pears,6},{milk,3}]
+2> L1=lists:map(fun({What,N}) -> shop:cost(What) * N end, Buy).
+[20,8,20,54,21]
+3> lists:sum(L1).
+123
+```
+
+
+> **我要怎样编写程序**
+>
+> 在编写某个程序时，我（作者）的方法是 “写一点” 就 “测试一点”。我会先编写一个包含几个函数的小模组，然后编译他，并在 shell 下用几个命令测试他。一旦我对他感到满意，我会再写几个函数，编译他们，测试他们，以此类推。
+>
+> 通常情况下，我并未真正决定在我的程序中，需要什么样的数据结构，而当我运行一些小的示例时，我就能明白，我所选择的数据结构是否合适。
+>
+> 我倾向于 “养大” 程序，而不是在编写他们之前，就将其完全想好。这样就不会在我发现错误之前，就犯下大错。最重要的是，这样做很有趣，我会立即得到反馈，并且在输入程序时，就立即会看到我的想法是否可行。
+>
+> 一旦在 shell 下搞清楚怎样完成某事，我通常就会去写个 makefile，以及一些重现我在 shell 下所掌握内容的代码。
+
+
+还要注意这个模组中 `-import` 与 `-export` 声明的使用。
+
+
+- 声明 `-import(lists,[map/2,sum/1]).` 表示函数 `map/2` *导入* 自模组 `lists` 中，以此类推。这意味着我们可以写下 `map(Fun,...)` 代替 `lists:map(Fun,...)`。`cost/1` 未在某个导入声明中声明，因此我们必须使用 “完全限定” 的名字 `shop:cost`；
+- 声明 `-export([total/1])` 表示可从 `shop2` 这个模组外部，调用函数 `total/1`。只有从某个模组导出的函数，才能从该模组外部调用。
+
+
+这时，咱们可能会认为我们这个 `total` 函数无法再被改进了，但咱们错了。进一步的改进是可行的。为此，我们将用到列表综合。
+
+
+*知识点*：
+
+- list comprehension
+- fully qualified name
+
+
+## 列表综合
+
+
+所谓 *列表综合*，是一些不必用到 `funs`、映射或过滤器，即可创建出列表的表达式。这会使得我们的程序更加简短易懂。
+
+
+我们将从一个示例开始。设想我们有个列表 `L`。
+
+
+```erlang
+1> L = [1,2,3,4,5].
+[1,2,3,4,5]
+```
+
+并假设说我们打算把这个列表中的每个元素都翻倍。我们以前做过这个，但我还是要提醒一下。
+
+
+```erlang
+2> lists:map(fun(X) -> X*2 end, L).
+[2,4,6,8,10]
+```
+
+
+不过还有种更简单的，使用列表综合的方法。
+
+```erlang
+3> [2*X || X <- L ].
+[2,4,6,8,10]
+```
+
+
+`[ F(X) || X <- L]` 这种写法，表示 “`F(X)` 的列表，其中 `X` 取自列表 `L`”。因此，`[2*X || X <- L ]` 就表示 “`2*X` 的列表，其中 `X` 取自列表 `L`"。
+
+
+要了解如何使用列表综合，我们可以在 shell 下输入几个表达式，看看会发生什么。我们以定义 `Buy` 开始。
+
+
+```erlang
+1> Buy = [{oranges,4},{newspaper,1},{apples,10},{pears,6},{milk,3}].
+[{oranges,4},{newspaper,1},{apples,10},{pears,6},{milk,3}]
+```
+
+
+现在我们来把这个原始列表中每个项目的数量加倍。
+
+
+```erlang
+2> [{Name, 2*Number} || {Name, Number} <- Buy].
+[{oranges,8},{newspaper,2},{apples,20},{pears,12},{milk,6}]
+```
+
+
+请注意，`||` 符号右侧的元组 `{Name, Number}`，是个会与列表 `Buy` 中每个元素匹配的 *模式*。而左边的元组 `{Name, 2*Number}`，则 是个 *构造函数*。
+
+
+设想我们想要计算出那个原始列表中，所有元素的总费用；我们可以如下完成这点。首先用该列表中每项物品的价格，替换其名字。
+
+
+```erlang
+3> [{shop:cost(A), B} || {A, B} <- Buy].
+[{5,4},{8,1},{2,10},{9,6},{7,3}]
+```
+
+
+现在乘以数量。
+
+
+```erlang
+4> [shop:cost(A) * B || {A, B} <- Buy].
+[20,8,20,54,21]
+```
+
+
+再对他们求和。
+
+
+```erlang
+5> lists:sum([shop:cost(A) * B || {A, B} <- Buy]).
+123
+```
+
+
+最后，若我们打算将其构造为一个函数，就可以写出下面的代码：
+
+
+```erlang
+total(L) ->
+    lists:sum([shop:cost(A) * B || {A, B} <- L]).
+```
+
+
+> **译注**：在传入给此版本的 `total/1` 函数为空列表时，其仍能计算出结果为 `0`。
+
+
+```erlang
+8> shop3:total(Buy).
+123
+9> shop3:total([]).
+0
+```
+
+> 请思考这是为什么......
+
+
+列表综合会让咱们代码变得非常简短易读。例如，我们可以定义一个更简短版本的 `map`。
+
+
+```erlang
+map(F, L) -> [F(X) || X <- L].
+```
+
+
+列表综合最一般形式，是下面这种形式的表达式：
+
+
+```erlang
+[X || Qualifier1, Qualifier2, ...]
+```
+
+
 
