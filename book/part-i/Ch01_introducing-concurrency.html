@@ -1,0 +1,563 @@
+<!DOCTYPE HTML>
+<html lang="zh" class="sidebar-visible no-js light">
+  <head>
+    <!-- Book generated using mdBook -->
+    <meta charset="UTF-8">
+    <title>并发介绍 - Erlang 编程</title>
+
+
+    <!-- Custom HTML head -->
+
+    <meta name="description" content="Programming Erlang, 2nd Edition, Joe Armstrong">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff" />
+
+    <link rel="icon" href="../favicon.svg">
+    <link rel="shortcut icon" href="../favicon.png">
+    <link rel="stylesheet" href="../css/variables.css">
+    <link rel="stylesheet" href="../css/general.css">
+    <link rel="stylesheet" href="../css/chrome.css">
+
+    <!-- Fonts -->
+    <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+    <link rel="stylesheet" href="../fonts/fonts.css">
+
+    <!-- Highlight.js Stylesheets -->
+    <link rel="stylesheet" href="../highlight.css">
+    <link rel="stylesheet" href="../tomorrow-night.css">
+    <link rel="stylesheet" href="../ayu-highlight.css">
+    <link rel="prefetch" href="../images/alipay-laxers.jpeg" />
+    <link rel="prefetch" href="../images/wechat-pay-hector.jpeg" />
+
+    <!-- Custom theme stylesheets -->
+    <link rel="stylesheet" href="../theme/pagetoc.css">
+
+    <style type="text/css">
+        a.button {
+                color:white;
+              font-family:Helvetica, sans-serif;
+              font-weight:bold;
+              font-size:12px;
+              text-align: center;
+              text-decoration:none;
+              background-color:#FFA12B;
+              display:inline-block;
+              position:relative;
+              padding:5px 10px;
+
+              -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+              text-shadow: 0px 1px 0px #000;
+              filter: dropshadow(color=#000, offx=0px, offy=1px);
+
+              -webkit-box-shadow:inset 0 1px 0 #FFE5C4, 0 2px 0 #915100;
+              -moz-box-shadow:inset 0 1px 0 #FFE5C4, 0 2px 0 #915100;
+              box-shadow:inset 0 1px 0 #FFE5C4, 0 2px 0 #915100;
+
+              -webkit-border-radius: 5px;
+              -moz-border-radius: 5px;
+              border-radius: 5px;
+        }
+    </style>
+
+  </head>
+  <body>
+    <div id="body-container">
+      <!-- Provide site root to javascript -->
+      <script>
+        var path_to_root = "../";
+        var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+      </script>
+
+      <!-- Work around some values being stored in localStorage wrapped in quotes -->
+      <script>
+        try {
+                  var theme = localStorage.getItem('mdbook-theme');
+                  var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                  if (theme.startsWith('"') && theme.endsWith('"')) {
+                            localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                          }
+
+                  if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                            localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                          }
+                } catch (e) { }
+      </script>
+
+      <!-- Set the theme before any content is loaded, prevents flash -->
+      <script>
+        var theme;
+        try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+        if (theme === null || theme === undefined) { theme = default_theme; }
+        var html = document.querySelector('html');
+        html.classList.remove('no-js')
+        html.classList.remove('light')
+        html.classList.add(theme);
+        html.classList.add('js');
+      </script>
+
+      <!-- Hide / unhide sidebar before it is displayed -->
+      <script>
+        var html = document.querySelector('html');
+        var sidebar = null;
+        if (document.body.clientWidth >= 1080) {
+                  try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                  sidebar = sidebar || 'visible';
+                } else {
+                          sidebar = 'hidden';
+                        }
+        html.classList.remove('sidebar-visible');
+        html.classList.add("sidebar-" + sidebar);
+      </script>
+
+      <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+        <div class="sidebar-scrollbox">
+          <ol class="chapter"><li class="chapter-item expanded affix "><a href="introduction.html">简介</a></li><li class="chapter-item expanded "><a href="part-i.html"><strong aria-hidden="true">1.</strong> 第 I 部分，为何是 Erlang？</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="getting_started.html"><strong aria-hidden="true">1.1.</strong> 入门</a></li><li class="chapter-item expanded "><a href="part-i/Ch01_introducing-concurrency.html"><strong aria-hidden="true">1.2.</strong> 并发介绍</a></li><li class="chapter-item expanded "><a href="part-i/Ch02_a-whirlwind-tour-of-erlang.html"><strong aria-hidden="true">1.3.</strong> Erlang 旋风之旅</a></li></ol></li><li class="chapter-item expanded "><a href="part-ii.html"><strong aria-hidden="true">2.</strong> 第 II 部分，序列编程</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="part-ii/Ch03-basic_concepts.html"><strong aria-hidden="true">2.1.</strong> 基本概念</a></li><li class="chapter-item expanded "><a href="part-ii/Ch04-modules_and_functions.html"><strong aria-hidden="true">2.2.</strong> 模组与函数</a></li></ol></li></ol>
+        </div>
+        <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+      </nav>
+
+      <div id="page-wrapper" class="page-wrapper">
+
+        <div class="page">
+          <div id="menu-bar-hover-placeholder"></div>
+          <div id="menu-bar" class="menu-bar sticky bordered">
+            <div class="left-buttons">
+              <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+              </button>
+              <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                <i class="fa fa-paint-brush"></i>
+              </button>
+              <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+              </ul>
+            </div>
+
+            <h3 class="menu-title">Erlang 编程</h3>
+
+            <div class="right-buttons">
+              <a href="https://github.com/gnu4cn/erlang-book" title="Git repository" aria-label="Git repository">
+                <i id="git-repository-button" class="fa fa-github"></i>
+              </a>
+                <button class="open-button">打 赏 💰</button>
+            </div>
+          </div>
+
+
+          <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+          <script>
+            document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+            document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+            Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                          link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                        });
+          </script>
+
+          <div id="content" class="content">
+            <main><div class="sidetoc"><nav class="pagetoc"></nav></div>
+              <h1 id="并发介绍"><a class="header" href="#并发介绍">并发介绍</a></h1>
+<p>让我们暂时忘掉电脑；我（作者）要从窗户向外看，告诉你们我看到了什么。</p>
+<p>我（作者）看到一位女士带着狗散步。我看到一辆小汽车在寻找停车位。我看到一架飞机从头顶飞过，一艘船从旁边驶过。所有这些事情都是 <em>并行</em> 发生的。在本书中，我们将学习怎样把一些并行的活动，描述为一组相互通信的并行进程。我们将学习如何编写 <em>并发程序</em>。</p>
+<p>在日常用语中，<em>并发</em>、<em>同步</em>及 <em>并行</em> 等词的意思几乎相同。但在编程语言中，我们需要更加精确。特别是，我们需要区分并发程序和并行程序。</p>
+<p><em>知识点</em>：</p>
+<ul>
+<li>concurrent, 并发</li>
+<li>simultaneous, 同步</li>
+<li>parallel, 并行</li>
+</ul>
+<p>若我们只有一部单核的计算机，那么我们就永远无法在他上面运行某个并行的程序。这是因为我们只有一个 CPU，而他一次只能做一件事。不过，我们可以在一部单核计算机上，运行并发程序。计算机会在不同任务之间进行分时，从而维持不同任务并行运行的假象，the computer time-shares between the different tasks, maintaining the illusion that the different tasks run in parallel。</p>
+<p>在接下来的小节中，我们将从一些简单的并发建模开始，进而了解使用并发解决问题的好处，最后看看突出并发和并行之间区别的一些精确定义。</p>
+<h2 id="建模并发"><a class="header" href="#建模并发">建模并发</a></h2>
+<p>我们将从一个简单示例开始，建立一个日常场景的并发模型。请设想一下，我看到四个人出来散步。有两只狗和许多兔子。人们在互相交谈，而狗则想追逐那些兔子。</p>
+<p>要用 Erlang 模拟这种情况，我们需要创建四个模组，分别称为 <code>person</code>、<code>dog</code>、<code>rabbit</code> 及 <code>world</code>。<code>person</code> 的代码将位于一个名为 <code>person.erl</code> 的文件中，看起来可能是这样的：</p>
+<pre><code class="language-erlang">-module(person).
+-export([init/1]).
+
+init(Name) -&gt; ...
+</code></pre>
+<p>其中第一行 <code>-module(person).</code>，表示该文件包含了名为 <code>person</code> 模组的代码。这应与文件名相同（不包括 <code>.erl</code> 文件扩展名）。模组名 <em>必须</em> 以小写字母开头。从技术上讲，模组名是个 <em>原子</em>；我们将在 <a href="../part-ii/Ch03-basic_concepts.html#%E5%8E%9F%E5%AD%90">第 3.5 节 “原子”</a> 中详细介绍何为原子。</p>
+<p>模组声明之后，是个 <em>导出声明</em>。导出声明指出模组中的哪些函数，可以从该模组 <em>外部</em> 调用。他们就像许多编程语言中的 <code>public</code> 声明。不在导出声明中的函数属于私有的，而不能从模组外部调用。</p>
+<p><em>知识点</em>：</p>
+<ul>
+<li>the module declaration, 模组声明</li>
+<li>export declaration，导出声明</li>
+<li>public</li>
+<li>private</li>
+</ul>
+<p><code>-export([init/1]).</code> 这种语法，表示有一个参数（这是 <code>/1</code> 的意思；不是除以一 的意思）的函数 <code>init</code>，可从该模组外部调用。在我们打算导出多个函数时，可使用这种语法：</p>
+<pre><code class="language-erlang">-export([FuncName1/N1, FuncName2/N2, .....]).
+</code></pre>
+<p>其中方括号 <code>[ ...]</code> 的意思是 “列表”，因此这个声明表示我们打算从模组中导出一个函数列表。</p>
+<p>我们还需编写 <code>dog</code> 与 <code>rabbit</code> 的代码。</p>
+<h3 id="启动模拟"><a class="header" href="#启动模拟">启动模拟</a></h3>
+<p>要启动这个程序，我们将调用 <code>world:start()</code>。这是定义在一个名为 <code>world</code> 模组中的，其开头如此：</p>
+<pre><code class="language-erlang">-module(world).
+-export([start/0]).
+
+start() -&gt;
+    Joe = spawn(person, init, ["Joe"]),
+    Susannah = spawn(person, init, ["Susannah"]),
+    Dave = spawn(person, init, ["Dave"]),
+    Andy = spawn(person, init, ["Andy"]),
+    Rover = spawn(dog, init, ["Rover"]),
+    ...
+    Rabbit1 = spawn(rabbit, init, ["Flopsy"]),
+   ...
+</code></pre>
+<p><code>spawn</code> 是个创建并发进程，并返回一个进程标识符的 Erlang 原语。<code>spawn</code> 的调用如下：</p>
+<pre><code class="language-erlang">spawn(ModName, FuncName, [Arg1, Arg2, ..., ArgN])
+</code></pre>
+<p>当 <code>spawn</code> 被求值时，Erlang 的运行时系统，会创建出一个新进程（不是个操作系统进程，而是个由 Erlang 系统管理的轻量级进程）。一旦该进程被创建出来，他就会开始计算由那些参数所指定的代码。<code>ModName</code> 是有着我们打算执行代码的模组名称。<code>FuncName</code> 是模组中函数的名称，<code>[Arg1, Arg2, ...]</code> 是个包含了我们要计算函数参数的列表。因此，以下调用表示要启动一个执行函数 <code>person:init("Joe")</code> 的进程：</p>
+<pre><code class="language-erlang">spawn(person, init, ["Joe"])
+</code></pre>
+<p><code>spawn</code> 的返回值，是个可用于与这个新创建进程交互的 <em>进程标识符，PID</em>。</p>
+<p><em>知识点</em>：</p>
+<ul>
+<li>lightweight process, 轻量级进程</li>
+<li>process identifier，进程标识符</li>
+</ul>
+<blockquote>
+<p>以对象类比</p>
+<p>Erlang 中的模组，就像面向对象编程语言，object-oriented programming language, OOPL, 中的类，而进程就像 OOPL 中的对象（或类的实例）。</p>
+<p>在 Erlang 中，<code>spawn</code> 通过运行某个模组中定义的一个函数，创建出一个新的进程。在 Java 中，<code>new</code> 通过运行某个类中定义的一个方法，创建出一个新对象。</p>
+<p>在某门 OOPL 中，我们可以有一个类，而有数千个类实例。同样，在 Erlang 中，我们可以有一个模组，而有数千甚至数百万个执行该模组中代码的进程。所有 Erlang 的进程，都并发且独立执行，如果我们有一台百万核的计算机，他们甚至可以并行运行。</p>
+</blockquote>
+<h3 id="发送消息"><a class="header" href="#发送消息">发送消息</a></h3>
+<p>一旦模拟启动，我们就会打算在程序中的不同进程间发送消息。在 Erlang 中，进程间不共享内存，而只能通过发送消息进行交互。这正是现实世界中，对象的行为方式。</p>
+<p>假设 Joe 想要对 Susannah 说些什么。在程序中，我们就要写下面这样一行代码：</p>
+<pre><code class="language-erlang">Susannah ! {self(), "Hope the dogs don't chase the rabbits"}
+</code></pre>
+<p><code>Pid ！Msg</code> 这种语法，表示将信息 <code>Msg</code> 发送到进程 <code>Pid</code>。花括号中的 <code>self()</code> 参数，指的是发送信息的进程（此情形下为 <code>Joe</code>）。</p>
+<h3 id="接收消息"><a class="header" href="#接收消息">接收消息</a></h3>
+<p>要让 Susannah 的进程接收来自 Joe 的消息，我们就要写下这些代码：</p>
+<pre><code class="language-erlang">receive
+    {From, Message} -&gt;
+        ...
+end
+</code></pre>
+<p>当 Susannah 的进程收到一条信息时，其中的变量 <code>From</code> 将绑定到 <code>Joe</code>，这样 Susannah 就知道信息来自谁，而变量 <code>Message</code> 将包含这条信息。</p>
+<p>我们可以设想扩展我们的模型，让狗子互相发送 <code>"woof woof rabbits"</code> 的消息，让兔子互相发送 <code>"panic go and hide"</code> 的消息。</p>
+<p>这里我们应记住的关键点，是我们的编程模型是基于对现实世界的 <em>观察</em>。我们有三个模组（<code>person</code>、<code>dog</code> 和 <code>rabbit</code>），因为在我们的示例中,有三种类型的并发事物。<code>world</code>  这个模组，是出于需要一个顶级进程启动一切。因为有两只狗，所以我们创建了两个狗的进程，而又因为有四个人，所以我们创建了四个人的进程。程序中的消息，反映了我们示例中所观察到的消息。</p>
+<p>与其扩展这个模型，我们不如就此打住，换个思路，看看并发程序的一些特点。</p>
+<h2 id="并发的益处"><a class="header" href="#并发的益处">并发的益处</a></h2>
+<p>并发编程可用于提高性能、创建出可扩展性与容错的系统，以及为控制现实世界应用编写出清晰易懂的程序。以下是之所以这样讲的一些原因：</p>
+<h3 id="性能"><a class="header" href="#性能"><em>性能</em></a></h3>
+<p>设想咱们有两项任务：<code>A</code> 需要 10 秒钟完成，<code>B</code> 需要 15 秒钟完成。在单个 CPU 上同时执行 <code>A</code> 和 <code>B</code> 将要 25 秒。而在有着两个独立运行 CPU 的计算机上，执行 <code>A</code> 和 <code>B</code> 只需 15 秒。要达到这种性能提升，我们必须编写并发程序。</p>
+<p>直到最近，并行计算机都还很少见，而且价格昂贵，但如今多核计算机已司空见惯。顶级处理器有着 64 个核心，而且在可预见的未来，每芯片的核心数量还会稳步增加。如果咱们有个合适的问题，和一台有 64 核心的计算机，那么咱们的程序在这台计算机上运行时，可能会快六十四倍，但前提是咱们必须编写一个并发的程序。</p>
+<p>计算机行业中最紧迫的问题之一，是由将老旧顺序代码并行化，以使其能在多核计算机上运行的难度造成的。Erlang 中就不没有这类问题。二十年前为顺序机器编写的 Erlang 程序，我们在现代多核计算机上运行时速度只会更快。</p>
+<h3 id="可扩展性"><a class="header" href="#可扩展性"><em>可扩展性</em></a></h3>
+<p>并发程序由小的独立进程组成。因此，我们可以通过增加进程数量和增加 CPU，轻松扩展系统。在运行时，Erlang 的虚拟机会自动将进程的执行，分配到可用的 CPU 上。</p>
+<h3 id="容错性"><a class="header" href="#容错性"><em>容错性</em></a></h3>
+<p>容错与可扩展性类似。容错的关键是独立和硬件冗余。Erlang 程序由许多小的独立进程组成。一个进程中的错误，不会意外导致另一进程崩溃。为防止整个计算机（或数据中心）失效，我们需要检测远端计算机的故障。进程独立性和远端故障检测，在 Erlang 虚拟机中都有建置。</p>
+<p>Erlang 是为构建具备容错能力的电讯系统设计的，但同样的技术，也能很好地用于构建具备容错能力的可扩展 web 系统或云服务。</p>
+<h3 id="清晰度"><a class="header" href="#清晰度">清晰度</a></h3>
+<p>在现实世界中，事情都是并行发生的，而在大多数编程语言中，事情则是顺序发生的。现实世界中的并行性，与咱们编程语言中的顺序性间的不匹配，使得以顺序语言编写现实世界中的控制问题，变得非常困难。</p>
+<p>以 Erlang 的方式，我们就可以将现实世界中的并行性，直接映射到 Erlang 的并发。这样，代码就清晰易懂了。</p>
+<p>既然咱们已经看到这些好处，我们将试着为并发和并行的概念，增加一些精确性。这将为我们在以后的章节中，讨论这些术语提供一个框架。</p>
+<h2 id="并发程序与并行计算机"><a class="header" href="#并发程序与并行计算机">并发程序与并行计算机</a></h2>
+<p>在这里，我要迂腐一点，尽量给 <em>并发</em> 和 <em>并行</em> 等术语赋予准确的含义。我们要区分并行程序和并行计算机，所谓并行程序，是指在我们有并行计算机时就能运行得更快的程序，而并行计算机，则是真的有一个以上核心（或 CPU）。</p>
+<ul>
+<li><em>并发程序</em> 是以某门并发编程语言编写的程序。我们编写并发程序是出于性能、可扩展性或容错等的考虑；</li>
+<li><em>并发编程语言</em>,是一门有着用于编写并发程序目的的明确语言结构的语言。这些构造是该门编程语言不可或缺的一部分，同时在所有操作系统上以同样方式行事；</li>
+<li><em>并行计算机</em>，是一部有着多个在同一时间运行的处理单元（CPU 或核心）的计算机。</li>
+</ul>
+<p>以 Erlang 编写的并发程序，是由数个通信的顺序进程集合组成。Erlang 进程是可计算单个 Erlang 函数的小小虚拟机；其不应与操作系统的进程混淆。</p>
+<p>要以 Erlang 编写并发程序，咱们必须确定出能解决咱们问题的一组进程。我们将这种确定出进程的行为，称为 <em>并发建模</em>。这就好比识别出编写面向对象程序所需对象的艺术。</p>
+<p>在面向对象设计中，选择解决问题所需的对象，是个公认的难题。在并发建模中也是如此。选择正确进程可能很难。好的进程模型和差的进程模型之间的差别，可以决定一个设计的成败。</p>
+<p>编写好并发程序后，我们可在并行计算机上运行他。我们可在多核的计算机上运行，也可以在一组联网计算机上，或云上运行。</p>
+<p>我们的并行程序真的会在并行计算机上并行运行吗？有时很难知道。在多核计算机上，操作系统可能会决定关闭某个核心以节省能耗。在云计算中，某台计算可能会暂停而迁移到某台新计算机上。这些都在我们的掌控之外。</p>
+<p>现在我们已经看到并发程序与并行计算机之间的区别。并发与软件的结构有关，并行则与硬件有关。接下来我们来看看顺序编程语言和并发编程语言的区别。</p>
+<p><em>知识点</em>：</p>
+<ul>
+<li>concurrent program, 并发程序</li>
+<li>concurrent programming language, 并发编程语言</li>
+<li>parallel computer, 并行计算机</li>
+<li>CPU，core，处理器，核心</li>
+</ul>
+<h2 id="顺序与并发编程语言"><a class="header" href="#顺序与并发编程语言">顺序与并发编程语言</a></h2>
+<p>编程语言分为两类：顺序语言和并发语言。顺序语言是那些为编写顺序程序而设计的语言,没有用于描述并发计算的语言结构。并发编程语言是为编写并发程序而设计的那些语言，语言本身具有表达并发性的一些特殊结构。</p>
+<p>Erlang 中的并发性，是由 Erlang 虚拟机提供的，而不是由操作系统或任何外部库提供。在大多数顺序编程语言中，并发性是作为主机操作系统的并发原语的某个接口提供的，in most sequential programming languages, concurrency is provided as an interface to the concurrency primitives of the host operating system。</p>
+<p>对基于操作系统的并发性，和基于语言的并发性的区分，非常重要，因为当咱们在使用基于操作系统的并发性时，那么咱们的程序在不同的操作系统上，将以不同方式运行。Erlang 的并发，在所有操作系统上的工作方式一致。要以 Erlang 编写并发程序，咱们只需了解 Erlang；咱们不必了解操作系统中的并发机制。</p>
+<p>在 Erlang 中，进程和并发，是我们用于塑造和解决问题的工具。这实现了对咱们程序并发结构细粒度的控制，而使用操作系统的进程，就很难做到这点。</p>
+<p><em>知识点</em>：</p>
+<ul>
+<li>sequential programming language</li>
+<li>concurrent programming language</li>
+<li>the concurrency primitives of the host operating system</li>
+</ul>
+<h2 id="总结"><a class="header" href="#总结">总结</a></h2>
+<p>我们现在已经介绍了本书的中心主题。我们谈到了作为编写高性能、可扩展和容错软件一种手段的并发，但我们没有介绍如何实现这一点的任何细节。在下一章中，我们将对 Erlang 进行一次旋风之旅，并编写我们的第一个并发程序。</p>
+<footer id="last-change">Last change: 2025-08-15, commit: <a href="https://github.com/gnu4cn/erlang-book/commit/e63c102">e63c102</a></footer>
+            </main>
+
+            <nav class="nav-wrapper" aria-label="Page navigation">
+              <!-- Mobile navigation buttons -->
+              <a rel="prev" href="../getting_started.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                <i class="fa fa-angle-left"></i>
+              </a>
+
+              <a rel="next" href="../part-i/Ch02_a-whirlwind-tour-of-erlang.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                <i class="fa fa-angle-right"></i>
+              </a>
+
+              <div style="clear: both"></div>
+            </nav>
+          </div>
+        </div>
+
+        <nav class="nav-wide-wrapper" aria-label="Page navigation">
+          <a rel="prev" href="../getting_started.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+            <i class="fa fa-angle-left"></i>
+          </a>
+
+          <a rel="next" href="../part-i/Ch02_a-whirlwind-tour-of-erlang.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+            <i class="fa fa-angle-right"></i>
+          </a>
+        </nav>
+
+      </div>
+
+      <!-- Livereload script (if served using the cli tool) -->
+      <script>
+        const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+        const socket = new WebSocket(wsAddress);
+        socket.onmessage = function (event) {
+                  if (event.data === "reload") {
+                            socket.close();
+                            location.reload();
+                          }
+                };
+
+        window.onbeforeunload = function() {
+                  socket.close();
+                }
+      </script>
+
+
+      <script>
+        window.playground_copyable = true;
+      </script>
+
+
+
+      <script src="../clipboard.min.js"></script>
+      <script src="../highlight.js"></script>
+      <script src="../book.js"></script>
+
+      <!-- Custom JS scripts -->
+      <script src="../theme/pagetoc.js"></script>
+
+
+    </div>
+
+<!-- Donation dialog -->
+<dialog class="modal">
+  <p>小额打赏，赞助 xfoss.com 长存......</p>
+
+<div class="slider">
+  <a href="#slide-1">微信</a> |
+  <a href="#slide-2">支付宝</a>
+
+  <div class="slides">
+    <div id="slide-1">
+         <img src="../images/wechat-pay-hector.jpeg" />
+    </div>
+    <div id="slide-2">
+          <img src="../images/alipay-laxers.jpeg" />
+    </div>
+  </div>
+</div>
+
+<br />
+  <p>若这里内容有帮助到你，请选择上述方式向 xfoss.com 捐赠。</p>
+  <button class="close-button">Close</button>
+</dialog>
+
+
+
+  </body>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-V49YMMPZJN"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-V49YMMPZJN');
+</script>
+
+<script>
+
+const modal = document.querySelector('.modal');
+const openButton = document.querySelector('.open-button');
+const closeButton = document.querySelector('.close-button');
+
+openButton.addEventListener('click', () => {
+  modal.showModal();
+});
+
+closeButton.addEventListener('click', () => {
+  modal.close();
+});
+</script>
+    <style type="text/css">
+button {
+  display: inline-block;
+  margin: 5px auto;
+  border: 0;
+  border-radius: 2px;
+  padding: 3px 8px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+    background-color: #FFA12B;
+  cursor: pointer;
+  color: #FFF;
+  transition: all 240ms linear;
+}
+
+button:hover {
+  filter: brightness(0.8);
+}
+button:active {
+  transform: scale(0.9);
+}
+dialog {
+  margin: 10% auto;
+  width: 80%;
+  max-width: 800px;
+  background-color: #eee;
+  padding: 24px;
+  border: 0;
+  border-radius: 5px;
+}
+dialog > p {
+  text-align: center;
+  margin: 0;
+}
+dialog > p:first-of-type {
+  margin: 0 auto 20px;
+  font-size: 24px;
+  font-weight: 600;
+}
+dialog > button {
+    display: block;
+    float: right;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.slider {
+  width: 300px;
+  text-align: center;
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.slides {
+  display: flex;
+
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+
+
+
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+
+  /*
+  scroll-snap-points-x: repeat(300px);
+  scroll-snap-type: mandatory;
+  */
+}
+.slides::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.slides::-webkit-scrollbar-thumb {
+  background: black;
+  border-radius: 10px;
+}
+.slides::-webkit-scrollbar-track {
+  background: transparent;
+}
+.slides > div {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+  width: 300px;
+  height: 300px;
+  margin-right: 50px;
+  border-radius: 10px;
+  background: #eee;
+  transform-origin: center center;
+  transform: scale(1);
+  transition: transform 0.5s;
+  position: relative;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 100px;
+}
+.slides > div:target {
+/*   transform: scale(0.8); */
+}
+.author-info {
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  padding: 0.75rem;
+  text-align: center;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  margin: 0;
+}
+.author-info a {
+  color: white;
+}
+.slides > div > img {
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.slider > a {
+  display: inline-flex;
+  height: 1.5rem;
+  background: white;
+  text-decoration: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin: 0 0 0.5rem 0;
+  position: relative;
+}
+.slider > a:active {
+  top: 1px;
+}
+.slider > a:focus {
+  background: #000;
+}
+
+/* Don't need button navigation */
+@supports (scroll-snap-type) {
+  .slider > a {
+    display: none;
+  }
+}
+
+    </style>
+
+</html>

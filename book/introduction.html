@@ -1,0 +1,497 @@
+<!DOCTYPE HTML>
+<html lang="zh" class="sidebar-visible no-js light">
+  <head>
+    <!-- Book generated using mdBook -->
+    <meta charset="UTF-8">
+    <title>简介 - Erlang 编程</title>
+
+
+    <!-- Custom HTML head -->
+
+    <meta name="description" content="Programming Erlang, 2nd Edition, Joe Armstrong">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff" />
+
+    <link rel="icon" href="favicon.svg">
+    <link rel="shortcut icon" href="favicon.png">
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/general.css">
+    <link rel="stylesheet" href="css/chrome.css">
+
+    <!-- Fonts -->
+    <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+    <link rel="stylesheet" href="fonts/fonts.css">
+
+    <!-- Highlight.js Stylesheets -->
+    <link rel="stylesheet" href="highlight.css">
+    <link rel="stylesheet" href="tomorrow-night.css">
+    <link rel="stylesheet" href="ayu-highlight.css">
+    <link rel="prefetch" href="images/alipay-laxers.jpeg" />
+    <link rel="prefetch" href="images/wechat-pay-hector.jpeg" />
+
+    <!-- Custom theme stylesheets -->
+    <link rel="stylesheet" href="theme/pagetoc.css">
+
+    <style type="text/css">
+        a.button {
+                color:white;
+              font-family:Helvetica, sans-serif;
+              font-weight:bold;
+              font-size:12px;
+              text-align: center;
+              text-decoration:none;
+              background-color:#FFA12B;
+              display:inline-block;
+              position:relative;
+              padding:5px 10px;
+
+              -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+              text-shadow: 0px 1px 0px #000;
+              filter: dropshadow(color=#000, offx=0px, offy=1px);
+
+              -webkit-box-shadow:inset 0 1px 0 #FFE5C4, 0 2px 0 #915100;
+              -moz-box-shadow:inset 0 1px 0 #FFE5C4, 0 2px 0 #915100;
+              box-shadow:inset 0 1px 0 #FFE5C4, 0 2px 0 #915100;
+
+              -webkit-border-radius: 5px;
+              -moz-border-radius: 5px;
+              border-radius: 5px;
+        }
+    </style>
+
+  </head>
+  <body>
+    <div id="body-container">
+      <!-- Provide site root to javascript -->
+      <script>
+        var path_to_root = "";
+        var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+      </script>
+
+      <!-- Work around some values being stored in localStorage wrapped in quotes -->
+      <script>
+        try {
+                  var theme = localStorage.getItem('mdbook-theme');
+                  var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                  if (theme.startsWith('"') && theme.endsWith('"')) {
+                            localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                          }
+
+                  if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                            localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                          }
+                } catch (e) { }
+      </script>
+
+      <!-- Set the theme before any content is loaded, prevents flash -->
+      <script>
+        var theme;
+        try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+        if (theme === null || theme === undefined) { theme = default_theme; }
+        var html = document.querySelector('html');
+        html.classList.remove('no-js')
+        html.classList.remove('light')
+        html.classList.add(theme);
+        html.classList.add('js');
+      </script>
+
+      <!-- Hide / unhide sidebar before it is displayed -->
+      <script>
+        var html = document.querySelector('html');
+        var sidebar = null;
+        if (document.body.clientWidth >= 1080) {
+                  try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                  sidebar = sidebar || 'visible';
+                } else {
+                          sidebar = 'hidden';
+                        }
+        html.classList.remove('sidebar-visible');
+        html.classList.add("sidebar-" + sidebar);
+      </script>
+
+      <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+        <div class="sidebar-scrollbox">
+          <ol class="chapter"><li class="chapter-item expanded affix "><a href="introduction.html">简介</a></li><li class="chapter-item expanded "><a href="part-i.html"><strong aria-hidden="true">1.</strong> 第 I 部分，为何是 Erlang？</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="getting_started.html"><strong aria-hidden="true">1.1.</strong> 入门</a></li><li class="chapter-item expanded "><a href="part-i/Ch01_introducing-concurrency.html"><strong aria-hidden="true">1.2.</strong> 并发介绍</a></li><li class="chapter-item expanded "><a href="part-i/Ch02_a-whirlwind-tour-of-erlang.html"><strong aria-hidden="true">1.3.</strong> Erlang 旋风之旅</a></li></ol></li><li class="chapter-item expanded "><a href="part-ii.html"><strong aria-hidden="true">2.</strong> 第 II 部分，序列编程</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="part-ii/Ch03-basic_concepts.html"><strong aria-hidden="true">2.1.</strong> 基本概念</a></li><li class="chapter-item expanded "><a href="part-ii/Ch04-modules_and_functions.html"><strong aria-hidden="true">2.2.</strong> 模组与函数</a></li></ol></li></ol>
+        </div>
+        <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+      </nav>
+
+      <div id="page-wrapper" class="page-wrapper">
+
+        <div class="page">
+          <div id="menu-bar-hover-placeholder"></div>
+          <div id="menu-bar" class="menu-bar sticky bordered">
+            <div class="left-buttons">
+              <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+              </button>
+              <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                <i class="fa fa-paint-brush"></i>
+              </button>
+              <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+              </ul>
+            </div>
+
+            <h3 class="menu-title">Erlang 编程</h3>
+
+            <div class="right-buttons">
+              <a href="https://github.com/gnu4cn/erlang-book" title="Git repository" aria-label="Git repository">
+                <i id="git-repository-button" class="fa fa-github"></i>
+              </a>
+                <button class="open-button">打 赏 💰</button>
+            </div>
+          </div>
+
+
+          <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+          <script>
+            document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+            document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+            Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                          link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                        });
+          </script>
+
+          <div id="content" class="content">
+            <main><div class="sidetoc"><nav class="pagetoc"></nav></div>
+              <h1 id="简介"><a class="header" href="#简介">简介</a></h1>
+<p>新硬件的并行性越来越强，因此新的编程语言必须支持并发性，否则就会消亡。</p>
+<blockquote>
+<p>“处理器行业的发展方向，是增加越来越多的核心，但没有人知道如何对这些东西进行编程。我的意思是，两个，可以；四个，不行；八个，算了吧。”  --苹果公司史蒂夫-乔布斯<sup>1</sup></p>
+<p><sup>1</sup> <a href="https://archive.nytimes.com/bits.blogs.nytimes.com/2008/06/10/apple-in-parallel-turning-the-pc-world-upside-down/">Apple in Parallel: Turning the PC World Upside Down?</a></p>
+</blockquote>
+<p>史蒂夫错了；我们确实知道如何为多核编程。我们用 Erlang 对他们进行编程，而咱们的许多程序，都会随着内核的增加而变得更快。</p>
+<p>自底向上，Erlang 都是为并发、分布式、容错、可扩展的软实时系统编程而设计。所谓软实时系统，是指诸如电话交换机、银行系统等的一些系统，其中快速响应时间非常重要，但即使错过了零星的定时截止时间，也不会造成灾难。一些 Erlang 的系统，已被大规模部署，并控制着世界上移动通信网络的重要部分。</p>
+<p>如果咱们的问题是并发的，如果咱们正构建某个多用户系统，或者如果咱们正构建某个随时间演进的系统，那么使用 Erlang 可能会为咱们节省很多工作，因为 Erlang 正是专门为构建此类系统而设计的。</p>
+<blockquote>
+<p>“这是可变的状态，愚蠢。” -- Brian Goetz，Java 并发实践</p>
+</blockquote>
+<p>Erlang 属于 <em>函数式编程语言</em> 家族。函数式编程禁止带有副作用的代码，functional programming forbids code with side effects。副作用和并发性不相容。在 Erlang 中，于单个进程内改变状态是可以的，但一个进程不能改变另一进程的状态。Erlang 没有互斥，没有同步方法，也没有共享内存编程的任何工具。</p>
+<p>进程间交互有且只有一个方法，即交换消息/报文, by exchanging messages。进程不与其他进程共享数据。这就是为什么我们可以轻松地在多核或网络上，发布 Erlang 程序的原因。</p>
+<p>当我们编写某个 Erlang 程序时，我们并不是将其作为一个完成所有事情的单独进程实现，而是将其实现为大量的，完成一些简单事情并相互通信的小进程。</p>
+<h2 id="这本书讲的是什么"><a class="header" href="#这本书讲的是什么">这本书讲的是什么？</a></h2>
+<p>这是有关并发的、有关分布式、有关容错、有关函数式编程的一本书。这是关于不使用锁和互斥，而只使用纯消息传递的分布式并发系统编程的一本书。这是有关在多核 CPU 上，自动加速咱们程序的一本书。这是有关编写允许人们交互的分布式应用程序的一本书。这是有关编写容错与分布式系统设计模式的一本书。这是有关并发建模，以及将这些模型映射到计算机程序，我（作者）将这一过程称为 <em>面向并发的编程，concurrency-oriented programming</em>。</p>
+<ul>
+<li>concurrency</li>
+<li>distribution</li>
+<li>fault tolerance</li>
+<li>functional programming</li>
+<li>locks and mutexes</li>
+<li>message passing</li>
+<li>design patterns</li>
+<li>distributed systems</li>
+<li>modeling concurrency</li>
+<li>concurrency-oriented programming</li>
+</ul>
+<h2 id="这本书适合哪些人阅读"><a class="header" href="#这本书适合哪些人阅读">这本书适合哪些人阅读？</a></h2>
+<p>本书的目标读者，包括希望进一步了解 Erlang 内部结构于 Erlang 背后理念的资深 Erlang 程序员，以及绝对的初学者。从专家到初学者，各个层次的专业程序员都对本书进行了审阅。第二版与第一版的主要区别之一，是增加了大量的解释性材料，特别针对初学者。高级 Erlang 程序员可以跳过入门材料。</p>
+<p>本书的第二个目标是揭开函数式、并发与分布式编程的神秘面纱，并以一种适合尚无并发或函数式编程知识的读者方式，介绍这些知识。长期以来，编写函数式程序与并行程序，一直被视为一门 "黑色艺术"；本书正是为改变这一现状而不断尝试的一部分。</p>
+<p>虽然本书并未假定对函数式编程或并行编程有具体的了解，但他面向的读者，是那些已熟悉一两门编程语言的人。</p>
+<p>当咱们来到一门新的编程语言时，往往很难想到 "适合用新语言解决的问题"。这些练习为咱们提供了线索。这些都是适合用 Erlang 解决的问题。</p>
+<h2 id="这一版本中的新内容"><a class="header" href="#这一版本中的新内容">这一版本中的新内容</a></h2>
+<p>首先，我们对文本进行了更新，以反映自本书第一版出版以来 Erlang 发生的所有变化。现在，我们涵盖了语言官方的所有变更，并介绍了 Erlang R17 版本。</p>
+<blockquote>
+<p><strong>译注</strong>：如今（2025-8-14）, Erlang 的版本为 <code>Erlang/OTP 28</code>。</p>
+</blockquote>
+<p>第二版重新调整了重点，以满足初学者的需求，与第一版相比增加了解释性文字。面向高级用户或可能快速变化的资料，已移至在线代码仓库。</p>
+<p>编程练习在第一版中大受欢迎，现在每章末尾都有练习。这些练习的复杂程度各不相同，因此无论是初学者还是高级用户，都能找到适合自己的练习。</p>
+<p>在几个全新的章节中，咱们将了解 Erlang 的类型系统与 Dialyzer、映射（Erlang 在 R17 中新增功能）、websockets、编程习语以及集成第三方代码。一个新附录介绍了如何构建最小独立的 Erlang 系统。</p>
+<p>最后一章 “夏洛克的最后一案” 是个新的章节，为咱们提供了一个从大量文本中，处理并提取意义的练习。这是个开放性的章节，我（作者）希望本章末尾的练习，能激发今后的工作。</p>
+<h2 id="路线图"><a class="header" href="#路线图">路线图</a></h2>
+<p>在学会走路前是没办法跑起来的，我们要循序渐进。Erlang 程序是由许多同时运行的小的顺序程序组成的，Erlang programs are made up from lots of small sequential programs running at the same time。在咱们能编写并发代码前，我们需要能够编写出顺序代码。这意味着我们要到 <a href="Ch11-real-world_concurrency.html">第 11 章 真实世界的并发，Real-World Concurrency</a>，才会涉及编写并发程序的细节。</p>
+<ul>
+<li>第一部分简要介绍了并发编程的核心思想，并对 Erlang 进行了旋风式的介绍；</li>
+<li>第二部分详细介绍了顺序的 Erlang 编程，还讲述了构建 Erlang 程序的一些类型与方法；</li>
+<li>第三部分是本书的核心，其中我们将学习如何编写并行与分布式的 Erlang 程序；</li>
+<li>第四部分介绍了一些主要的 Erlang 库，一些跟踪与调试技巧，以及 Erlang 代码结构化的技巧；</li>
+<li>第五部分涉及应用程序。咱们将学习如何将外部软件与核心的 Erlang 库集成，以及如何将自己的代码转化为开源贡献。我们将讨论一些编程习语，以及如何为多核 CPU 编程。最后，福尔摩斯将分析我们的想法。</li>
+</ul>
+<p>在每章末尾，咱们都会看到精选的编程练习。这些练习旨在测试咱们对该章知识的掌握程度，并向咱们提出挑战。这些问题由易到难。最难的问题适合作为研究项目。即使咱们不尝试解答所有问题，但只要思考这些问题以及如何解决他们，就会加深对课文的理解。</p>
+<h2 id="本书中的代码"><a class="header" href="#本书中的代码">本书中的代码</a></h2>
+<p>大多数代码片段，都来自咱们可下载的完整运行示例。<sup>2</sup> 为帮助咱们找到方向，如果本书中的某个代码列表可在下载中找到，代码片段上方会有一个条形图（就像这里的一样）：</p>
+<p><a href="http://media.pragprog.com/titles/jaerlang2/code/shop1.erl"><code>shop1.erl</code></a></p>
+<pre><code class="language-erlang">-module(shop1).
+-export([total/1]).
+
+total([{What, N}|T]) -&gt; shop:cost(What) * N + total(T);
+total([]) -&gt; 0.
+</code></pre>
+<p>条形图包含了该代码在下载中的路径。如果咱们正在阅读本书的电子书版本，并且咱们的电子书阅读器支持超链接，那么咱么可以点击该栏，代码就会出现在浏览器窗口中。</p>
+<blockquote>
+<p><sup>2</sup> <a href="https://pragprog.com/titles/jaerlang2/programming-erlang-2nd-edition/">Programming Erlang (2nd edition)</a></p>
+</blockquote>
+<h2 id="救命这不工作"><a class="header" href="#救命这不工作">救命！这不工作</a></h2>
+<p>学习新知识很困难。咱们会被卡住。当咱们被卡住时，规则 1 是不要默默放弃；规则 2 是寻求帮助；规则 3 是向福尔摩斯请教。</p>
+<p>规则 1 非常重要。有些人尝试过 Erlang，卡住了，放弃了，却没有告诉任何人。如果我们不知道问题所在，我们就无法解决他。故事结束。</p>
+<p>获得帮助的最佳方法，是先尝试 Google；如果 Google 无法提供帮助，请向 Erlang 邮件列表发送邮件 <sup>3</sup>。咱们也可尝试在 irc.freenode.net 上的 #erlounge，或 #erlang 下获取更快的回复。</p>
+<p>有时，咱们问题的答案可能就在 Erlang 邮件列表的旧贴中，但咱们就是找不到。在 <a href="Ch27-sherlock-s_last_case.html">第 27 章 “夏洛克的最后一案”</a> 中，有个咱们可在本地运行的程序，他可以对 Erlang 邮件列表中的所有旧贴，进行复杂的检索。</p>
+<p>因此，事不宜迟，我（作者）要感谢帮助我写这本书（和第一版）的好人，咱们可以跳到第1章，在那里我们将参加 Erlang 的闪电之旅。</p>
+<footer id="last-change">Last change: 2025-08-14, commit: <a href="https://github.com/gnu4cn/erlang-book/commit/19580a7">19580a7</a></footer>
+            </main>
+
+            <nav class="nav-wrapper" aria-label="Page navigation">
+              <!-- Mobile navigation buttons -->
+
+              <a rel="next" href="part-i.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                <i class="fa fa-angle-right"></i>
+              </a>
+
+              <div style="clear: both"></div>
+            </nav>
+          </div>
+        </div>
+
+        <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+          <a rel="next" href="part-i.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+            <i class="fa fa-angle-right"></i>
+          </a>
+        </nav>
+
+      </div>
+
+      <!-- Livereload script (if served using the cli tool) -->
+      <script>
+        const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+        const socket = new WebSocket(wsAddress);
+        socket.onmessage = function (event) {
+                  if (event.data === "reload") {
+                            socket.close();
+                            location.reload();
+                          }
+                };
+
+        window.onbeforeunload = function() {
+                  socket.close();
+                }
+      </script>
+
+
+      <script>
+        window.playground_copyable = true;
+      </script>
+
+
+
+      <script src="clipboard.min.js"></script>
+      <script src="highlight.js"></script>
+      <script src="book.js"></script>
+
+      <!-- Custom JS scripts -->
+      <script src="theme/pagetoc.js"></script>
+
+
+    </div>
+
+<!-- Donation dialog -->
+<dialog class="modal">
+  <p>小额打赏，赞助 xfoss.com 长存......</p>
+
+<div class="slider">
+  <a href="#slide-1">微信</a> |
+  <a href="#slide-2">支付宝</a>
+
+  <div class="slides">
+    <div id="slide-1">
+         <img src="images/wechat-pay-hector.jpeg" />
+    </div>
+    <div id="slide-2">
+          <img src="images/alipay-laxers.jpeg" />
+    </div>
+  </div>
+</div>
+
+<br />
+  <p>若这里内容有帮助到你，请选择上述方式向 xfoss.com 捐赠。</p>
+  <button class="close-button">Close</button>
+</dialog>
+
+
+
+  </body>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-V49YMMPZJN"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-V49YMMPZJN');
+</script>
+
+<script>
+
+const modal = document.querySelector('.modal');
+const openButton = document.querySelector('.open-button');
+const closeButton = document.querySelector('.close-button');
+
+openButton.addEventListener('click', () => {
+  modal.showModal();
+});
+
+closeButton.addEventListener('click', () => {
+  modal.close();
+});
+</script>
+    <style type="text/css">
+button {
+  display: inline-block;
+  margin: 5px auto;
+  border: 0;
+  border-radius: 2px;
+  padding: 3px 8px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+    background-color: #FFA12B;
+  cursor: pointer;
+  color: #FFF;
+  transition: all 240ms linear;
+}
+
+button:hover {
+  filter: brightness(0.8);
+}
+button:active {
+  transform: scale(0.9);
+}
+dialog {
+  margin: 10% auto;
+  width: 80%;
+  max-width: 800px;
+  background-color: #eee;
+  padding: 24px;
+  border: 0;
+  border-radius: 5px;
+}
+dialog > p {
+  text-align: center;
+  margin: 0;
+}
+dialog > p:first-of-type {
+  margin: 0 auto 20px;
+  font-size: 24px;
+  font-weight: 600;
+}
+dialog > button {
+    display: block;
+    float: right;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.slider {
+  width: 300px;
+  text-align: center;
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.slides {
+  display: flex;
+
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+
+
+
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+
+  /*
+  scroll-snap-points-x: repeat(300px);
+  scroll-snap-type: mandatory;
+  */
+}
+.slides::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.slides::-webkit-scrollbar-thumb {
+  background: black;
+  border-radius: 10px;
+}
+.slides::-webkit-scrollbar-track {
+  background: transparent;
+}
+.slides > div {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+  width: 300px;
+  height: 300px;
+  margin-right: 50px;
+  border-radius: 10px;
+  background: #eee;
+  transform-origin: center center;
+  transform: scale(1);
+  transition: transform 0.5s;
+  position: relative;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 100px;
+}
+.slides > div:target {
+/*   transform: scale(0.8); */
+}
+.author-info {
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  padding: 0.75rem;
+  text-align: center;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  margin: 0;
+}
+.author-info a {
+  color: white;
+}
+.slides > div > img {
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.slider > a {
+  display: inline-flex;
+  height: 1.5rem;
+  background: white;
+  text-decoration: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin: 0 0 0.5rem 0;
+  position: relative;
+}
+.slider > a:active {
+  top: 1px;
+}
+.slider > a:focus {
+  background: #000;
+}
+
+/* Don't need button navigation */
+@supports (scroll-snap-type) {
+  .slider > a {
+    display: none;
+  }
+}
+
+    </style>
+
+</html>

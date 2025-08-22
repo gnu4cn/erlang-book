@@ -1,0 +1,422 @@
+<!DOCTYPE HTML>
+<html lang="zh" class="sidebar-visible no-js light">
+  <head>
+    <!-- Book generated using mdBook -->
+    <meta charset="UTF-8">
+    <title>Page not found - Erlang 编程</title>
+    <base href="/">
+
+
+    <!-- Custom HTML head -->
+
+    <meta name="description" content="Programming Erlang, 2nd Edition, Joe Armstrong">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff" />
+
+    <link rel="icon" href="favicon.svg">
+    <link rel="shortcut icon" href="favicon.png">
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/general.css">
+    <link rel="stylesheet" href="css/chrome.css">
+
+    <!-- Fonts -->
+    <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+    <link rel="stylesheet" href="fonts/fonts.css">
+
+    <!-- Highlight.js Stylesheets -->
+    <link rel="stylesheet" href="highlight.css">
+    <link rel="stylesheet" href="tomorrow-night.css">
+    <link rel="stylesheet" href="ayu-highlight.css">
+    <link rel="prefetch" href="images/alipay-laxers.jpeg" />
+    <link rel="prefetch" href="images/wechat-pay-hector.jpeg" />
+
+    <!-- Custom theme stylesheets -->
+    <link rel="stylesheet" href="theme/pagetoc.css">
+
+    <style type="text/css">
+        a.button {
+                color:white;
+              font-family:Helvetica, sans-serif;
+              font-weight:bold;
+              font-size:12px;
+              text-align: center;
+              text-decoration:none;
+              background-color:#FFA12B;
+              display:inline-block;
+              position:relative;
+              padding:5px 10px;
+
+              -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+              text-shadow: 0px 1px 0px #000;
+              filter: dropshadow(color=#000, offx=0px, offy=1px);
+
+              -webkit-box-shadow:inset 0 1px 0 #FFE5C4, 0 2px 0 #915100;
+              -moz-box-shadow:inset 0 1px 0 #FFE5C4, 0 2px 0 #915100;
+              box-shadow:inset 0 1px 0 #FFE5C4, 0 2px 0 #915100;
+
+              -webkit-border-radius: 5px;
+              -moz-border-radius: 5px;
+              border-radius: 5px;
+        }
+    </style>
+
+  </head>
+  <body>
+    <div id="body-container">
+      <!-- Provide site root to javascript -->
+      <script>
+        var path_to_root = "";
+        var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+      </script>
+
+      <!-- Work around some values being stored in localStorage wrapped in quotes -->
+      <script>
+        try {
+                  var theme = localStorage.getItem('mdbook-theme');
+                  var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                  if (theme.startsWith('"') && theme.endsWith('"')) {
+                            localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                          }
+
+                  if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                            localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                          }
+                } catch (e) { }
+      </script>
+
+      <!-- Set the theme before any content is loaded, prevents flash -->
+      <script>
+        var theme;
+        try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+        if (theme === null || theme === undefined) { theme = default_theme; }
+        var html = document.querySelector('html');
+        html.classList.remove('no-js')
+        html.classList.remove('light')
+        html.classList.add(theme);
+        html.classList.add('js');
+      </script>
+
+      <!-- Hide / unhide sidebar before it is displayed -->
+      <script>
+        var html = document.querySelector('html');
+        var sidebar = null;
+        if (document.body.clientWidth >= 1080) {
+                  try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                  sidebar = sidebar || 'visible';
+                } else {
+                          sidebar = 'hidden';
+                        }
+        html.classList.remove('sidebar-visible');
+        html.classList.add("sidebar-" + sidebar);
+      </script>
+
+      <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+        <div class="sidebar-scrollbox">
+          <ol class="chapter"><li class="chapter-item expanded affix "><a href="introduction.html">简介</a></li><li class="chapter-item expanded "><a href="part-i.html"><strong aria-hidden="true">1.</strong> 第 I 部分，为何是 Erlang？</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="getting_started.html"><strong aria-hidden="true">1.1.</strong> 入门</a></li><li class="chapter-item expanded "><a href="part-i/Ch01_introducing-concurrency.html"><strong aria-hidden="true">1.2.</strong> 并发介绍</a></li><li class="chapter-item expanded "><a href="part-i/Ch02_a-whirlwind-tour-of-erlang.html"><strong aria-hidden="true">1.3.</strong> Erlang 旋风之旅</a></li></ol></li><li class="chapter-item expanded "><a href="part-ii.html"><strong aria-hidden="true">2.</strong> 第 II 部分，序列编程</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="part-ii/Ch03-basic_concepts.html"><strong aria-hidden="true">2.1.</strong> 基本概念</a></li><li class="chapter-item expanded "><a href="part-ii/Ch04-modules_and_functions.html"><strong aria-hidden="true">2.2.</strong> 模组与函数</a></li></ol></li></ol>
+        </div>
+        <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+      </nav>
+
+      <div id="page-wrapper" class="page-wrapper">
+
+        <div class="page">
+          <div id="menu-bar-hover-placeholder"></div>
+          <div id="menu-bar" class="menu-bar sticky bordered">
+            <div class="left-buttons">
+              <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+              </button>
+              <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                <i class="fa fa-paint-brush"></i>
+              </button>
+              <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+              </ul>
+            </div>
+
+            <h3 class="menu-title">Erlang 编程</h3>
+
+            <div class="right-buttons">
+              <a href="https://github.com/gnu4cn/erlang-book" title="Git repository" aria-label="Git repository">
+                <i id="git-repository-button" class="fa fa-github"></i>
+              </a>
+                <button class="open-button">打 赏 💰</button>
+            </div>
+          </div>
+
+
+          <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+          <script>
+            document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+            document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+            Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                          link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                        });
+          </script>
+
+          <div id="content" class="content">
+            <main><div class="sidetoc"><nav class="pagetoc"></nav></div>
+              <h1 id="document-not-found-404"><a class="header" href="#document-not-found-404">Document not found (404)</a></h1>
+<p>This URL is invalid, sorry. Please use the navigation bar or search to continue.</p>
+
+            </main>
+
+            <nav class="nav-wrapper" aria-label="Page navigation">
+              <!-- Mobile navigation buttons -->
+
+
+              <div style="clear: both"></div>
+            </nav>
+          </div>
+        </div>
+
+        <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+        </nav>
+
+      </div>
+
+      <!-- Livereload script (if served using the cli tool) -->
+      <script>
+        const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+        const socket = new WebSocket(wsAddress);
+        socket.onmessage = function (event) {
+                  if (event.data === "reload") {
+                            socket.close();
+                            location.reload();
+                          }
+                };
+
+        window.onbeforeunload = function() {
+                  socket.close();
+                }
+      </script>
+
+
+      <script>
+        window.playground_copyable = true;
+      </script>
+
+
+
+      <script src="clipboard.min.js"></script>
+      <script src="highlight.js"></script>
+      <script src="book.js"></script>
+
+      <!-- Custom JS scripts -->
+      <script src="theme/pagetoc.js"></script>
+
+
+    </div>
+
+<!-- Donation dialog -->
+<dialog class="modal">
+  <p>小额打赏，赞助 xfoss.com 长存......</p>
+
+<div class="slider">
+  <a href="#slide-1">微信</a> |
+  <a href="#slide-2">支付宝</a>
+
+  <div class="slides">
+    <div id="slide-1">
+         <img src="images/wechat-pay-hector.jpeg" />
+    </div>
+    <div id="slide-2">
+          <img src="images/alipay-laxers.jpeg" />
+    </div>
+  </div>
+</div>
+
+<br />
+  <p>若这里内容有帮助到你，请选择上述方式向 xfoss.com 捐赠。</p>
+  <button class="close-button">Close</button>
+</dialog>
+
+
+
+  </body>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-V49YMMPZJN"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-V49YMMPZJN');
+</script>
+
+<script>
+
+const modal = document.querySelector('.modal');
+const openButton = document.querySelector('.open-button');
+const closeButton = document.querySelector('.close-button');
+
+openButton.addEventListener('click', () => {
+  modal.showModal();
+});
+
+closeButton.addEventListener('click', () => {
+  modal.close();
+});
+</script>
+    <style type="text/css">
+button {
+  display: inline-block;
+  margin: 5px auto;
+  border: 0;
+  border-radius: 2px;
+  padding: 3px 8px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+    background-color: #FFA12B;
+  cursor: pointer;
+  color: #FFF;
+  transition: all 240ms linear;
+}
+
+button:hover {
+  filter: brightness(0.8);
+}
+button:active {
+  transform: scale(0.9);
+}
+dialog {
+  margin: 10% auto;
+  width: 80%;
+  max-width: 800px;
+  background-color: #eee;
+  padding: 24px;
+  border: 0;
+  border-radius: 5px;
+}
+dialog > p {
+  text-align: center;
+  margin: 0;
+}
+dialog > p:first-of-type {
+  margin: 0 auto 20px;
+  font-size: 24px;
+  font-weight: 600;
+}
+dialog > button {
+    display: block;
+    float: right;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.slider {
+  width: 300px;
+  text-align: center;
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.slides {
+  display: flex;
+
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+
+
+
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+
+  /*
+  scroll-snap-points-x: repeat(300px);
+  scroll-snap-type: mandatory;
+  */
+}
+.slides::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.slides::-webkit-scrollbar-thumb {
+  background: black;
+  border-radius: 10px;
+}
+.slides::-webkit-scrollbar-track {
+  background: transparent;
+}
+.slides > div {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+  width: 300px;
+  height: 300px;
+  margin-right: 50px;
+  border-radius: 10px;
+  background: #eee;
+  transform-origin: center center;
+  transform: scale(1);
+  transition: transform 0.5s;
+  position: relative;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 100px;
+}
+.slides > div:target {
+/*   transform: scale(0.8); */
+}
+.author-info {
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  padding: 0.75rem;
+  text-align: center;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  margin: 0;
+}
+.author-info a {
+  color: white;
+}
+.slides > div > img {
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.slider > a {
+  display: inline-flex;
+  height: 1.5rem;
+  background: white;
+  text-decoration: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin: 0 0 0.5rem 0;
+  position: relative;
+}
+.slider > a:active {
+  top: 1px;
+}
+.slider > a:focus {
+  background: #000;
+}
+
+/* Don't need button navigation */
+@supports (scroll-snap-type) {
+  .slider > a {
+    display: none;
+  }
+}
+
+    </style>
+
+</html>

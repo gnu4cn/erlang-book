@@ -1,0 +1,1031 @@
+<!DOCTYPE HTML>
+<html lang="zh" class="sidebar-visible no-js light">
+  <head>
+    <!-- Book generated using mdBook -->
+    <meta charset="UTF-8">
+    <title>模组与函数 - Erlang 编程</title>
+
+
+    <!-- Custom HTML head -->
+
+    <meta name="description" content="Programming Erlang, 2nd Edition, Joe Armstrong">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff" />
+
+    <link rel="icon" href="../favicon.svg">
+    <link rel="shortcut icon" href="../favicon.png">
+    <link rel="stylesheet" href="../css/variables.css">
+    <link rel="stylesheet" href="../css/general.css">
+    <link rel="stylesheet" href="../css/chrome.css">
+
+    <!-- Fonts -->
+    <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+    <link rel="stylesheet" href="../fonts/fonts.css">
+
+    <!-- Highlight.js Stylesheets -->
+    <link rel="stylesheet" href="../highlight.css">
+    <link rel="stylesheet" href="../tomorrow-night.css">
+    <link rel="stylesheet" href="../ayu-highlight.css">
+    <link rel="prefetch" href="../images/alipay-laxers.jpeg" />
+    <link rel="prefetch" href="../images/wechat-pay-hector.jpeg" />
+
+    <!-- Custom theme stylesheets -->
+    <link rel="stylesheet" href="../theme/pagetoc.css">
+
+    <style type="text/css">
+        a.button {
+                color:white;
+              font-family:Helvetica, sans-serif;
+              font-weight:bold;
+              font-size:12px;
+              text-align: center;
+              text-decoration:none;
+              background-color:#FFA12B;
+              display:inline-block;
+              position:relative;
+              padding:5px 10px;
+
+              -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+              text-shadow: 0px 1px 0px #000;
+              filter: dropshadow(color=#000, offx=0px, offy=1px);
+
+              -webkit-box-shadow:inset 0 1px 0 #FFE5C4, 0 2px 0 #915100;
+              -moz-box-shadow:inset 0 1px 0 #FFE5C4, 0 2px 0 #915100;
+              box-shadow:inset 0 1px 0 #FFE5C4, 0 2px 0 #915100;
+
+              -webkit-border-radius: 5px;
+              -moz-border-radius: 5px;
+              border-radius: 5px;
+        }
+    </style>
+
+  </head>
+  <body>
+    <div id="body-container">
+      <!-- Provide site root to javascript -->
+      <script>
+        var path_to_root = "../";
+        var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+      </script>
+
+      <!-- Work around some values being stored in localStorage wrapped in quotes -->
+      <script>
+        try {
+                  var theme = localStorage.getItem('mdbook-theme');
+                  var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                  if (theme.startsWith('"') && theme.endsWith('"')) {
+                            localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                          }
+
+                  if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                            localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                          }
+                } catch (e) { }
+      </script>
+
+      <!-- Set the theme before any content is loaded, prevents flash -->
+      <script>
+        var theme;
+        try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+        if (theme === null || theme === undefined) { theme = default_theme; }
+        var html = document.querySelector('html');
+        html.classList.remove('no-js')
+        html.classList.remove('light')
+        html.classList.add(theme);
+        html.classList.add('js');
+      </script>
+
+      <!-- Hide / unhide sidebar before it is displayed -->
+      <script>
+        var html = document.querySelector('html');
+        var sidebar = null;
+        if (document.body.clientWidth >= 1080) {
+                  try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                  sidebar = sidebar || 'visible';
+                } else {
+                          sidebar = 'hidden';
+                        }
+        html.classList.remove('sidebar-visible');
+        html.classList.add("sidebar-" + sidebar);
+      </script>
+
+      <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+        <div class="sidebar-scrollbox">
+          <ol class="chapter"><li class="chapter-item expanded affix "><a href="introduction.html">简介</a></li><li class="chapter-item expanded "><a href="part-i.html"><strong aria-hidden="true">1.</strong> 第 I 部分，为何是 Erlang？</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="getting_started.html"><strong aria-hidden="true">1.1.</strong> 入门</a></li><li class="chapter-item expanded "><a href="part-i/Ch01_introducing-concurrency.html"><strong aria-hidden="true">1.2.</strong> 并发介绍</a></li><li class="chapter-item expanded "><a href="part-i/Ch02_a-whirlwind-tour-of-erlang.html"><strong aria-hidden="true">1.3.</strong> Erlang 旋风之旅</a></li></ol></li><li class="chapter-item expanded "><a href="part-ii.html"><strong aria-hidden="true">2.</strong> 第 II 部分，序列编程</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="part-ii/Ch03-basic_concepts.html"><strong aria-hidden="true">2.1.</strong> 基本概念</a></li><li class="chapter-item expanded "><a href="part-ii/Ch04-modules_and_functions.html"><strong aria-hidden="true">2.2.</strong> 模组与函数</a></li></ol></li></ol>
+        </div>
+        <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+      </nav>
+
+      <div id="page-wrapper" class="page-wrapper">
+
+        <div class="page">
+          <div id="menu-bar-hover-placeholder"></div>
+          <div id="menu-bar" class="menu-bar sticky bordered">
+            <div class="left-buttons">
+              <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+              </button>
+              <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                <i class="fa fa-paint-brush"></i>
+              </button>
+              <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+              </ul>
+            </div>
+
+            <h3 class="menu-title">Erlang 编程</h3>
+
+            <div class="right-buttons">
+              <a href="https://github.com/gnu4cn/erlang-book" title="Git repository" aria-label="Git repository">
+                <i id="git-repository-button" class="fa fa-github"></i>
+              </a>
+                <button class="open-button">打 赏 💰</button>
+            </div>
+          </div>
+
+
+          <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+          <script>
+            document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+            document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+            Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                          link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                        });
+          </script>
+
+          <div id="content" class="content">
+            <main><div class="sidetoc"><nav class="pagetoc"></nav></div>
+              <h1 id="模组与函数"><a class="header" href="#模组与函数">模组与函数</a></h1>
+<p>模组与函数，是构建顺序程序及并行程序的基本单元。模组包含了函数，而函数可以顺序运行，也可以并行运行。</p>
+<p>本章建立在上一章中模式匹配思想基础上，介了我们编写代码所需的所有控制语句。我们将讨论高阶函数（称为 <code>funs</code>），以及如何使用他们，创建咱们自己的控制抽象。此外，我们还将讨论</p>
+<ul>
+<li>列表综合</li>
+<li>守护</li>
+<li>记录</li>
+<li>及 <code>case</code> 表达式</li>
+</ul>
+<p>并展示如何在一些小的代码片段中使用他们。</p>
+<p>让我们开始把。</p>
+<p><em>知识点</em>：</p>
+<ul>
+<li>higher-order functions, <code>funs</code></li>
+<li>list comprehensions</li>
+<li>guards</li>
+<li>records</li>
+<li><code>case</code> expressions</li>
+</ul>
+<h2 id="模组乃我们存储代码之处"><a class="header" href="#模组乃我们存储代码之处">模组乃我们存储代码之处</a></h2>
+<p>模组是 Erlang 代码的基本单元。模组包含在扩展名 <code>.erl</code> 的文件中，必须编译后模组中的代码才能运行。编译后的模组扩展名为 <code>.beam</code>。</p>
+<p>在我们编写咱们的首个模组前，我们先来了解一下模式匹配。我们要做的就是，创建两个分别表示矩形和正方形的数据结构。然后，我们将解包这两个数据结构，并提取出矩形和正方形中的边。具体方法如下：</p>
+<pre><code class="language-erlang">1&gt; Rectangle = {rectangle, 10, 5}.
+{rectangle,10,5}
+2&gt; Square = {square, 3}.
+{square,3}
+3&gt; {rectangle, Width, Height} = Rectangle.
+{rectangle,10,5}
+4&gt; Width.
+10
+5&gt; Height.
+5
+6&gt; {square, Side} = Square.
+{square,3}
+7&gt; Side.
+3
+</code></pre>
+<p>在第 1 和第 2 行中，我们创建了一个矩形和一个正方形。在第 3 和第 6 行中，我们使用模式匹配，解包了这个矩形和正方形的字段。在第 4、5 和 7 行中，我们打印了通过模式匹配表达式，创建出的变量绑定。第 7 行后，shell 中的变量绑定为 <code>Width = 10</code>、<code>Height = 5</code> 及 <code>Side = 3</code>。</p>
+<p>从 shell 中的模式匹配，到函数中的模式匹配，是极小的一步。我们来从一个名为 <code>area</code>，计算矩形和正方形面积的函数开始。我们将把这个函数，放在一个名为 <code>geometry</code> 的模组中，并将该模组存储在名为 <code>geometry.erl</code> 的文件中。整个模组看起来是这样的:</p>
+<p><a href="http://media.pragprog.com/titles/jaerlang2/code/geometry.erl"><code>geometry.erl</code></a></p>
+<pre><code class="language-erlang">-module(geometry).
+-export([area/1]).
+
+area({rectangle, Width, Height}) -&gt; Width * Height;
+area({square, Side})			 -&gt;	Side * Side.
+</code></pre>
+<p>该文件的第一行，是个 <em>模组声明</em>。声明中的模组名字，必须与模组所在文件的基本名称相同。</p>
+<p>第二行是个 <em>导出声明</em>。<code>Name/N</code> 这种写法，表示一个名为 <code>Name</code>，带有 <code>N</code> 个参数的函数；<code>N</code> 称为该函数的 <em>元数</em>。<code>export</code> 的参数，是个 <code>Name/N</code> 项的列表。因此，<code>-export([area/1])</code> 就表示，可以从此模组外部调用有着一个参数的函数 <code>area</code>。</p>
+<p><em>知识点</em>：</p>
+<ul>
+<li>module declaration</li>
+<li>export declaration</li>
+<li>the arity of the function, <a href="https://en.wikipedia.org/wiki/Arity">Wikipedia: Arity</a></li>
+</ul>
+<p>模组中导出的函数，只能在模组内调用。导出的函数等同于面向对象编程语言（OOPL）中的公共方法；未导出的函数则相当于 OOPL 中的私有方法。</p>
+<p>上面的函数 <code>area</code> 由两个 <em>子句</em> 组成。子句间以分号隔开，最后子句以点空白结束。每个子句都有个 <em>头</em> 和一个 <em>躯干</em>，由箭头 (<code>-&gt;</code>) 分隔。头部由函数名称，及零个或多个模式组成，躯干由一个表达式序列组成（表达式在 <a href="Ch08-the_rest_of_sequential_erlang.html#%E8%A1%A8%E8%BE%BE%E5%BC%8F%E4%B8%8E%E8%A1%A8%E8%BE%BE%E5%BC%8F%E5%BA%8F%E5%88%97">8.13 小节 表达式与表达式序列</a>），在头部中模式与调用参数成功匹配时，该表达式序列即会被计算求值。各子句会以其在函数定义中出现顺序，逐一尝试。</p>
+<p>请注意，我们曾在 shell 示例中用到的模式，已成为这个 <code>area</code> 函数定义的一部分。每个模式准确对应了一个子句。<code>area</code> 函数的第一个子句：</p>
+<pre><code class="language-erlang">area({rectangle, Width, Height}) -&gt; Width * Height;
+</code></pre>
+<p>告诉我们如何计算某个矩形的面积。当我们计算函数 <code>geometry:area({rectangle,10,5})</code> 时，<code>area/1</code> 下的第一个子句，就会以 <code>Width = 10</code> 及 <code>Height = 5</code> 匹配。在该次匹配后，箭头 <code>-&gt;</code> 后面的代码就会被求值。这就是 <code>Width * Height</code>，即 <code>10*5</code> 或 <code>50</code>。请注意，这个函数没有显式返回语句；该函数的返回值，就是子句躯干中，最后那个表达式的值。</p>
+<p>现在我们将编译这个模组并运行他。</p>
+<pre><code class="language-erlang">1&gt; c(geometry).
+{ok,geometry}
+2&gt; geometry:area({rectangle,10,5}).
+50
+3&gt; geometry:area({square,3}).
+9
+</code></pre>
+<p>在第 1 行，我们下达了 <code>c(geometry)</code> 这个命令，其会编译文件 <code>geometry.erl</code> 中的代码。编译器返回了表示编译成功，以及这个 <code>geometry</code> 模组已被编译并加载的 <code>{ok,geometry}</code>。编译器将在当前目录下，创建出一个名为 <code>geometry.beam</code> 的目标代码模组。在第 2 和第 3 行中，我们调用了 <code>geometry</code> 这个模组中的函数。请注意，我们需要将模组名字与函数名字放在一起，以便准确识别到我们打算调用的函数。</p>
+<h3 id="常见错误"><a class="header" href="#常见错误">常见错误</a></h3>
+<p>需要提醒的是：<code>c(geometry).</code>（前面用到）这样的命令，只在 shell 中有效，而不能放入模组中。有些读者将源码清单中的代码片段，错误地输入到 shell 中。这些都不是有效的 shell 命令，当咱们尝试这样做时，就将得到一些非常奇怪的错误消息。所以，请不要这样做。</p>
+<p>当咱们不小心选择了与某个系统模组相冲突的模组名字时，那么在咱们编译该模组时，咱们将收到一条提示咱们无法加载某个位于粘滞目录中模组的奇怪消息。只要重命名这个模组，并删除咱们编译模组时，可能生成的 <code>.beam</code> 文件即可。</p>
+<h3 id="目录与代码路径"><a class="header" href="#目录与代码路径">目录与代码路径</a></h3>
+<p>若咱们下载了本书中的代码示例，或想编写咱们自己的示例，咱们必须确保在咱们于 shell 中运行编译器时，处于正确目录中，这样系统才能找到咱们的文件。</p>
+<p>Erlang shell 有许多查看和更改当前工作目录的内建命令。</p>
+<ul>
+<li><code>pwd()</code> 会打印当前工作目录；</li>
+<li><code>ls()</code> 会列出当前工作目录下的文件名字；</li>
+<li><code>cd(Dir)</code> 会将当前工作目录，改变到 <code>Dir</code>。</li>
+</ul>
+<h3 id="将测试添加到咱们的代码"><a class="header" href="#将测试添加到咱们的代码">将测试添加到咱们的代码</a></h3>
+<p>在此阶段，我们可将一些简单测试，添加到咱们的模组。我们来将该模组重命名为 <code>geometry1.erl</code>，并添加一些测试代码。</p>
+<p><a href="http://media.pragprog.com/titles/jaerlang2/code/geometry1.erl"><code>geometry1.erl</code></a></p>
+<pre><code class="language-erlang">-module(geometry1).
+-export([test/0, area/1]).
+
+
+test() -&gt;
+    12 = area({rectangle, 3, 4}),
+    144 = area({square, 12}),
+    test_worked.
+
+area({rectangle, Width, Height}) -&gt; Width * Height;
+area({square, Side})			 -&gt;	Side * Side.
+</code></pre>
+<pre><code class="language-erlang">1&gt; c(geometry1).
+{ok,geometry1}
+2&gt; geometry1:test().
+test_worked
+</code></pre>
+<p><code>12 = area({rectangle, 3, 4})</code> 这行代码，就是个测试。当 <code>area({rectangle, 3, 4})</code> 没有返回 <code>12</code> 时，这个模式匹配就会失败，而我们就会得到一条错误消息。在我们运行 <code>geometry1:test()</code>，并看到结果 <code>tests_worked</code> 时，我们就可以得出结论：<code>test/0</code> 函数主体中的所有测试都成功了。</p>
+<blockquote>
+<p><strong>译注</strong>：若我们修改一下 <code>geometry1.erl</code> 中的代码如下：</p>
+</blockquote>
+<pre><code class="language-erlang">-module(geometry1).
+-export([test/0, area/1]).
+
+
+test() -&gt;
+    12 = area({rectangle, 3, 4}),
+    144 = area({square, 12}),
+    test_worked.
+
+area({rectangle, Width, Height}) -&gt; Width * Height * 2;
+area({square, Side})			 -&gt;	Side * Side.
+</code></pre>
+<blockquote>
+<p>测试就不会通过，报出如下错误：</p>
+</blockquote>
+<pre><code class="language-erlang">4&gt; geometry1:test().
+** exception error: no match of right hand side value 24
+     in function  geometry1:test/0 (geometry1.erl:6)
+</code></pre>
+<p>在无需任何额外工具下，我们就能轻松添加测试，并进行测试驱动的开发。我们需要的只是模式匹配与 <code>=</code>。虽然这对于快速测试来说已经足够，但对生产代码来说，最好使用功能齐全的测试框架，比如通用测试框架或单元测试框架；详情请阅读 <a href="http://www.erlang.org/doc">Erlang 文档</a> 中的测试部分。</p>
+<p><em>知识点</em>：</p>
+<ul>
+<li>clause</li>
+<li>the head of a function</li>
+<li>the body of a function</li>
+<li>the calling arguments</li>
+<li>the system modules</li>
+<li>a sticky directory</li>
+<li>test-driven development</li>
+<li>quick-and-dirty testing</li>
+<li>the common test framework</li>
+<li>the unit test framework</li>
+</ul>
+<h3 id="扩展这个程序"><a class="header" href="#扩展这个程序">扩展这个程序</a></h3>
+<p>现在，设想我们打算通过把圆添加到我们的几何对象，扩展我们的程序。我们可以这样写：</p>
+<pre><code class="language-erlang">area({rectangle, Width, Height}) -&gt; Width * Height;
+area({square, Side})			 -&gt;	Side * Side;
+area({circle, Radius})	         -&gt; 3.14159 * Radius * Radius.
+</code></pre>
+<p>或这样：</p>
+<pre><code class="language-erlang">area({rectangle, Width, Height}) -&gt; Width * Height;
+area({circle, Radius})	         -&gt; 3.14159 * Radius * Radius;
+area({square, Side})			 -&gt;	Side * Side.
+</code></pre>
+<p>请注意在这个示例中，子句的顺序并不重要；无论子句如何排序，该程序的含义都是同样的。这是因为子句中的模式是互斥的。这使得编写及扩展程序变得非常容易 -- 我们只要添加更多的模式。不过，一般来说，子句顺序确实重要。当某个函数被输入时，子句将按照调用参数在文件中出现的顺序，进行模式匹配。</p>
+<p>在继续后面内容前，咱们应该注意以下有关这个 <code>area</code> 函数书写方式的内容：</p>
+<ul>
+<li>这个函数 <code>area</code> 由几个不同子句组成。在我们调用这个函数时，执行将从与调用参数匹配的首个子句开始；</li>
+<li>我们的函数不会处理没有模式匹配的情形 -- 我们的程序会以一个运行时错误失败。这是故意的。这正是我们在 Erlang 下编程的方式。</li>
+</ul>
+<blockquote>
+<p><strong>译注</strong>：在没有没有与调用参数匹配的模式时，报错如下所示：</p>
+</blockquote>
+<pre><code class="language-erlang">1&gt; geometry:area({diamond, 12, 15}).
+** exception error: no function clause matching geometry:area({diamond,12,15}) (geometry.erl:4)
+</code></pre>
+<p>许多编程语言，比如 C，的每个函数，都只有一个入口点。若我们用 C 编写这个程序，代码可能如下：</p>
+<pre><code class="language-c">enum ShapeType { Rectangle, Circle, Square };
+
+struct Shape {
+    enum ShapeType kind;
+
+    union {
+        struct { int width, height; } rectangleData;
+        struct { int radius; }	      circleData;
+        struct { int side;}	          squareData;
+    } shapeData;
+};
+
+
+double area(struct Shape* s) {
+    if( s-&gt;kind == Rectangle ) {
+        int width, ht;
+        width = s-&gt;shapeData.rectangleData.width;
+        ht	  = s-&gt;shapeData.rectangleData.height;
+        return width * ht;
+    } else if ( s-&gt;kind == Circle ) {
+      ...
+</code></pre>
+<p>这段 C 代码本质上对这个函数参数，执行了一次模式匹配操作，但程序员必须编写出模式匹配代码，并确保其正确无误。</p>
+<p>在 Erlang 的等价代码中，我们只需编写出模式，Erlang 的编译器会生成为程序选取正确入口点的最佳模式匹配代码。</p>
+<p>下面显示的是 Java 下的等价代码 <sup>1</sup>：</p>
+<pre><code class="language-java">abstract class Shape {
+    abstract double area();
+}
+
+class Circle extends Shape {
+    final double radius;
+    Circle(double radius) { this.radius = radius; }
+    double area() { return Math.PI * radius*radius; }
+}
+
+class Rectangle extends Shape {
+    final double ht;
+    final double width;
+    Rectangle(double width, double height) {
+        this.ht = height;
+        this.width = width;
+    }
+    double area() { return width * ht; }
+}
+
+class Square extends Shape {
+    final double side;
+    Square(double side) {
+        this.side = side;
+    }
+    double area() { return side * side; }
+}
+</code></pre>
+<blockquote>
+<p>注 <sup>1<sup>：<a href="https://web.archive.org/web/*/http://java.sun.com/developer/Books/shiftintojava/page1.html">http://java.sun.com/developer/Books/shiftintojava/page1.html</a></p>
+</blockquote>
+<p>若咱们将 Erlang 的代码与 Java 代码进行比较，就会发现在 Java 程序中，<code>area</code> 的代码位于三个位置。而在 Erlang 程序中，<code>area</code> 的所有代码都在同一个地方。</p>
+<h3 id="分号的位置"><a class="header" href="#分号的位置">分号的位置</a></h3>
+<p>在离开这个 <code>geometry</code> 示例前，我们再看一下这段代码，这次要看的是标点符号。这次我们要仔细观察代码，找一下逗号、分号和句点的位置。</p>
+<p><a href="http://media.pragprog.com/titles/jaerlang2/code/geometry.erl"><code>geometry.erl</code></a></p>
+<pre><code class="language-erlang">-module(geometry).
+-export([area/1]).
+
+area({rectangle, Width, Height}) -&gt; Width * Height;
+area({circle, Radius})	         -&gt; 3.14159 * Radius * Radius;
+area({square, Side})			 -&gt;	Side * Side.
+</code></pre>
+<p>咱们将看到下面这些：</p>
+<ul>
+<li><em>逗号</em>（<code>,</code>）分隔了函数调用、数据构造器及模式中的那些参数；</li>
+<li><em>分号</em>（<code>;</code>）分隔了 <em>子句</em>。我们可以在多种上下文中找到子句，即函数定义与 <code>case</code>、<code>if</code>、<code>try...catch</code> 及 <code>receive</code> 表达式等中的子句；</li>
+<li><em>句点</em>（<code>.</code>）（后跟空白符）分隔了 shell 中的整个函数与表达式。</li>
+</ul>
+<p>有种简单的记忆方法 -- <em>想想英语</em>。句号分隔句子，分号分隔子句，而逗号则分隔了从句。逗号是个短距符号，分号是个中距符号，句号是个长距符号。</p>
+<p><em>知识点</em>：</p>
+<ul>
+<li>sentence</li>
+<li>clause</li>
+<li>subordinate clause</li>
+<li>short-range symbol</li>
+<li>medium-range symbol</li>
+<li>long-range symbol</li>
+</ul>
+<p>每当我们看到表达式后有一组模式时，我们就会看到作为分隔符的分号。下面就是个示例：</p>
+<pre><code class="language-erlang">case f(...) of
+    Pattern1 -&gt;
+        Expressions1;
+    Pattern2 -&gt;
+        Expressions2;
+
+    ...
+
+    LastPattern -&gt;
+        LastExpression
+end
+</code></pre>
+<p>请注意，最后的表达式（紧接 <code>end</code> 关键字前的那个）没有分号。</p>
+<p>理论到此为止。我们来继续学习一些代码；稍后我们再讨论控制结构。</p>
+<h2 id="回到购物的示例"><a class="header" href="#回到购物的示例">回到购物的示例</a></h2>
+<p>在 <a href="Ch03-basic_concepts.html#%E5%AE%9A%E4%B9%89%E5%88%97%E8%A1%A8">“定义列表” 小节</a> 中，我们有过这样一个购物清单：</p>
+<pre><code class="language-erlang">[{oranges,4},{newspaper,1},{apples,6},{pears,6},{milk,3}]
+</code></pre>
+<p>现在假设我们想要知道咱们购物的花费。为此，我们需要知道咱们购物清单中，每件物品要用多少钱。我们假设此信息是在一个名为 <code>shop</code> 的模组中计算出来的，其定义如下：</p>
+<p><a href="http://media.pragprog.com/titles/jaerlang2/code/shop.erl"><code>shop.erl</code></a></p>
+<pre><code class="language-erlang">-module(shop).
+-export([cost/1]).
+
+cost(oranges) -&gt; 5;
+cost(newspaper) -&gt; 8;
+cost(apples) -&gt; 2;
+cost(pears) -&gt; 9;
+cost(milk) -&gt; 7.
+</code></pre>
+<p>其中函数 <code>cost/1</code> 由五个子句组成。每个子句的头部，都包含一种模式（在此情形下是种非常简单的模式，只是个原子）。当我们计算 <code>shop:cost(X)</code> 时，系统就会尝试将 <code>X</code> 与这些子句中的每种模式匹配。在找到某个匹配时，<code>-&gt;</code> 箭头右边的代码就会被求值。</p>
+<p>我们来测试一下这段代码。我们将在 Erlang shell 中编译并运行这个程序。</p>
+<pre><code class="language-erlang">1&gt; c(shop).
+{ok,shop}
+2&gt; shop:cost(apples).
+2
+3&gt; shop:cost(oranges).
+5
+4&gt; shop:cost(socks).
+** exception error: no function clause matching shop:cost(socks) (shop.erl:4)
+</code></pre>
+<p>在第 1 行种，我们编译了 <code>shop.erl</code> 文件中的模组。在第 2 和第 3 行中，我们询问了 <code>apples</code> 和 <code>oranges</code> 的开支（结果 <code>2</code> 和 <code>5</code> 是以开支单位表示）。在第 4 行中，我们询问了 <code>socks</code> 的开支，不过没有任何子句匹配，因此我们得到一个模式匹配报错，系统打印了一条错误消息，其中包含着发生错误处的文件名及行号。</p>
+<p>回到购物清单。假设我们有个这样的购物清单：</p>
+<pre><code class="language-erlang">1&gt; Buy = [{oranges,4},{newspaper,1},{apples,10},{pears,6},{milk,3}].
+[{oranges,4},{newspaper,1},{apples,10},{pears,6},{milk,3}]
+</code></pre>
+<p>并想要计算该列表中，所有项目的总价值。一种方法是如下定义一个函数 <code>shop1:total/1</code>：</p>
+<p><a href="http://media.pragprog.com/titles/jaerlang2/code/shop1.erl"><code>shop1.erl</code></a></p>
+<pre><code class="language-erlang">-module(shop1).
+-export([total/1]).
+
+total([{What, N}|T]) -&gt; shop:cost(What) * N + total(T);
+total([]) -&gt; 0.
+</code></pre>
+<p>我们来以这段代码实验一下：</p>
+<pre><code class="language-erlang">2&gt; c(shop1).
+{ok,shop1}
+3&gt; shop1:total([]).
+0
+</code></pre>
+<p>这里返回了 <code>0</code>，因为 <code>total/1</code> 的第二个子句是 <code>total([]) -&gt; 0</code>。</p>
+<p>下面是个更复杂的查询：</p>
+<pre><code class="language-erlang">4&gt; shop1:total([{milk,3}]).
+21
+</code></pre>
+<p>这条命令原理如下。调用 <code>shop1:total([{milk,3}])</code> 以绑定 <code>What = milk</code>、<code>N = 3</code> 及 <code>T = []</code>，与以下子句匹配：</p>
+<pre><code class="language-erlang">total([{What, N}|T]) -&gt; shop:cost(What) * N + total(T);
+</code></pre>
+<p>在此之下，该函数主题中的代码就会被求值，因此我们必须计算这个表达式。</p>
+<pre><code class="language-erlang">shop:cost(milk) * 3 + total([]);
+</code></pre>
+<p><code>shop:cost(milk)</code> 为 <code>7</code>，而 <code>total([])</code> 为 <code>0</code>，因此最终返回值为 <code>21</code>。</p>
+<p>我们可以一个更复杂的参数，测试这个函数（<code>shop1:total/1</code>）。</p>
+<pre><code class="language-erlang">5&gt; shop1:total([{pears,6},{milk,3}]).
+75
+</code></pre>
+<p>同样，第 5 行以绑定 <code>What = pears</code>、<code>N = 6</code> 及 <code>T = [{milk,3}]</code>，匹配了函数 <code>total/1</code> 的第一个子句。</p>
+<pre><code class="language-erlang">total([{What, N}|T]) -&gt; shop:cost(What) * N + total(T);
+</code></pre>
+<p>变量 <code>What</code>、<code>N</code> 与 <code>T</code>，就被替换到该子句的主体中，而 <code>shop:cost(pears) * 6 + total([{milk,3}])</code> 被会被求值，结果变为 <code>9 * 6 + total([{milk,3}])</code>。</p>
+<p>而我们之前已经计算出了 <code>total([{milk,3}])</code> 是 <code>21</code>，所以最终结果是 <code>9*6 + 21 = 75</code>。</p>
+<p>最后：</p>
+<pre><code class="language-erlang">6&gt; shop1:total(Buy).
+123
+</code></pre>
+<p>在告别这个小节前，我们应更详细地了解一下这个函数 <code>total</code>。<code>total(L)</code> 的工作原理，是对参数 <code>L</code> 进行情况分析。有两种可能的情况；<code>L</code> 是个非空的列表，或者 <code>L</code> 是个空列表。我们为每种可能情形，分别编写了个子句，就像这样：</p>
+<pre><code class="language-erlang">total([Head|Tail]) -&gt;
+    some_function_of(Head) + total(Tail);
+total([]) -&gt;
+    0.
+</code></pre>
+<p>在我们的例子中，<code>Head</code> 为模式 <code>{What,N}</code>。当第一个子句匹配到一个非空列表时，他会挑出该列表中的头部，对这个头部完成一些操作，然后调用自身处理该列表的尾部。在列表已缩减为空列表（<code>[]</code>）时，第二个子句就会匹配。</p>
+<p>这个函数 <code>total/1</code> 实际上完成了两件不同事情。他查找了该列表中每个元素的价格，然后对将所有价格与所购买物品数量的乘积求和。我们可以将查找单个物品价值，与价值求和分开的方式，重写这个 <code>total</code> 函数。得到的代码将更加清晰易懂。为此，我们将编写两个名为 <code>sum</code> 和 <code>map</code> 的小的列表处理函数。要编写 <code>map</code>，我们必须引入 <code>funs</code> 的概念。之后，我们将在模组 <code>shop2.erl</code> 中，编写一个改进版的 <code>total</code> 函数，咱们可在 <a href="#%E7%AE%80%E5%8D%95%E7%9A%84%E5%88%97%E8%A1%A8%E5%A4%84%E7%90%86">4.4 节 “简单的列表处理”</a> 末尾处，找到这个模组。</p>
+<h2 id="funs抽象的基本单元"><a class="header" href="#funs抽象的基本单元"><code>funs</code>：抽象的基本单元</a></h2>
+<p>Erlang 是门函数式编程语言。除开其他方面，这意味着函数可被用作其他函数的参数，且函数可返回函数。操作函数的函数，被称做 <em>高阶函数</em>，同时 Erlang 中表示函数的数据类型，称为 <code>fun</code>。</p>
+<p>高阶函数是函数式编程语言的精髓--函数式程序不仅可以操作常规数据结构，还可以操作转换数据的函数。咱们一旦学会使用他们，就会爱上他们。今后我们将看到更多的高阶函数。</p>
+<p><code>funs</code> 可依以下方式使用：</p>
+<ul>
+<li>对列表中的每个元素，执行同样操作。在这种情况下，我们将 <code>funs</code> 作为参数传递给诸如 <code>lists:map/2</code>、<code>lists:filter/2</code> 等函数。<code>funs</code> 的这种用法相当常见；</li>
+<li>创建咱们自己的控制抽象。这种技术非常有用。例如，Erlang 没有 <code>for</code> 循环。但我们可以轻松创建我们自己的 <code>for</code> 循环。创建我们自己的控制抽象的好处,是我们可以让他们刚好做我们想做的事，而不是依赖预定义的一组，行为可能不完全符合我们要求的控制抽象；</li>
+<li>实现诸如可重入解析代码、解析器组合器，或惰性求值器等物件。在这种情况下，我们会编写一些返回 <code>funs</code> 的函数。这是一种非常强大的技术，但可能造成难以调试的程序。</li>
+</ul>
+<p><em>知识点</em>：</p>
+<ul>
+<li>functional programming language</li>
+<li>higher-order function</li>
+<li>functions be used as arguments to functions</li>
+<li>functions returned by functions</li>
+<li>the data type which represents a function, <code>fun</code></li>
+<li>control abstraction</li>
+<li>reentrant parsing code</li>
+<li>parser combinator</li>
+<li>lazy evaluators</li>
+</ul>
+<p><code>funs</code> 是一些 “匿名” 函数。之所以这么叫，是因为他们没有名字。在其他编程语言中，咱们可能看到他们被称为 <em>lambda 抽象</em>。我们来开始试验；首先，我们将定义一个 <code>fun</code>，并将其赋值给一个变量。</p>
+<pre><code class="language-erlang">1&gt; Double = fun(X) -&gt; 2*X end.
+#Fun&lt;erl_eval.42.113135111&gt;
+</code></pre>
+<p>在我们定义某个 <code>fun</code> 时，Erlang shell 会打印 <code>#Fun&lt;erl_eval.N.M&gt;</code>，其中 <code>N</code> 和 <code>M</code> 是些奇怪数字。现在不用担心这个。</p>
+<p>我们只能用 <code>fun</code> 做一件事，那就是将其应用到某个参数，就像这样：</p>
+<pre><code class="language-erlang">2&gt; Double(2).
+4
+</code></pre>
+<p><code>funs</code> 可以有任意数量的参数。我们可以写个计算直角三角形斜边的函数，就像这样：</p>
+<pre><code class="language-erlang">3&gt; Hypot = fun(X, Y) -&gt; math:sqrt(X*X + Y*Y) end.
+#Fun&lt;erl_eval.41.113135111&gt;
+4&gt; Hypot(3,4).
+5.0
+5&gt; Hypot(5).
+** exception error: interpreted function with arity 2 called with one argument
+</code></pre>
+<p>其中的错误信息告诉我们，<code>Hypot</code> 需要两个参数，而我们只提供了一个。请记住，<code>arity</code> 为某个函数接受参数的个数。</p>
+<p><code>funs</code> 可以有多个不同子句。下面是个在华氏温度和摄氏温度之间进行转换的函数：</p>
+<pre><code class="language-erlang">6&gt; TempConvert = fun({c, C}) -&gt; {f, 32 + C*9/5};
+   ({f, F}) -&gt; {c, (F-32)*5/9}
+   end.
+#Fun&lt;erl_eval.42.113135111&gt;
+7&gt; TempConvert({c,100}).
+{f,212.0}
+8&gt; TempConvert({f,212}).
+{c,100.0}
+9&gt; TempConvert({c,0}).
+{f,32.0}
+</code></pre>
+<p><em>注意</em>：第 6 行中的表达式跨了好几行。在我们输入这个表达式时，每输入一行，shell 就会重复提示 <code>..</code>。这意味着表达式不完整，shell 希望输入更多内容。</p>
+<h3 id="以函数作为其参数的函数"><a class="header" href="#以函数作为其参数的函数">以函数作为其参数的函数</a></h3>
+<p>标准库中的 <code>lists</code> 模组，导出了数个参数为 <code>funs</code> 的函数。其中最有用的是 <code>lists:map(F,L)</code>。这是个通过将 <code>fun</code> <code>F</code>，应用于列表 <code>L</code> 中的每个元素，从而返回一个列表的函数。</p>
+<pre><code class="language-erlang">10&gt; L = [1,2,3,4].
+[1,2,3,4]
+11&gt; lists:map(fun(X) -&gt; 2*X end, L).
+[2,4,6,8]
+</code></pre>
+<p>另一有用函数，则是返回一个其中包含 <code>L</code> 中，<code>P(E)</code> 为 <code>true</code> 的所有元素新列表的 <code>lists:filter(P,L)</code>。</p>
+<p>我们来定义一个在 <code>X</code> 是个偶数时为 <code>true</code> 的函数 <code>Even(X)</code>。</p>
+<pre><code class="language-erlang">12&gt; Even = fun(X) -&gt; (X rem 2) =:= 0 end.
+#Fun&lt;erl_eval.42.113135111&gt;
+</code></pre>
+<p>这里 <code>X rem 2</code> 计算的是 <code>X</code> 除以 <code>2</code> 后的余数，而 <code>=:=</code> 则是相等测试。现在我们可以测试 <code>Even</code>，然后将其作为 <code>map</code> 与 <code>filter</code> 的参数。</p>
+<pre><code class="language-erlang">12&gt; Even(8).
+true
+13&gt; Even(7).
+false
+14&gt; lists:map(Even, [1,2,3,4,5,6,8]).
+[false,true,false,true,false,true,true]
+15&gt; lists:filter(Even, [1,2,3,4,5,6,8]).
+[2,4,6,8]
+</code></pre>
+<p>我们将诸如 <code>map</code> 和 <code>filter</code> 这样的，在一次函数调用中，对整个列表执行一些处理的操作，称为 <em>list-at-a-time</em> 操作。使用这些  list-at-a-time 操作，可使我们的程序变得小巧易懂；他们之所以易懂，是因为我们可将对整个列表的每次操作，视为咱们程序中的单个概念性步骤。否则，我们就必须把对列表元素的单个操作，视为咱们程序中的单个步骤。</p>
+<h3 id="返回-funs-的函数"><a class="header" href="#返回-funs-的函数">返回 <code>funs</code> 的函数</a></h3>
+<p><code>funs</code> 不仅可用作函数（如 <code>map</code> 和 <code>filter</code>）的参数，而且函数也可以 <em>返回</em> <code>funs</code>。</p>
+<p>下面是个示例 -- 假设我有个清单，比如水果：</p>
+<pre><code class="language-erlang">1&gt; Fruit = [apple,pear,orange].
+[apple,pear,orange]
+</code></pre>
+<p>现在，我可以定义一个将某事物列表 (<code>L</code>)， 转化为一个检查其参数，是否在该列表 <code>L</code> 中的测试函数的函数 <code>MakeTest(L)</code>。</p>
+<pre><code class="language-erlang">2&gt; MakeTest = fun(L) -&gt; (fun(X) -&gt; lists:member(X, L) end) end.
+#Fun&lt;erl_eval.42.113135111&gt;
+3&gt; IsFruit = MakeTest(Fruit).
+#Fun&lt;erl_eval.42.113135111&gt;
+</code></pre>
+<p>当 <code>X</code> 是列表 <code>L</code> 的成员时，<code>lists:member(X, L)</code> 会返回 <code>true</code>；否则返回 <code>false</code>。现在我们就已构建了个测试函数，可以试试看。</p>
+<pre><code class="language-erlang">4&gt; IsFruit(pear).
+true
+5&gt; IsFruit(apple).
+true
+6&gt; IsFruit(dog).
+false
+</code></pre>
+<p>我们还可将其用作 <code>lists:filter/2</code> 的一个参数。</p>
+<pre><code class="language-erlang">7&gt; lists:filter(IsFruit, [dog,orange,cat,apple,bear]).
+[orange,apple]
+</code></pre>
+<p>返回 <code>funs</code> 的 <code>funs</code> 这种写法，需要一点时间来适应，因此我们来剖析一下这种写法，以便更清楚地了解发生了什么。返回某个 “正常”  值的函数是这样的：</p>
+<pre><code class="language-erlang">1&gt; Double = fun(X) -&gt; (X * 2) end.
+#Fun&lt;erl_eval.42.113135111&gt;
+2&gt; Double(5).
+10
+</code></pre>
+<p>其中括号内的代码（换句话说，<code>2 * X</code>），明显就是该函数的 “返回值”。现在我们来试着将一个 <code>fun</code> 放入这对括号。</p>
+<p>请记住，括号里的内容，<em>即为</em> 返回值。</p>
+<pre><code class="language-erlang">3&gt; Mult = fun(Times) -&gt; ( fun(X) -&gt; X * Times end ) end.
+#Fun&lt;erl_eval.42.113135111&gt;
+</code></pre>
+<p>其中括号内的 <code>fun</code> 为 <code>fun(X) -&gt; X * Times end</code>；这就是个 <code>X</code> 的函数，<code>Times</code> 属于 “外层” <code>fun</code> 的参数。</p>
+<p>对 <code>Mult(3)</code> 求值，会返回 <code>fun(X) -&gt; X * 3 end</code>，即以 <code>3</code> 替换 <code>Times</code> 后的那个内部 <code>fun</code> 的主体。现在我们可以测试这点。</p>
+<pre><code class="language-erlang">4&gt; Triple = Mult(3).
+#Fun&lt;erl_eval.42.113135111&gt;
+5&gt; Triple(5).
+15
+</code></pre>
+<p>这样来看，<code>Mult</code> 是 <code>Double</code> 的一种 <em>泛化</em>。与其计算某个值，<em>他返回了个在调用时，将计算所要求值的函数</em>。</p>
+<h3 id="定义咱们自己的控制抽象"><a class="header" href="#定义咱们自己的控制抽象">定义咱们自己的控制抽象</a></h3>
+<p>到目前为止，我们还没看到任何 <code>if</code> 语句、<code>switch</code> 语句、<code>for</code> 语句或 <code>while</code> 语句，但这似乎并不重要。一切都使用模式匹配及高阶函数编写出来。</p>
+<p>当我们需要额外控制结构时，我们可以构造咱们自己的。下面是个示例；Erlang 没有 <code>for</code> 循环，所以我们来构造一个：</p>
+<p><a href="http://media.pragprog.com/titles/jaerlang2/code/lib_misc.erl"><code>lib_misc.erl</code></a></p>
+<pre><code class="language-erlang">for(Max, Max, F) -&gt; [F(Max)];
+for(I, Max, F) -&gt; [F(I)|for(I+1, Max, F)].
+</code></pre>
+<p>那么，比如对 <code>for(1,10,F)</code> 求值，就会创建处一个列表 <code>[F(1)，F(2)，...，F(10)]</code>。</p>
+<p>现在我们有了个简单的 <code>for</code> 循环。我们可以用他构造一个从 <code>1</code> 到 <code>10</code> 的整数列表。</p>
+<pre><code class="language-erlang">1&gt; lib_misc:for(1,10,fun(I) -&gt; I end).
+[1,2,3,4,5,6,7,8,9,10]
+</code></pre>
+<p>或者，我们可计算出 <code>1</code> 到 <code>10</code> 的整数平方。</p>
+<pre><code class="language-erlang">2&gt; lib_misc:for(1,10,fun(I) -&gt; I*I end).
+[1,4,9,16,25,36,49,64,81,100]
+</code></pre>
+<p>随着咱们更有经验，就会发现创建咱们自己控制结构的能力，可以大大减小咱们程序的大小，并有时还会使他们更加清晰。这是因为咱们可以创建出刚好解决咱们问题所需的控制结构，而且咱们不受编程语言自带的一小套固定控制结构约束。</p>
+<h2 id="简单的列表处理"><a class="header" href="#简单的列表处理">简单的列表处理</a></h2>
+<p>既然我们已介绍了 <code>funs</code>，咱们就可以继续编写 <code>sum</code> 和 <code>map</code> 了，我们改进版的 <code>total</code> 就需要他们（我相信你一定没有忘记！）。</p>
+<p>我们将从 <code>sum</code> 开始，他会计算某个列表中元素的总和。</p>
+<p><a href="http://media.pragprog.com/titles/jaerlang2/code/mylists.erl"><code>mylists.erl</code></a></p>
+<pre><code class="language-erlang">sum([H|T]) -&gt; H + sum(T);
+sum([])	   -&gt; 0.
+</code></pre>
+<p>请注意 <code>sum</code> 中两个子句的顺序并不重要。这是因为第一个子句会匹配某个非空列表，同时第二个子句匹配的是个空列表，而这两种情况是互斥的。我们可以如下测试 <code>sum</code>：</p>
+<pre><code class="language-erlang">1&gt; c(mylists).
+{ok,mylists}
+2&gt; L = [1,3,10].
+[1,3,10]
+3&gt; mylists:sum(L).
+14
+</code></pre>
+<p>第 1 行编译了 <code>mylists</code> 这个 模组。从现在起，我（作者）会经常省略编译模组的命令，所以咱们必须记住自己完成这件事。要理解这段代码是如何工作很容易。我们来跟踪一下执行过程。</p>
+<ol>
+<li><code>sum([1,3,10])</code>；</li>
+<li><code>sum([1,3,10]) = 1 + sum([3,10])</code>（按照第一个子句 <code>sum([H|T]) -&gt; H + sum(T)</code>）；</li>
+<li><code>= 1 + 3 + sum([10])</code>（按照第一个子句）；</li>
+<li><code>= 1 + 3 + 10 + sum([])</code>（按照第一个子句）；</li>
+<li><code>= 1 + 3 + 10 + 0</code>（按照第二个子句）；</li>
+<li><code>= 14</code></li>
+</ol>
+<p>最后，我们来看看我们前面曾见过的 <code>map/2</code>。下面是他的定义：</p>
+<p><a href="http://media.pragprog.com/titles/jaerlang2/code/mylists.erl"><code>mylists.erl</code></a></p>
+<pre><code class="language-erlang">map(_, [])	    -&gt; [];
+map(F, [H|T])	-&gt; [F(H)|map(F, T)].
+</code></pre>
+<ol>
+<li>其首个子句说的是如何处理空列表。在空列表（什么也没有！）的元素上映射任何函数，都会产生一个空列表；</li>
+<li>第二个子句是一条有关如何处理有着头部 <code>H</code>、尾部 <code>T</code> 的某个列表的规则。仅构建出一个头部为 <code>F(H)</code>，尾部为 <code>map(F,T)</code> 的列表。</li>
+</ol>
+<p><em>注意</em>：<code>map/2</code> 的定义，是从标准库模组 <code>lists</code> 复制到 <code>mylists</code> 的。咱们可随意修改 <code>mylists.erl</code> 中的代码。在任何情况下，都不要尝试创建咱们自己的 <code>lists</code> 模组 -- 若咱们在 <code>lists</code> 中犯了任何错误，都很可能会严重破坏系统。</p>
+<p>我们可使用一些将列表中的元素加倍及平方的函数，运行这个 <code>map</code>，如下所示：</p>
+<pre><code class="language-erlang">1&gt; L = [1,2,3,4,5].
+[1,2,3,4,5]
+2&gt; mylists:map(fun(X) -&gt; 2*X end, L).
+[2,4,6,8,10]
+3&gt; mylists:map(fun(X) -&gt; X*X end, L).
+[1,4,9,16,25]
+</code></pre>
+<p>稍后，我们将在 <a href="../part-v/Ch26-programming_multicore_CPUs.html#%E5%B9%B6%E8%A1%8C%E5%BA%8F%E5%88%97%E4%BB%A3%E7%A0%81">26.3 节 “并行化顺序代码” 中</a>，展示使用列表综合，编写的一个更简短版本的 <code>map</code>，我们将展示咱们如何以 <em>并行</em> 方式，计算映射 的所有元素（这将加快我们程序在多核计算机上的运行速度） -- 但这已太超前。既然我们已经知道了 <code>sum</code> 和 <code>map</code>，咱们就可以用这两个函数，重写 <code>total</code> 了：</p>
+<p><a href="http://media.pragprog.com/titles/jaerlang2/code/shop2.erl"><code>shop2.erl</code></a></p>
+<pre><code class="language-erlang">-module(shop2).
+-export([total/1]).
+-import(lists, [map/2, sum/1]).
+
+total(L) -&gt;
+    sum(map(fun({What, N}) -&gt; shop:cost(What) * N end, L)).
+</code></pre>
+<p>通过查看涉及到那些步骤，我们就可以了解这个函数的工作原理。</p>
+<pre><code class="language-erlang">1&gt; Buy = [{oranges,4},{newspaper,1},{apples,10},{pears,6},{milk,3}].
+[{oranges,4},{newspaper,1},{apples,10},{pears,6},{milk,3}]
+2&gt; L1=lists:map(fun({What,N}) -&gt; shop:cost(What) * N end, Buy).
+[20,8,20,54,21]
+3&gt; lists:sum(L1).
+123
+</code></pre>
+<blockquote>
+<p><strong>我要怎样编写程序</strong></p>
+<p>在编写某个程序时，我（作者）的方法是 “写一点” 就 “测试一点”。我会先编写一个包含几个函数的小模组，然后编译他，并在 shell 下用几个命令测试他。一旦我对他感到满意，我会再写几个函数，编译他们，测试他们，以此类推。</p>
+<p>通常情况下，我并未真正决定在我的程序中，需要什么样的数据结构，而当我运行一些小的示例时，我就能明白，我所选择的数据结构是否合适。</p>
+<p>我倾向于 “养大” 程序，而不是在编写他们之前，就将其完全想好。这样就不会在我发现错误之前，就犯下大错。最重要的是，这样做很有趣，我会立即得到反馈，并且在输入程序时，就立即会看到我的想法是否可行。</p>
+<p>一旦在 shell 下搞清楚怎样完成某事，我通常就会去写个 makefile，以及一些重现我在 shell 下所掌握内容的代码。</p>
+</blockquote>
+<p>还要注意这个模组中 <code>-import</code> 与 <code>-export</code> 声明的使用。</p>
+<ul>
+<li>声明 <code>-import(lists,[map/2,sum/1]).</code> 表示函数 <code>map/2</code> <em>导入</em> 自模组 <code>lists</code> 中，以此类推。这意味着我们可以写下 <code>map(Fun,...)</code> 代替 <code>lists:map(Fun,...)</code>。<code>cost/1</code> 未在某个导入声明中声明，因此我们必须使用 “完全限定” 的名字 <code>shop:cost</code>；</li>
+<li>声明 <code>-export([total/1])</code> 表示可从 <code>shop2</code> 这个模组外部，调用函数 <code>total/1</code>。只有从某个模组导出的函数，才能从该模组外部调用。</li>
+</ul>
+<p>这时，咱们可能会认为我们这个 <code>total</code> 函数无法再被改进了，但咱们错了。进一步的改进是可行的。为此，我们将用到列表综合。</p>
+<p><em>知识点</em>：</p>
+<ul>
+<li>list comprehension</li>
+<li>fully qualified name</li>
+</ul>
+<h2 id="列表综合"><a class="header" href="#列表综合">列表综合</a></h2>
+<p>所谓 <em>列表综合</em>，是一些不必用到 <code>funs</code>、映射或过滤器，即可创建出列表的表达式。这会使得我们的程序更加简短易懂。</p>
+<p>我们将从一个示例开始。设想我们有个列表 <code>L</code>。</p>
+<pre><code class="language-erlang">1&gt; L = [1,2,3,4,5].
+[1,2,3,4,5]
+</code></pre>
+<p>并假设说我们打算把这个列表中的每个元素都翻倍。我们以前做过这个，但我还是要提醒一下。</p>
+<pre><code class="language-erlang">2&gt; lists:map(fun(X) -&gt; X*2 end, L).
+[2,4,6,8,10]
+</code></pre>
+<p>不过还有种更简单的，使用列表综合的方法。</p>
+<pre><code class="language-erlang">3&gt; [2*X || X &lt;- L ].
+[2,4,6,8,10]
+</code></pre>
+<p><code>[ F(X) || X &lt;- L]</code> 这种写法，表示 “<code>F(X)</code> 的列表，其中 <code>X</code> 取自列表 <code>L</code>”。因此，<code>[2*X || X &lt;- L ]</code> 就表示 “<code>2*X</code> 的列表，其中 <code>X</code> 取自列表 <code>L</code>"。</p>
+<p>要了解如何使用列表综合，我们可以在 shell 下输入几个表达式，看看会发生什么。我们以定义 <code>Buy</code> 开始。</p>
+<pre><code class="language-erlang">1&gt; Buy = [{oranges,4},{newspaper,1},{apples,10},{pears,6},{milk,3}].
+[{oranges,4},{newspaper,1},{apples,10},{pears,6},{milk,3}]
+</code></pre>
+<p>现在我们来把这个原始列表中每个项目的数量加倍。</p>
+<pre><code class="language-erlang">2&gt; [{Name, 2*Number} || {Name, Number} &lt;- Buy].
+[{oranges,8},{newspaper,2},{apples,20},{pears,12},{milk,6}]
+</code></pre>
+<p>请注意，<code>||</code> 符号右侧的元组 <code>{Name, Number}</code>，是个会与列表 <code>Buy</code> 中每个元素匹配的 <em>模式</em>。而左边的元组 <code>{Name, 2*Number}</code>，则 是个 <em>构造函数</em>。</p>
+<p>设想我们想要计算出那个原始列表中，所有元素的总费用；我们可以如下完成这点。首先用该列表中每项物品的价格，替换其名字。</p>
+<pre><code class="language-erlang">3&gt; [{shop:cost(A), B} || {A, B} &lt;- Buy].
+[{5,4},{8,1},{2,10},{9,6},{7,3}]
+</code></pre>
+<p>现在乘以数量。</p>
+<pre><code class="language-erlang">4&gt; [shop:cost(A) * B || {A, B} &lt;- Buy].
+[20,8,20,54,21]
+</code></pre>
+<p>再对他们求和。</p>
+<pre><code class="language-erlang">5&gt; lists:sum([shop:cost(A) * B || {A, B} &lt;- Buy]).
+123
+</code></pre>
+<p>最后，若我们打算将其构造为一个函数，就可以写出下面的代码：</p>
+<pre><code class="language-erlang">total(L) -&gt;
+    lists:sum([shop:cost(A) * B || {A, B} &lt;- L]).
+</code></pre>
+<blockquote>
+<p><strong>译注</strong>：在传入给此版本的 <code>total/1</code> 函数为空列表时，其仍能计算出结果为 <code>0</code>。</p>
+</blockquote>
+<pre><code class="language-erlang">8&gt; shop3:total(Buy).
+123
+9&gt; shop3:total([]).
+0
+</code></pre>
+<blockquote>
+<p>请思考这是为什么......</p>
+</blockquote>
+<p>列表综合会让咱们代码变得非常简短易读。例如，我们可以定义一个更简短版本的 <code>map</code>。</p>
+<pre><code class="language-erlang">map(F, L) -&gt; [F(X) || X &lt;- L].
+</code></pre>
+<p>列表综合最一般形式，是下面这种形式的表达式：</p>
+<pre><code class="language-erlang">[X || Qualifier1, Qualifier2, ...]
+</code></pre>
+<footer id="last-change">Last change: 2025-08-22, commit: <a href="https://github.com/gnu4cn/erlang-book/commit/0556ca0">0556ca0</a></footer>
+            </main>
+
+            <nav class="nav-wrapper" aria-label="Page navigation">
+              <!-- Mobile navigation buttons -->
+              <a rel="prev" href="../part-ii/Ch03-basic_concepts.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                <i class="fa fa-angle-left"></i>
+              </a>
+
+
+              <div style="clear: both"></div>
+            </nav>
+          </div>
+        </div>
+
+        <nav class="nav-wide-wrapper" aria-label="Page navigation">
+          <a rel="prev" href="../part-ii/Ch03-basic_concepts.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+            <i class="fa fa-angle-left"></i>
+          </a>
+
+        </nav>
+
+      </div>
+
+      <!-- Livereload script (if served using the cli tool) -->
+      <script>
+        const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+        const socket = new WebSocket(wsAddress);
+        socket.onmessage = function (event) {
+                  if (event.data === "reload") {
+                            socket.close();
+                            location.reload();
+                          }
+                };
+
+        window.onbeforeunload = function() {
+                  socket.close();
+                }
+      </script>
+
+
+      <script>
+        window.playground_copyable = true;
+      </script>
+
+
+
+      <script src="../clipboard.min.js"></script>
+      <script src="../highlight.js"></script>
+      <script src="../book.js"></script>
+
+      <!-- Custom JS scripts -->
+      <script src="../theme/pagetoc.js"></script>
+
+
+    </div>
+
+<!-- Donation dialog -->
+<dialog class="modal">
+  <p>小额打赏，赞助 xfoss.com 长存......</p>
+
+<div class="slider">
+  <a href="#slide-1">微信</a> |
+  <a href="#slide-2">支付宝</a>
+
+  <div class="slides">
+    <div id="slide-1">
+         <img src="../images/wechat-pay-hector.jpeg" />
+    </div>
+    <div id="slide-2">
+          <img src="../images/alipay-laxers.jpeg" />
+    </div>
+  </div>
+</div>
+
+<br />
+  <p>若这里内容有帮助到你，请选择上述方式向 xfoss.com 捐赠。</p>
+  <button class="close-button">Close</button>
+</dialog>
+
+
+
+  </body>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-V49YMMPZJN"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-V49YMMPZJN');
+</script>
+
+<script>
+
+const modal = document.querySelector('.modal');
+const openButton = document.querySelector('.open-button');
+const closeButton = document.querySelector('.close-button');
+
+openButton.addEventListener('click', () => {
+  modal.showModal();
+});
+
+closeButton.addEventListener('click', () => {
+  modal.close();
+});
+</script>
+    <style type="text/css">
+button {
+  display: inline-block;
+  margin: 5px auto;
+  border: 0;
+  border-radius: 2px;
+  padding: 3px 8px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+    background-color: #FFA12B;
+  cursor: pointer;
+  color: #FFF;
+  transition: all 240ms linear;
+}
+
+button:hover {
+  filter: brightness(0.8);
+}
+button:active {
+  transform: scale(0.9);
+}
+dialog {
+  margin: 10% auto;
+  width: 80%;
+  max-width: 800px;
+  background-color: #eee;
+  padding: 24px;
+  border: 0;
+  border-radius: 5px;
+}
+dialog > p {
+  text-align: center;
+  margin: 0;
+}
+dialog > p:first-of-type {
+  margin: 0 auto 20px;
+  font-size: 24px;
+  font-weight: 600;
+}
+dialog > button {
+    display: block;
+    float: right;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.slider {
+  width: 300px;
+  text-align: center;
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.slides {
+  display: flex;
+
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+
+
+
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+
+  /*
+  scroll-snap-points-x: repeat(300px);
+  scroll-snap-type: mandatory;
+  */
+}
+.slides::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.slides::-webkit-scrollbar-thumb {
+  background: black;
+  border-radius: 10px;
+}
+.slides::-webkit-scrollbar-track {
+  background: transparent;
+}
+.slides > div {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+  width: 300px;
+  height: 300px;
+  margin-right: 50px;
+  border-radius: 10px;
+  background: #eee;
+  transform-origin: center center;
+  transform: scale(1);
+  transition: transform 0.5s;
+  position: relative;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 100px;
+}
+.slides > div:target {
+/*   transform: scale(0.8); */
+}
+.author-info {
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  padding: 0.75rem;
+  text-align: center;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  margin: 0;
+}
+.author-info a {
+  color: white;
+}
+.slides > div > img {
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.slider > a {
+  display: inline-flex;
+  height: 1.5rem;
+  background: white;
+  text-decoration: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin: 0 0 0.5rem 0;
+  position: relative;
+}
+.slider > a:active {
+  top: 1px;
+}
+.slider > a:focus {
+  background: #000;
+}
+
+/* Don't need button navigation */
+@supports (scroll-snap-type) {
+  .slider > a {
+    display: none;
+  }
+}
+
+    </style>
+
+</html>

@@ -32,7 +32,7 @@
 
 
 ```erlang
--module(person). 
+-module(person).
 -export([init/1]).
 
 init(Name) -> ...
@@ -71,7 +71,7 @@ init(Name) -> ...
 
 
 ```erlang
--module(world). 
+-module(world).
 -export([start/0]).
 
 start() ->
@@ -115,7 +115,7 @@ spawn(person, init, ["Joe"])
 >
 > 在 Erlang 中，`spawn` 通过运行某个模组中定义的一个函数，创建出一个新的进程。在 Java 中，`new` 通过运行某个类中定义的一个方法，创建出一个新对象。
 >
-> 在某门 OOPL 中，我们可以有一个类，而有数千个类实例。同样，在 Erlang 中，我们可以有一个模组，而有数千甚至数百万个执行该模组中代码的进程。所有 Erlang 的进程，都并发且独立执行，如果我们有一台百万核的计算机，他们甚至可以并行运行。 
+> 在某门 OOPL 中，我们可以有一个类，而有数千个类实例。同样，在 Erlang 中，我们可以有一个模组，而有数千甚至数百万个执行该模组中代码的进程。所有 Erlang 的进程，都并发且独立执行，如果我们有一台百万核的计算机，他们甚至可以并行运行。
 
 
 

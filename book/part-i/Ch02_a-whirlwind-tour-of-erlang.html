@@ -1,0 +1,676 @@
+<!DOCTYPE HTML>
+<html lang="zh" class="sidebar-visible no-js light">
+  <head>
+    <!-- Book generated using mdBook -->
+    <meta charset="UTF-8">
+    <title>Erlang 旋风之旅 - Erlang 编程</title>
+
+
+    <!-- Custom HTML head -->
+
+    <meta name="description" content="Programming Erlang, 2nd Edition, Joe Armstrong">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff" />
+
+    <link rel="icon" href="../favicon.svg">
+    <link rel="shortcut icon" href="../favicon.png">
+    <link rel="stylesheet" href="../css/variables.css">
+    <link rel="stylesheet" href="../css/general.css">
+    <link rel="stylesheet" href="../css/chrome.css">
+
+    <!-- Fonts -->
+    <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+    <link rel="stylesheet" href="../fonts/fonts.css">
+
+    <!-- Highlight.js Stylesheets -->
+    <link rel="stylesheet" href="../highlight.css">
+    <link rel="stylesheet" href="../tomorrow-night.css">
+    <link rel="stylesheet" href="../ayu-highlight.css">
+    <link rel="prefetch" href="../images/alipay-laxers.jpeg" />
+    <link rel="prefetch" href="../images/wechat-pay-hector.jpeg" />
+
+    <!-- Custom theme stylesheets -->
+    <link rel="stylesheet" href="../theme/pagetoc.css">
+
+    <style type="text/css">
+        a.button {
+                color:white;
+              font-family:Helvetica, sans-serif;
+              font-weight:bold;
+              font-size:12px;
+              text-align: center;
+              text-decoration:none;
+              background-color:#FFA12B;
+              display:inline-block;
+              position:relative;
+              padding:5px 10px;
+
+              -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+              text-shadow: 0px 1px 0px #000;
+              filter: dropshadow(color=#000, offx=0px, offy=1px);
+
+              -webkit-box-shadow:inset 0 1px 0 #FFE5C4, 0 2px 0 #915100;
+              -moz-box-shadow:inset 0 1px 0 #FFE5C4, 0 2px 0 #915100;
+              box-shadow:inset 0 1px 0 #FFE5C4, 0 2px 0 #915100;
+
+              -webkit-border-radius: 5px;
+              -moz-border-radius: 5px;
+              border-radius: 5px;
+        }
+    </style>
+
+  </head>
+  <body>
+    <div id="body-container">
+      <!-- Provide site root to javascript -->
+      <script>
+        var path_to_root = "../";
+        var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+      </script>
+
+      <!-- Work around some values being stored in localStorage wrapped in quotes -->
+      <script>
+        try {
+                  var theme = localStorage.getItem('mdbook-theme');
+                  var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                  if (theme.startsWith('"') && theme.endsWith('"')) {
+                            localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                          }
+
+                  if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                            localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                          }
+                } catch (e) { }
+      </script>
+
+      <!-- Set the theme before any content is loaded, prevents flash -->
+      <script>
+        var theme;
+        try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+        if (theme === null || theme === undefined) { theme = default_theme; }
+        var html = document.querySelector('html');
+        html.classList.remove('no-js')
+        html.classList.remove('light')
+        html.classList.add(theme);
+        html.classList.add('js');
+      </script>
+
+      <!-- Hide / unhide sidebar before it is displayed -->
+      <script>
+        var html = document.querySelector('html');
+        var sidebar = null;
+        if (document.body.clientWidth >= 1080) {
+                  try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                  sidebar = sidebar || 'visible';
+                } else {
+                          sidebar = 'hidden';
+                        }
+        html.classList.remove('sidebar-visible');
+        html.classList.add("sidebar-" + sidebar);
+      </script>
+
+      <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+        <div class="sidebar-scrollbox">
+          <ol class="chapter"><li class="chapter-item expanded affix "><a href="introduction.html">简介</a></li><li class="chapter-item expanded "><a href="part-i.html"><strong aria-hidden="true">1.</strong> 第 I 部分，为何是 Erlang？</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="getting_started.html"><strong aria-hidden="true">1.1.</strong> 入门</a></li><li class="chapter-item expanded "><a href="part-i/Ch01_introducing-concurrency.html"><strong aria-hidden="true">1.2.</strong> 并发介绍</a></li><li class="chapter-item expanded "><a href="part-i/Ch02_a-whirlwind-tour-of-erlang.html"><strong aria-hidden="true">1.3.</strong> Erlang 旋风之旅</a></li></ol></li><li class="chapter-item expanded "><a href="part-ii.html"><strong aria-hidden="true">2.</strong> 第 II 部分，序列编程</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="part-ii/Ch03-basic_concepts.html"><strong aria-hidden="true">2.1.</strong> 基本概念</a></li><li class="chapter-item expanded "><a href="part-ii/Ch04-modules_and_functions.html"><strong aria-hidden="true">2.2.</strong> 模组与函数</a></li></ol></li></ol>
+        </div>
+        <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+      </nav>
+
+      <div id="page-wrapper" class="page-wrapper">
+
+        <div class="page">
+          <div id="menu-bar-hover-placeholder"></div>
+          <div id="menu-bar" class="menu-bar sticky bordered">
+            <div class="left-buttons">
+              <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+              </button>
+              <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                <i class="fa fa-paint-brush"></i>
+              </button>
+              <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+              </ul>
+            </div>
+
+            <h3 class="menu-title">Erlang 编程</h3>
+
+            <div class="right-buttons">
+              <a href="https://github.com/gnu4cn/erlang-book" title="Git repository" aria-label="Git repository">
+                <i id="git-repository-button" class="fa fa-github"></i>
+              </a>
+                <button class="open-button">打 赏 💰</button>
+            </div>
+          </div>
+
+
+          <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+          <script>
+            document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+            document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+            Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                          link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                        });
+          </script>
+
+          <div id="content" class="content">
+            <main><div class="sidetoc"><nav class="pagetoc"></nav></div>
+              <h1 id="erlang-旋风之旅"><a class="header" href="#erlang-旋风之旅">Erlang 旋风之旅</a></h1>
+<p>在本章中，我们将构建我们的首个并发程序。我们将构造一个文件服务器。该文件服务器有两个并发进程：一个进程代表服务器，另一个代表客户端。</p>
+<p>我们将从一个小的 Erlang 子集开始，这样我们就可以展示一些广泛的原则，而不必纠缠于细节。至少，我们必须了解如何在 shell 中运行代码及编译模组。这就是我们入门所需的全部知识。</p>
+<p>学习 Erlang 的最佳方法，是将示例输入到实际的 Erlang 系统中，看看能否重现书中的内容。要安装 Erlang，请参阅 <a href="https://www.erlang.org/docs/22/installation_guide/users_guide">Installation Guide</a>。我们会尽量更新安装说明。这很困难，因为有许多不同平台以不同方式进行配置。如果这些安装指令失败或不是最新的，请发送邮件到 Erlang 的邮件列表，我们会尽力提供帮助。</p>
+<h2 id="关于-erlang-shell"><a class="header" href="#关于-erlang-shell">关于 Erlang shell</a></h2>
+<p>Erlang shell 是咱们将耗费咱们大部分时间的地方。在咱们输入某个表达式后，shell 就会对该表达式求值并打印结果。</p>
+<pre><code class="language-shell">$ werl
+Erlang/OTP 28 [erts-16.0.2] [source] [64-bit] [smp:8:8] [ds:8:8:10] [async-threads:1] [jit:ns]
+
+Eshell V16.0.2 (press Ctrl+G to abort, type help(). for help)
+1&gt; 123456 * 223344.
+27573156864
+2&gt;
+</code></pre>
+<p>那么，发生了什么？其中 <code>$</code> 是操作系统的提示符。我们输入了 <code>werl</code> 命令，他启动了 Erlang shell。Erlang shell 会以一个横幅及编号的提示 <code>1&gt;</code> 响应。然后，我们输入了一个表达式，该表达式被求值并打印出来。注意每个表达式都 <em>必须</em> 以一个句点结束，后跟一个空格符。在这个语境下，空格是指空格、制表符或回车符。</p>
+<p>初学者经常会忘记用这个点空白位，结束表达式。请把命令想象成英语句子。英语的句子通常以句点结束，因此很容易记住。</p>
+<h3 id="-运算符"><a class="header" href="#-运算符"><code>=</code> 运算符</a></h3>
+<p>使用 <code>=</code> 运算符，我们可以为变量赋值（严格来说，这叫做将该变量 <em>绑定</em> 到某个值），就像这样：</p>
+<pre><code class="language-erlang">2&gt; X = 123.
+123
+3&gt; X * 2.
+246
+</code></pre>
+<p>若我们试图更改某个变量的值，就会发生一些奇怪的事情。</p>
+<pre><code class="language-erlang">4&gt; X = 999.
+** exception error: no match of right hand side value 999
+</code></pre>
+<p>这是第一个惊喜。我们无法 <em>重新绑定</em> 变量。Erlang 是门函数式语言，所以一旦我们说 <code>X = 123</code>，那么 <code>X</code> 就永远是 <code>123</code>，不能更改！</p>
+<p>别担心，这是个好处，不是个问题。想比于同一变量在程序生命周期可获得许多不同值的程序，其中变量一旦设定就不能更改的程序要更容易理解。</p>
+<p>当我们看到类似 <code>X = 123</code> 这样的表达式时，他的意思似乎是 “将整数 <code>123</code> 赋值给变量 <code>X</code>”，但这种解释是不正确的。<code>=</code> 不是个赋值运算符；他实际上是个 <em>模式匹配运算符</em>。这在 <a href="../part-ii/Ch03-basic_concepts.html#%E5%8F%98%E9%87%8F%E7%BB%91%E5%AE%9A%E4%B8%8E%E6%A8%A1%E5%BC%8F%E5%8C%B9%E9%85%8D">变量绑定和模式匹配</a> 小节会详细介绍。</p>
+<p>与在函数式编程语言中一样，Erlang 中的变量只能绑定一次。绑定某个变量意味着给了变量一个值；一旦其被绑定，以后该值就不能被更改。</p>
+<p>如果咱们习惯了命令式语言，可能会觉得这种想法很奇怪。在命令式语言中，变量实际上是一种指向内存地址的变相方式。某个程序中的 <code>X</code>，其实就是内存中某个数据项的地址。当我们说 <code>X=12</code> 时，我们是在改变地址为 <code>X</code> 处内存位置的值，但在 Erlang 中，变量 <code>X</code> 表示了一个永远不会被改变的值。</p>
+<h3 id="变量与原子的语法"><a class="header" href="#变量与原子的语法">变量与原子的语法</a></h3>
+<p><strong>Syntax of Variables and Atoms</strong></p>
+<p>请注意，Erlang 的变量以大写字母开头。因此，<code>X</code>、<code>This</code> 和 <code>A_long_name</code> 都属于变量。以小写字母开头的名字 -- 例如，<code>monday</code> 或 <code>friday</code> -- 则不属于变量，而是一些称为 <em>原子</em> 的符号常量。</p>
+<p>若咱们曾看到或写过某个类似 <code>x = 123</code> 的表达式（注：这里的 <code>x</code> 是用小写字母书写的，以防咱们未注意到），那么几乎可以肯定这是个错误。当咱们在 shell 中这样做时，反应是立竿见影的。</p>
+<pre><code class="language-erlang">1&gt; abc=123.
+** exception error: no match of right hand side value 123
+</code></pre>
+<p>但是如果这样的一行代码深埋在一些代码中，他就可能会让咱们的程序崩溃，所以请注意。诸如如 Emacs 和 Eclipse 编辑器等的大多数编辑器，都会以不同颜色对原子与变量进行颜色编码，因此很容易看出区别。</p>
+<p>在咱们阅读下一小节之前，请尝试启动 shell 并输入几个简单的算术表达式。在此阶段，当出错时，只需通过键入 <code>Control+C</code> 然后键入 <code>a</code>（表示中止，abort），然后从操作系统的提示符重新启动 shell。</p>
+<p>现在，咱们应已经熟悉了启动和停止 shell，以及使用 shell 计算一些简单表达式。我们还看到了函数式编程语言和命令式编程语言根本区别之一。在函数式编程语言中，变量无法改变，但在命令式编程语言中，变量则可以改变。</p>
+<h2 id="进程模组与编译"><a class="header" href="#进程模组与编译">进程、模组与编译</a></h2>
+<p><strong>Process, Modules and Compilation</strong></p>
+<p>Erlang 程序建立在数个并行的进程之上。进程会运行定义在模组中的函数。模组是一些扩展名为 <code>.erl</code>  的文件，且必须经过编译才能运行。编译完某个模组后，我们就可以在 shell 中，或在操作系统环境下的命令行中，运行该模组中的函数。</p>
+<p>在接下来的小节中，我们将了解如何在 shell 及操作系统命令行下，编译模组与运行函数。</p>
+<h3 id="在-shell-下编译和并运行-hello-world"><a class="header" href="#在-shell-下编译和并运行-hello-world">在 shell 下编译和并运行 <code>"Hello World"</code></a></h3>
+<p>请以以下内容，构造一个名为 <code>hello.erl</code> 的文件：</p>
+<p><a href="http://media.pragprog.com/titles/jaerlang2/code/hello.erl"><code>hello.erl</code></a></p>
+<pre><code class="language-erlang">-module(hello).
+-export([start/0]).
+
+start() -&gt;
+    io:format("Hello world~n").
+</code></pre>
+<p>要编译和运行这个程序，我们要在咱们存储 <code>hello.erl</code> 的目录下启动 Erlang shell，并执行以下操作：</p>
+<pre><code class="language-shell">$ erl
+Erlang/OTP 28 [erts-16.0.2] [source] [64-bit] [smp:8:8] [ds:8:8:10] [async-threads:1] [jit:ns]
+
+Eshell V16.0.2 (press Ctrl+G to abort, type help(). for help)
+1&gt; c(hello).
+{ok,hello}
+2&gt; hello:start().
+Hello world
+ok
+3&gt; halt().
+$ 
+</code></pre>
+<p>其中命令 <code>c(hello)</code> 会编译文件 <code>hello.erl</code> 中的代码。<code>{ok, hello}</code> 表示编译成功。代码现在可以运行了。在第 2 行，我们执行了函数 <code>hello:start()</code>。在第 3 行，我们停止了这个 Erlang shell。</p>
+<p>在 shell 下工作的优势在于，这种编译和运行程序的方式，在所有支持 Erlang 的平台上已知都能运行。而在操作系统的命令行下工作，则不一定在所有平台上都能正常运行。</p>
+<h3 id="在-erlang-shell-外部编译"><a class="header" href="#在-erlang-shell-外部编译">在 Erlang shell 外部编译</a></h3>
+<p>使用之前的同样代码，我们可以在操作系统命令行下，编译并运行我们的代码，如下所示：</p>
+<pre><code class="language-shell">$ erlc hello.erl
+$ erl -noshell -s hello start -s init stop
+Hello world
+</code></pre>
+<p>其中 <code>erlc</code> 会从命令行调用 Erlang 的编译器。该编译器会编译 <code>hello.erl</code> 中的代码，并生成一个名为 <code>hello.beam</code> 的目标代码文件。</p>
+<blockquote>
+<p><strong>译注</strong>：经测试，<code>erlc hello.erl</code> 命令的效果，与 Erlang shell 下 <code>c(hello).</code> 命令效果一致。</p>
+</blockquote>
+<p>而其中的 <code>$ erl -noshell ...</code> 命令，会加载这个模组 <code>hello</code> 并执行函数 <code>hello:start()</code>。然后，他会执行表达式 <code>init:stop()</code>，这会终止这个 Erlang 会话。</p>
+<p>在 Erlang shell 之外运行 Erlang 的编译器 (即 <code>erlc</code>)，是编译 Erlang 代码的首选方式。我们可在 Erlang shell 内编译模组，但我们首先必须启动 Erlang shell。而使用 <code>erlc</code> 的优势在于自动化。我们可以在 rakefile 或 makefile 中运行 <code>erlc</code>，并自动化构建过程。</p>
+<p>在咱们开始学习 Erlang 时，建议使用 Erlang shell 处理所有事情；这样咱们就能熟悉编译及运行代码的细节。更高级的用户会希望自动编译，而减少 Erlang shell 的使用。</p>
+<h2 id="你好并发"><a class="header" href="#你好并发">你好，并发</a></h2>
+<p>我们已经了解如何编译一个简单模组。但该怎么编写一个并发的程序呢？Erlang  中并发的基本单元是 <em>进程</em>。所谓进程，是个仅靠发送和接收消息，就能与其他进程通信的轻量级虚拟机。若咱们打算让某个进程做什么事情，咱们就要向其发送一条消息，然后等待答复。</p>
+<p>我们将编写的第一个并发程序，是个文件服务器。要在两台机器间传输文件，我们就需要两个程序：运行在一台机器上的客户端，和在第二台机器上运行的服务器。要实现这个，我们将构造两个模组，分别称为 <code>afile_client</code> 和 <code>afile_server</code>。</p>
+<h3 id="文件服务器进程"><a class="header" href="#文件服务器进程">文件服务器进程</a></h3>
+<p>文件服务器是在名为 <code>afile_server</code> 的模组中实现的。提醒一下，进程和模组就如同对象和类。进程的代码包含在某个模组中，而要创建出进程，我们就要调用原语 <code>spawn(...)</code>， 他会实际创建出进程。</p>
+<p><a href="http://media.pragprog.com/titles/jaerlang2/code/afile_server.erl"><code>afile_server.erl</code></a></p>
+<pre><code class="language-erlang">-module(afile_server).
+-export([start/1, loop/1]).
+
+start(Dir) -&gt; spawn(afile_server, loop, [Dir]).
+loop(Dir) -&gt;
+    receive
+        {Client, list_dir} -&gt;
+            Client ! {self(), file:list_dir(Dir)};
+        {Client, {get_file, File}} -&gt;
+            Full = filename:join(Dir, File),
+            Client ! {self(), file:read_file(Full)}
+    end,
+    loop(Dir).
+</code></pre>
+<p>这段代码有着非常简单的结构。若我们省略掉大部分细节，他看起来就像这样：</p>
+<pre><code class="language-erlang">loop(Dir) -&gt;
+    %% wait for a command
+    receive
+        Command -&gt;
+            ... do something ...
+    end,
+    loop(Dir).
+</code></pre>
+<p>这就是我们在 Erlang 中编写无限循环的方式。其中变量 <code>Dir</code>  包含着文件服务器当前的工作目录。在这个循环中，我们等待接收一条命令；在我们收到一条命令时，我们会遵从该命令，然后再次调用咱们自己，接收下一命令。</p>
+<p><em>好奇者请注意</em>：请不要担心我们做的最后一件事是调用自己；我们不会耗尽堆栈空间，stack space。Erlang  会对代码进行所谓的尾调用优化，tail-call optimization，这意味着该函数将在恒定空间内运行。这是 Erlang 中编写循环的标准方法。只需将调用自己，作为咱们最后做的事情即可。</p>
+<p>要注意的另一点是，<code>loop</code> 是没有返回值的函数。在顺序编程语言中，我们必须非常小心地避免无限循环；我们只有一个控制线程，若这个线程陷入循环，我们就麻烦了。而在 Erlang 中，就不存在这类问题。服务器只是个在无限循环中，为请求提供服务的程序，他与我们要执行的任何其他任务，一起并行运行。</p>
+<p><em>知识点</em>：</p>
+<ul>
+<li>stack space</li>
+<li>tail-call optimization</li>
+</ul>
+<p>现在，让我们仔细看看那个接收语句；为提醒大家，他看起来是这样的：</p>
+<p><a href="http://media.pragprog.com/titles/jaerlang2/code/afile_server.erl"><code>afile_server.erl</code></a></p>
+<pre><code class="language-erlang">    receive
+        {Client, list_dir} -&gt;
+            Client ! {self(), file:list_dir(Dir)};
+        {Client, {get_file, File}} -&gt;
+            Full = filename:join(Dir, File),
+            Client ! {self(), file:read_file(Full)}
+    end,
+</code></pre>
+<p>这段代码表示，在我们接收到消息 <code>{Client,list_dir}</code> 时，应回复一个文件列表；若我们接收到消息 <code>{Client,{get_file,File}}</code>，则应回复该文件。在收到消息时，作为模式匹配过程的一部分，变量 <code>Client</code> 会被绑定。</p>
+<p>这段代码非常紧凑，因此很容易忽略其中的细节。关于这段代码，有三个要点值得注意。</p>
+<ul>
+<li><em>回复对象</em></li>
+</ul>
+<p>所有收到的消息，都包含着变量  <code>Client</code>；这是发送请求进程的进程标识符，回复应发送给该进程。</p>
+<p>若咱们打算回复某条消息，那么最好说明该回复要发往的对象。这就像在信件中写上咱们的姓名和地址一样；若咱们未说明信件来自于谁，那么咱们就永远不会收到回复。</p>
+<ul>
+<li><em><code>self()</code> 的使用</em></li>
+</ul>
+<p>由服务器发送的回复，包含了参数 <code>self()</code>（这里的 <code>self()</code> 是服务器的进程标识符）。该标识符被添加到消息中，以便客户端可以检查其收到的消息，是否来自该服务器，而不是其他进程。</p>
+<ul>
+<li><em>用于选择消息的模式匹配</em></li>
+</ul>
+<p>这个接收语句内有两个 <em>模式</em>。我们可以这样写：</p>
+<pre><code class="language-erlang">receive
+    Pattern1 -&gt;
+      Actions1;
+    Pattern2 -&gt;
+      Actions2 -&gt;
+    ...
+end
+</code></pre>
+<p>Erlang 编译器和运行时系统会在收到消息时，正确确定出如何运行相应的代码。我们不必编写任何的 <code>if-then-else</code> 或 <code>switch</code> 语句，来确定要做什么。这正是模式匹配的乐趣之一，他将为咱们节省大量的工作。</p>
+<p>我们可在 shell 中编译和测试这段代码，如下所示：</p>
+<pre><code class="language-console">1&gt; c(afile_server).
+{ok,afile_server}
+2&gt; FileServer = afile_server:start(".").
+&lt;0.91.0&gt;
+3&gt; FileServer ! {self(), list_dir}.
+{&lt;0.84.0&gt;,list_dir}
+4&gt; receive X -&gt; X end.
+{&lt;0.91.0&gt;,
+ {ok,[".afile_server.erl.swp","afile_server.beam",
+      "afile_server.erl","hello.beam","hello.erl"]}}
+</code></pre>
+<p>我们来看看其中细节。</p>
+<pre><code class="language-console">1&gt; c(afile_server).
+{ok,afile_server}
+</code></pre>
+<p>我们编译了文件 <code>afile_server.erl</code> 中的 <code>afile_server</code> 模组。编译成功了，因此 “编译” 函数 <code>c</code> 的返回值为 <code>{ok, afile_server}</code>。</p>
+<pre><code class="language-console">2&gt; FileServer = afile_server:start(".").
+&lt;0.91.0&gt;
+</code></pre>
+<p><code>afile_server:start(Dir)</code> 会调用 <code>spawn(afile_server,loop,[Dir])</code>。这会创建一个新的、计算函数 <code>afile_server:loop(Dir)</code> 的并行进程，并返回一个可用于与该进程通信的 <em>进程标识符</em>。</p>
+<p>其中 <code>&lt;0.91.0&gt;</code> 便是这个文件服务器进程的进程标识符。他被显示为三个整数，中间用句点隔开，并包含在一对尖括号中。<em>请注意</em>：每次咱们运行该程序时，这个进程标识符都会变化。因此，不同会话中的像是 <code>&lt;0.91.0&gt;</code> 这样的 数字会有所不同。</p>
+<pre><code class="language-console">3&gt; FileServer ! {self(), list_dir}.
+{&lt;0.84.0&gt;,list_dir}
+</code></pre>
+<p>这会向文件服务器进程，发送一条 <code>{self(), list_dir}</code> 的消息。<code>Pid ！Message</code> 的返回值 <em>被定义</em> 为了 <code>Message</code>，因此 shell 会打印出 <code>{self(), list_dir}</code> 的值，即 <code>{&lt;0.84.0&gt;, list_dir}</code>。其中 <code>&lt;0.84.0&gt;</code> 是这个 Erlang shell 本身的进程标识符；他包含在消息中，以便文件服务器知道该回复谁。</p>
+<pre><code class="language-console">4&gt; receive X -&gt; X end.
+{&lt;0.91.0&gt;,
+ {ok,[".afile_server.erl.swp","afile_server.beam",
+      "afile_server.erl","hello.beam","hello.erl"]}}
+</code></pre>
+<p><code>receive X -&gt; X end</code> 会接收由文件服务器发送的回复。他会返回元组 <code>{&lt;0.91.0&gt;, {ok, ...}</code>。该元组中第一个元素是 <code>&lt;0.91.0&gt;</code>，即文件服务器的进程标识符。第二个参数是函数 <code>file:list_dir(Dir)</code> 的返回值，该函数是在文件服务器进程的接收循环中求值的。</p>
+<h3 id="客户端代码"><a class="header" href="#客户端代码">客户端代码</a></h3>
+<p>文件服务器是经由一个名为 <code>afile_client</code> 客户端模组访问的。该模组的主要目的，是隐藏底层通信协议的细节。客户端代码的用户，可通过调用在这个客户端模组中导出的 <code>ls</code> 和 <code>get_file</code> 函数传输文件。这赋予了我们在不改变客户端代码 API 细节下，改变底层协议的自由。</p>
+<p><a href="http://media.pragprog.com/titles/jaerlang2/code/afile_client.erl"><code>afile_client.erl</code></a></p>
+<pre><code class="language-erlang">-module(afile_client).
+-export([ls/1, get_file/2]).
+
+ls(Server) -&gt;
+    Server ! {self(), list_dir},
+    receive
+        {Server, FileList} -&gt;
+            FileList
+    end.
+
+get_file(Server, File) -&gt;
+    Server ! {self(), {get_file, File}},
+    receive
+        {Server, Content} -&gt;
+            Content
+    end.
+</code></pre>
+<p>若咱们比较一下 <code>afile_client</code> 和 <code>afile_server</code> 的代码，就会发现两者之间有种美丽的对称。期间在客户端中有个 <code>Server ！...</code>，服务器中就会有个 <code>receive</code> 模式，反之亦然。</p>
+<pre><code class="language-erlang">receive
+    {Client, Pattern} -&gt;
+        ...
+end
+</code></pre>
+<p>现在，我们将重启 shell，重新编译一切，并展示客户端和服务器一起工作。</p>
+<pre><code class="language-console">1&gt; c(afile_server).
+{ok,afile_server}
+2&gt; c(afile_client).
+{ok,afile_client}
+3&gt; FileServer = afile_server:start(".").
+&lt;0.96.0&gt;
+4&gt; afile_client:get_file(FileServer, "missing").
+{error,enoent}
+5&gt; afile_client:get_file(FileServer, "afile_server.erl").
+{ok,&lt;&lt;"-module(afile_server).\n-export([start/1, loop/1]).\n\nstart(Dir) -&gt; spawn(afile_server, loop, [Dir]).\nloop(Dir"...&gt;&gt;}
+</code></pre>
+<p>我们在 shell 中运行的代码，与之前代码的唯一区别是，我们抽象出了接口例程，并将其放入了一个单独模组中。我们隐藏了客户端和服务器之间消息传递的细节，因为其他程序对这些细节不感兴趣。</p>
+<p>咱们目前看到的，是个完整文件服务器的基础，但他还没有完成。与启动和停止服务器、连接到套接字等相关的细节还有很多，这里就不一一介绍了。</p>
+<p>在 Erlang 的视角，咱们如何启动与停止服务器、连接到套接字、从错误中恢复等等，都是无关紧要的细节。问题的 <em>本质</em> 在于创建并行进程，以及发送及接收消息。</p>
+<p><em>知识点</em>：</p>
+<ul>
+<li>the <em>essence</em> of the problem, 问题的本质</li>
+</ul>
+<p>在 Erlang 中，我们使用进程,架构出问题的解决方案。对进程结构的思考（换句话说，哪些进程相互了解），与对进程间所发送消息及消息所包含信息的思考，是我们思维方式及编程方式的核心。</p>
+<h3 id="改进这个文件服务器"><a class="header" href="#改进这个文件服务器">改进这个文件服务器</a></h3>
+<p>我们开发的这个文件服务器，涉及运行在同一台机器上的两个通信进程，并展示了编写并发程序所需的几个构件。在真正的服务器中，客户端和服务器将运行在不同机器上，因此我们必须以某种方式，安排好进程间消息传递不仅可在同一 Erlang 节点中的进程间进行，还可以在物理上分离的机器上 Erlang 进程间进行。</p>
+<p>在 <a href="../part-iv/Ch17-programming_with_sockets.html">第 17 章 “使用套接字编程”</a> 中，我们将了解如何将 TCP 传输层用于进程通信，而 <a href="../part-iii/Ch14-distributed_programming.html#%E6%96%87%E4%BB%B6%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%9B%9E%E9%A1%BE">“文件服务器回顾”</a> 中，我们将了解如何在分布式 Erlang 中，直接实现这个文件服务器。</p>
+<p>在本章中，我们了解了如何在 shell 中执行一些简单的操作、编译某个模组，以及使用三个原语：<code>spawn</code>、<code>send</code> 和 <code>receive</code>，创建出有着两个进程的一个简单并发程序。</p>
+<p>本书第一部分到此结束。在第二部分中，我们将详细介绍顺序编程，并在 <a href="../part-iii/Ch12-concurrent_programming.html">第 12 章 “并发编程”</a>  中，我们将回到并发编程。在下一章中，我们将通过详细关注 shell、模式匹配及原生 Erlang 数据类型，开始学习顺序编程。</p>
+<h2 id="练习"><a class="header" href="#练习">练习</a></h2>
+<p>现在也许是检查咱们对迄今为止学习内容理解的好时机。</p>
+<ol>
+<li>请启动并停止 Erlang shell;</li>
+<li>请在 Erlang shell 中键入几条命令。切记要以句点空格，结束这些命令；</li>
+<li>请对 <code>hello.erl</code> 做一些小修改。在 shell 中编译并运行他们。在出错时，请从 Erlang shell 中止并重新启动 shell；</li>
+<li>请运行哪个文件客户端及服务器代码。添加一个名为 <code>put_file</code> 的命令。需要添加哪些消息呢？请了解如何查阅手册页面。请查阅 <code>file</code> 模组的手册页面；</li>
+</ol>
+<footer id="last-change">Last change: 2025-08-18, commit: <a href="https://github.com/gnu4cn/erlang-book/commit/67f2478">67f2478</a></footer>
+            </main>
+
+            <nav class="nav-wrapper" aria-label="Page navigation">
+              <!-- Mobile navigation buttons -->
+              <a rel="prev" href="../part-i/Ch01_introducing-concurrency.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                <i class="fa fa-angle-left"></i>
+              </a>
+
+              <a rel="next" href="../part-ii.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                <i class="fa fa-angle-right"></i>
+              </a>
+
+              <div style="clear: both"></div>
+            </nav>
+          </div>
+        </div>
+
+        <nav class="nav-wide-wrapper" aria-label="Page navigation">
+          <a rel="prev" href="../part-i/Ch01_introducing-concurrency.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+            <i class="fa fa-angle-left"></i>
+          </a>
+
+          <a rel="next" href="../part-ii.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+            <i class="fa fa-angle-right"></i>
+          </a>
+        </nav>
+
+      </div>
+
+      <!-- Livereload script (if served using the cli tool) -->
+      <script>
+        const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+        const socket = new WebSocket(wsAddress);
+        socket.onmessage = function (event) {
+                  if (event.data === "reload") {
+                            socket.close();
+                            location.reload();
+                          }
+                };
+
+        window.onbeforeunload = function() {
+                  socket.close();
+                }
+      </script>
+
+
+      <script>
+        window.playground_copyable = true;
+      </script>
+
+
+
+      <script src="../clipboard.min.js"></script>
+      <script src="../highlight.js"></script>
+      <script src="../book.js"></script>
+
+      <!-- Custom JS scripts -->
+      <script src="../theme/pagetoc.js"></script>
+
+
+    </div>
+
+<!-- Donation dialog -->
+<dialog class="modal">
+  <p>小额打赏，赞助 xfoss.com 长存......</p>
+
+<div class="slider">
+  <a href="#slide-1">微信</a> |
+  <a href="#slide-2">支付宝</a>
+
+  <div class="slides">
+    <div id="slide-1">
+         <img src="../images/wechat-pay-hector.jpeg" />
+    </div>
+    <div id="slide-2">
+          <img src="../images/alipay-laxers.jpeg" />
+    </div>
+  </div>
+</div>
+
+<br />
+  <p>若这里内容有帮助到你，请选择上述方式向 xfoss.com 捐赠。</p>
+  <button class="close-button">Close</button>
+</dialog>
+
+
+
+  </body>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-V49YMMPZJN"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-V49YMMPZJN');
+</script>
+
+<script>
+
+const modal = document.querySelector('.modal');
+const openButton = document.querySelector('.open-button');
+const closeButton = document.querySelector('.close-button');
+
+openButton.addEventListener('click', () => {
+  modal.showModal();
+});
+
+closeButton.addEventListener('click', () => {
+  modal.close();
+});
+</script>
+    <style type="text/css">
+button {
+  display: inline-block;
+  margin: 5px auto;
+  border: 0;
+  border-radius: 2px;
+  padding: 3px 8px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+    background-color: #FFA12B;
+  cursor: pointer;
+  color: #FFF;
+  transition: all 240ms linear;
+}
+
+button:hover {
+  filter: brightness(0.8);
+}
+button:active {
+  transform: scale(0.9);
+}
+dialog {
+  margin: 10% auto;
+  width: 80%;
+  max-width: 800px;
+  background-color: #eee;
+  padding: 24px;
+  border: 0;
+  border-radius: 5px;
+}
+dialog > p {
+  text-align: center;
+  margin: 0;
+}
+dialog > p:first-of-type {
+  margin: 0 auto 20px;
+  font-size: 24px;
+  font-weight: 600;
+}
+dialog > button {
+    display: block;
+    float: right;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.slider {
+  width: 300px;
+  text-align: center;
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.slides {
+  display: flex;
+
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+
+
+
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+
+  /*
+  scroll-snap-points-x: repeat(300px);
+  scroll-snap-type: mandatory;
+  */
+}
+.slides::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.slides::-webkit-scrollbar-thumb {
+  background: black;
+  border-radius: 10px;
+}
+.slides::-webkit-scrollbar-track {
+  background: transparent;
+}
+.slides > div {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+  width: 300px;
+  height: 300px;
+  margin-right: 50px;
+  border-radius: 10px;
+  background: #eee;
+  transform-origin: center center;
+  transform: scale(1);
+  transition: transform 0.5s;
+  position: relative;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 100px;
+}
+.slides > div:target {
+/*   transform: scale(0.8); */
+}
+.author-info {
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  padding: 0.75rem;
+  text-align: center;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  margin: 0;
+}
+.author-info a {
+  color: white;
+}
+.slides > div > img {
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.slider > a {
+  display: inline-flex;
+  height: 1.5rem;
+  background: white;
+  text-decoration: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin: 0 0 0.5rem 0;
+  position: relative;
+}
+.slider > a:active {
+  top: 1px;
+}
+.slider > a:focus {
+  background: #000;
+}
+
+/* Don't need button navigation */
+@supports (scroll-snap-type) {
+  .slider > a {
+    display: none;
+  }
+}
+
+    </style>
+
+</html>
