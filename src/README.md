@@ -8,7 +8,7 @@ Erlang 貌似一门很有趣的语言，Elixir 也是很热门的讨论。因此
 
 ## 参考资料
 
-- Erlang 理论基础：["Making reliable distributed systems in the presence of software errors", 2003, Joe Armstrong, PDF](src/images/armstrong_thesis_2003.pdf).
+- Erlang 理论基础：["Making reliable distributed systems in the presence of software errors", 2003, Joe Armstrong, PDF](images/armstrong_thesis_2003.pdf).
 - [The Rise & Fall of Erlang at Ericsson AB](https://iknek.github.io/blog/the-erlang-story/)
 
 
