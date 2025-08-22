@@ -1,5 +1,7 @@
 # Erlang 编程
 
+[README.md](README.md)
+
 [简介](introduction.md)
 
 + [第 I 部分，为何是 Erlang？](part-i.md)
