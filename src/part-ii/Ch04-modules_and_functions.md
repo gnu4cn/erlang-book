@@ -321,7 +321,7 @@ class Square extends Shape {
 }
 ```
 
-> 注 <sup>1<sup>：[http://java.sun.com/developer/Books/shiftintojava/page1.html](https://web.archive.org/web/*/http://java.sun.com/developer/Books/shiftintojava/page1.html) 
+> 注 <sup>1<sup>：[http://java.sun.com/developer/Books/shiftintojava/page1.html](https://web.archive.org/web/*/http://java.sun.com/developer/Books/shiftintojava/page1.html)
 
 若咱们将 Erlang 的代码与 Java 代码进行比较，就会发现在 Java 程序中，`area` 的代码位于三个位置。而在 Erlang 程序中，`area` 的所有代码都在同一个地方。
 
@@ -1035,6 +1035,51 @@ map(F, L) -> [F(X) || X <- L].
 ```erlang
 [X || Qualifier1, Qualifier2, ...]
 ```
+
+
+`X` 是个任意表达式，而每个限定符要么是个生成器，或位串生成器，要么是个过滤器。
+
+
+- 生成器的写法是 `Pattern <- ListExpr`，其中 `ListExpr` 必须是个求值为项目列表的表达式；
+- 位串生成器的写法是 `BitStringPattern <= BitStringExpr`，其中 `BitStringExpr` 必须是求值为位串的表达式。关于位串模式和生成器的更多信息，请参阅 [Erlang 参考手册](https://www.erlang.org/doc/system/reference_manual.html);
+- 过滤器既可以是谓词（返回 `true` 或 `false` 的函数），也可以是布尔表达式。
+
+请注意，列表综合的生成器部分，工作原理就像过滤器一样；下面是一个示例：
+
+
+```erlang
+1> [ X || {a, X} <- [{a,1},{b,2},{c,3},{a,4},hello,"wow"]].
+[1,4]
+```
+
+我们将以几个简短示例结束这一小节。
+
+
+*知识点*：
+
+- a generator
+- a bitstring generator
+- a filter
+
+
+### 快速排序
+
+
+下面是使用两个列表综合，编写排序算法的方法：
+
+
+[`lib_misc.erl`](http://media.pragprog.com/titles/jaerlang2/code/lib_misc.erl)
+
+
+```erlang
+qsort([]) -> [];
+qsort([Pivot|T]) ->
+    qsort([X || X <- T, X < Pivot])
+    ++ [Pivot] ++
+    qsort([X || X <- T, X >= Pivot]).
+```
+
+请注意，其中的 `++` 是下位附加运算符。这段代码是为了显示其优雅，而非高效。以这种方式使用 `++`，一般不被认为是良好的编程实践。更多信息，请参阅 [4.9 节 “以自然顺序构建列表”](#以自然顺序构建列表)。
 
 
 
