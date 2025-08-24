@@ -15,7 +15,7 @@ renderer = ["html"]
 [preprocessor.pagetoc]
 [output.html]
 additional-css = ["theme/pagetoc.css"]
-additional-js  = ["theme/pagetoc.js"]
+additional-js  = ["theme/erlang.min.js", "theme/pagetoc.js"]
 git-repository-url = "https://github.com/gnu4cn/erlang-book"
 git-repository-icon = "fa-github"
 
