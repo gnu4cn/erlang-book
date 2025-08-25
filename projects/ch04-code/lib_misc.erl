@@ -4,7 +4,9 @@
          qsort/1, 
          pythag/1, 
          perms/1,
-         max/2
+         max/2,
+         filter/2,
+         odds_and_evens/1
         ]).
 
 for(Max, Max, F) -> [F(Max)];
@@ -33,3 +35,17 @@ perms(L)  -> [[H|T] || H <- L, T <- perms(L -- [H])].
 
 max(X, Y) when X > Y -> X;
 max(X, Y) -> Y.
+
+
+filter(P, [H|T]) ->
+    case P(H) of
+        true  -> [H|filter(P, T)];
+        false -> filter(P, T)
+    end;
+filter(P, []) -> [].
+
+
+odds_and_evens(L) ->
+    Odds  = [X || X <- L, (X rem 2) =:= 1],
+    Evens = [X || X <- L, (X rem 2) =:= 0],
+    {Odds, Evens}.
