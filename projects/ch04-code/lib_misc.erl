@@ -1,5 +1,11 @@
 -module(lib_misc).
--export([for/3, qsort/1, pythag/1]).
+-export([
+         for/3, 
+         qsort/1, 
+         pythag/1, 
+         perms/1,
+         max/2
+        ]).
 
 for(Max, Max, F) -> [F(Max)];
 for(I, Max, F) -> [F(I)|for(I+1, Max, F)].
@@ -19,3 +25,11 @@ pythag(N) ->
       A+B+C =< N,
       A*A+B*B =:= C*C
     ].
+
+
+perms([]) -> [[]];
+perms(L)  -> [[H|T] || H <- L, T <- perms(L -- [H])].
+
+
+max(X, Y) when X > Y -> X;
+max(X, Y) -> Y.
