@@ -236,7 +236,7 @@ generate_exception(5) -> error(a).
 
 
 ```erlang
-demo1() -> 
+demo1() ->
     [catcher(I) || I <- [1,2,3,4,5]].
 
 catcher(N) ->
@@ -331,6 +331,6 @@ catcher(N) ->
 ```erlang
 sqrt(X) when X < 0 ->
     error({squareRootNegativeArgument, X});
-sqrt(X) -> 
+sqrt(X) ->
     math:sqrt(X).
 ```
