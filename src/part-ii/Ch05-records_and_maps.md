@@ -377,3 +377,247 @@ D2 = D1#{status := done},
 
 
 我们可在函数头部，使用包含模式的映射，前提是该映射中的所有键都是已知的。例如，我们可以定义一个返回某个字符串中，特定字符出现次数映射的函数 `count_characters(Str)`。
+
+
+```erlang
+count_characters(Str) ->
+    count_characters(Str, #{}).
+
+count_characters([H|T], #{ H := N }=X) ->
+    count_characters(T, X#{ H := N+1 });
+count_characters([H|T], X) ->
+    count_characters(T, X#{ H => 1 });
+count_characters([], X) ->
+    X.
+```
+
+
+下面是个示例：
+
+
+```erlang
+1> lib_misc:count_characters("hello").
+#{101 => 1,104 => 1,108 => 2,111 => 1}
+```
+
+
+因此，字符 `h`（ASCII，101）出现了一次，以此类推。有关其中 `count_characters/2` 这个函数，有两点需要注意。在第一个子句中，该映射内部的变量 `H`，*还* 被定义在了这个映射外部，因此他是绑定的（按要求）。在第二个子句中，我们使用了 `map_extend` 为这个映射添加了一个新键。
+
+
+> **译注**：
+>
+> 1. 其中行 `count_characters([H|T], #{ H := N }=X) ->` 处在编译时会报出错误，导致这段代码无法被编译。
+
+
+```erlang
+lib_misc.erl:71:28: variable 'H' is unbound
+%   71| count_characters([H|T], #{ H := N }=X) ->
+%     |                            ^
+
+```
+
+> 解决方法参考：[[Erlang] count_characters更正](https://blog.csdn.net/qq_44865780/article/details/105947621)
+> 
+> 修订后的代码：
+
+
+```erlang
+count_characters(Str) ->
+    count_characters(Str, #{}).
+
+count_characters([H|T], X) ->
+    case map:is_key(H, X) of
+        false -> count_characters(T, X#{ H => 1 });
+        true  -> #{ H := N } = X,
+                 count_characters(T, X#{ H := N+1 })
+    end;
+count_characters([], X) ->
+    X.
+```
+
+
+> 2. 其中 `h` 的 ASCII 代码为 104 而非 101。
+>
+> 参见：[Standard ASCII Table](https://www.ascii-code.com/ASCII)
+
+
+### 对映射操作的 BIFs
+
+
+有一些额外函数，对映射操作。他们是 `maps` 模组中的一些函数。
+
+
+- `maps:new() -> #{}`
+
+返回一个新的空映射。
+
+- `erlang:is_map() -> bool()`
+
+在 `M` 是个映射时，返回 `true`；否则返回 `false`。这可用作条件测试，或在函数体中使用。
+
+- `maps:to_list() -> [{K1,V1},...,{Kn,Vn}]`
+
+将映射 `M` 中的键和值，转换为键和值的列表。结果列表中的键会按严格的升序排列。
+
+
+- `maps:from_list([{K1,V1},...,{Kn,Vn}]) -> M`
+
+将成对元素的列表，转换为映射 `M`。若同一个键出现多次，则与列表中第一个键值关联的值将被使用，而后续值将被忽略。
+
+- `maps:size(Map) -> NumberOfEntries`
+
+
+> **译注**：原文此处有拼写错误，被写作了 `maps:map_size(Map) -> NumberOfEntries`。
+
+返回该映射中条目数量。
+
+- `maps:is_key(Key, Map) -> bool()`
+
+在该映射包含了某个键为 `Key` 的项目时，返回 `true`；否则返回 `false`。
+
+- `maps:get(Key, Map) -> Val`
+
+返回映射表中与 `Key` 关联的值；否则会抛出一个异常。
+
+- `maps:find(Key, Map) -> {Ok, Value}|error`
+
+返回映射表中与 `Key` 关联的值；否则，返回 `error`。
+
+- `maps:keys(Map) -> [Key1,...,KeyN]`
+
+按升序返回该映射中的键的一个列表。
+
+
+- `maps:remove(Key, M) -> M1`
+
+返回一个与 `M` 相同，但移除了有着键 `Key` （如果存在）项目的一个新映射 `M1`。
+
+- `maps:without([Key1,...,KeyN], M) -> M1`
+
+返回一个新的，`M` 的一个副本，但移除了有着列表 `[Key1,...,KeyN]` 中键元素的新映射 `M1`。
+
+- `maps:difference(M1, M2) -> M3`
+
+
+`M3` 等同于 `M1`，但移除了有着与 `M2` 中元素同样键的元素。
+
+
+其行为就好像他被定义如下：
+
+
+```erlang
+maps:difference(M1, M2) ->
+    maps:without(maps:keys(M2), M1).
+```
+
+
+### 映射的排序
+
+
+映射间的比较，会首先比较他们的大小，然后以键的排序，比较他们的键和值。
+
+
+当 `A` 和 `B` 都是映射时，若 `maps:size(A) < maps:size(B)`，则 `A < B`。
+
+若 `A` 和 `B` 是大小相等的两个映射，那么当 `maps:to_list(A) < maps:to_list(B)` 时，则 `A < B`。
+
+
+因此，例如 `A = #{age => 23, person => "jim"}` 就小于 `B = #{email => "sue@somplace.com", name => "sue"}` 。这是因为 `A` 中最小的键（`age`）小于 `B` 中最小的键（`email`）。
+
+> **译注**：在 Erlang shell 中验证如下。
+
+```erlang
+5> A = #{age => 23, person => "jim"}.
+#{age => 23,person => "jim"}
+6> B = #{email => "sue@somplace.com", name => "sue"}.
+#{name => "sue",email => "sue@somplace.com"}
+7> A < B.
+true
+8> A > B.
+false
+```
+
+
+
+在将映射与其他 Erlang 项比较时，映射被视为要比列表或元组 “更复杂”，因此映射总是被认为大于列表或元组。
+
+在 `~p` 选项下，映射可在 `io:format` 中输出，在 `io:read` 或 `file:consult` 中读取。
+
+
+
+### JSON 桥
+
+**The JSON Bridge**
+
+
+熟悉 JSON 的人会注意到映射和 JSON 项之间的相似性。有两个 BIFs 可在映射和 JSON 术语之间转换。
+
+
+- `maps:to_json(Map) -> Bin`
+
+会将某个映射，转换为包含该映射 JSON 表示形式的二进制值。二进制值将在 [第 7 章 “二进制及位语法 ”](Ch07-binaries_and_the_bit_syntax.md) 中讨论。请注意，并非所有映射，都能转换为 JSON 项。映射中的所有值，必须是可以用 JSON 表示的对象。因此，例如，值就不能包括 `funs`、PIDs、引用等等。在有任何键或值不能用 JSON 表示时，`maps:to_json` 会失败。
+
+- `maps:from_json(Bin) -> Map`
+
+将包含 JSON 项的某个二进制值，转换为映射。
+
+- `maps:safe_from_json(Bin) -> Map`
+
+
+将某个包含 JSON 项的二进制值，转换为映射。在这个 BIF 被调用前，`Bin` 中的任何原子都必须存在；否则将抛出一个异常。这样做是为避免创建处大量新原子。出于效率的原因，Erlang 不会对原子垃圾回收，因此持续增加新的原子，将在长时间后杀死 Erlang 虚拟机。
+
+
+在前面的两个定义中，`Map` 都必须是 `json_map()` 类型的实例，其定义如下（稍后 [第 9 章 “类型”](Ch09-types.md) 中将介绍类型定义）：
+
+
+```erlang
+-type json_map() = [{json_key(), json_value()}].
+```
+
+
+其中：
+
+
+```erlang
+-type json_key() = 
+    atom() | binary() | io_list()
+```
+
+以及：
+
+
+```erlang
+-type json_value() = 
+    integer() | binary() | float() | atom() | [json_value()] | json_map()
+```
+
+JSON 对象与 Erlang 值间的映射如下：
+
+
+- JSON *数字* 会表示位 Erlang 的整数或浮点数；
+- JSON *字符串* 会表示为 Erlang 的二进制值；
+- JSON *列表* 会表示为 Erlang 的列表；
+- JSON 的 *true* 与 *false*，会表示为 Erlang 原子的 `true` 和 `false`；
+- JSON *对象* 会表示位 Erlang 的映射，有映射中的键必须是原子、字符串或二进制值的限制，且值必须可表示为 JSON 项。
+
+
+在我们转换 JSON 项时，我们应当心这种转换的某些限制。Erlang 提供了无限精度的整数。因此，Erlang 会很乐意将某个映射中的大数，转换为 JSON 项中的大数；而要解码这个 JSON 项的程序，则可能会理解，也可能不会理解。
+
+
+在 [第 18 章 “使用 Websockets 和 Erlang 浏览”](../part-iv/Ch18-browsing_with_websockets_and_erlang.md) 中，咱们将了解如何使用结合了 JSON 项的映射，以及 websockets，提供一种与在 web 浏览器中运行应用程序通信的简单方法。
+
+
+现在，我们已经介绍了在 Erlang 下创建复合数据结构的所有方法。我们知道了列表是可变数量项目的容器，而元组是固定数量项目的容器。记录用于将符号名字，添加到元组的元素，而映射则被用作关联的数组。
+
+
+下一章中，我们将学习错误处理。在那之后，我们将回到顺序编程，然后再看看到目前为止我们省略了的二进制值及位语法。
+
+
+## 练习
+
+
+1. 配置文件可方便地表示为 JSON 项。请编写一些读取包含 JSON 项配置文件，并将其转换为 Erlang 映射的函数。编写一些对配置文件中数据执行正确性检查的代码；
+
+2. 请编写一个函数 `map_search_pred(Map, Pred)`，返回该映射中 `Pred(Key, Value)` 为 `true` 的首个元素 `{Key,Value}`；
+
+3. *复杂* 题目： 请查找 Ruby 哈希类的手册页面。将这个 Ruby 类中，咱们认为适合 Erlang 的方法构造为一个模组。
