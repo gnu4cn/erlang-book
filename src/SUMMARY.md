@@ -14,3 +14,4 @@
     - [模组与函数](part-ii/Ch04-modules_and_functions.md)
     - [记录与映射](part-ii/Ch05-records_and_maps.md)
     - [顺序程序中的错误处理](part-ii/Ch06-error_handling_in_sequential_programs.md)
+    - [二进制值与位语法](part-ii/Ch07-binaries_and_the_bit_syntax.md)
