@@ -334,3 +334,198 @@ sqrt(X) when X < 0 ->
 sqrt(X) -> 
     math:sqrt(X).
 ```
+
+
+```erlang
+2> lib_misc:sqrt(-1).
+** exception error: {squareRootNegativeArgument,-1}
+     in function  lib_misc:sqrt/1 (lib_misc.erl:83)
+```
+
+
+### 其中错误返回属于常见的代码
+
+当咱们的函数真的缺少某种 “常见情况” 时，咱们可能应返回类似 `{ok, Value}` 或 `{error, Reason}` 的值，但请记住，这样做会迫使所有调用者，对返回值完成 *某种操作*。这样，咱们就必须在两种情况中做出选择；要么写成这样：
+
+
+```erlang
+...
+case f(X) of
+    {ok, Val} ->
+        do_some_thing_with(Val);
+
+    {error, Why} ->
+        %% ... do something with the error ...
+end,
+...
+```
+
+
+这兼顾到了两种返回值，或者写成这样：
+
+
+```erlang
+...
+{ok, Val} = f(X),
+do_some_thing_with(Val);
+...
+```
+
+这会在 `f(X)` 返回 `{error, ...}` 时抛出一个异常。
+
+
+
+### 其中错误有可能但很少发生的代码
+
+
+通常情况下，咱们应编写出预期要处理错误的代码，如本例所示：
+
+```erlang
+try my_func(X)
+catch
+    throw:{thisError, X} -> ...
+    throw:{someOtherError, X} -> ...
+end
+```
+
+
+同时侦测错误的代码应如有着如下一些匹配的 `throws`：
+
+
+```erlang
+my_func(X) ->
+    case ... of
+        ...
+        ... ->
+                ... throw({thisError, ...})
+        ... ->
+                ... throw({someOtherError, ...})
+```
+
+
+### 捕获所有可能的异常
+
+
+当我们打算捕捉所有可能的错误时，我们可使用下面的习语（他运用了 `_` 可匹配任何东西这一事实）：
+
+
+```erlang
+try Expr
+catch
+    _:_ -> ... Code to handle all exceptions ...
+end
+```
+
+
+而当我们省略了标签，并写出这段代码时：
+
+
+```erlang
+try Expr
+catch
+    _ -> ... Code to handle all exceptions ...
+end
+```
+
+
+那么我们就 *不会* 捕捉到所有错误，因为在这种情况下，我们假定了默认标记 `throw`。
+
+
+## 栈追踪
+
+
+当某个异常被捕获到时，通过调用 `erlang:get_stacktrace()`，我们可发现最新的堆栈跟踪。下面是个示例：
+
+
+```erlang
+demo3() ->
+    try generate_exception(5)
+    catch
+        error:X ->
+            {X, Class::Error:Stacktrace}
+    end.
+```
+
+> **译注**：`erlang:get_stacktrace/0` 这个函数已在 Erlang OTP/21 种启用。因此在编写这段代码时，Vim 的 Erlang 插件会给出 `erlang:get_stacktrace/0 is remove; use the new try/catch syntax for retrieving  the stack backtrace` 警告。新的写法如下：
+
+
+```erlang
+demo3() ->
+    try generate_exception(5)
+    catch
+        C:E:S -> {C, E, S}
+    end.
+```
+
+> 参考：[在 OTP 21 編譯 Zotonic](https://medium.com/@yauhsienhuang/%E5%9C%A8-otp-21-%E7%B7%A8%E8%AD%AF-zotonic-fc247236ea78)
+
+
+
+```erlang
+1> try_test:demo3().
+{error,a,
+       [{try_test,generate_exception,1,
+                  [{file,"try_test.erl"},{line,12}]},
+        {try_test,demo3,0,[{file,"try_test.erl"},{line,32}]},
+        {erl_eval,do_apply,7,[{file,"erl_eval.erl"},{line,924}]},
+        {shell,exprs,7,[{file,"shell.erl"},{line,937}]},
+        {shell,eval_exprs,7,[{file,"shell.erl"},{line,893}]},
+        {shell,eval_loop,4,[{file,"shell.erl"},{line,878}]}]}
+```
+
+上面的跟踪，显示了在我们尝试计算 `try_test:demo3()` 时发生的情况。他显示我们的程序在函数 `generate_exception/1` 中崩溃了，该函数定义在文件 `try_test.erl` 的第 12 行处。
+
+
+该堆栈跟踪包含了当前函数（崩溃的那个）成功后，会返回到何处的信息。栈跟踪中单个元组的格式为 `{Mod,Func,Arity,Info}`。其中 `Mod`、`Func` 和 `Arity` 表示某个函数，而 `Info` 包含了该栈跟踪中，项目的文件名和行号。
+
+
+因此，`try_test:generate_exception/1` 将返回到 `try_test:demo3()`，而 `try_test:demo3()` 将返回到 `erl_eval:do_apply/6`，以此类推。当某个函数是在某个表达式序列中间被调用时，那么调用处与函数将返回的位置，会几乎相同。而当被调用函数是表达式序列中的最后那个函数时，那么栈上就不会保留该函数于何处被调用的信息。Erlang 对此类代码应用了一种最后调用的优化，因此堆栈跟踪不会记录该函数被调用的位置，而只会记录其将返回的位置。
+
+
+检查栈跟踪会给到我们在错误发生时，程序执行位置的良好指标。通常情况下，栈跟踪的前两个条目，会给到咱们定位错误发生于何处的足够信息。
+
+
+现在我们了解了顺序程序中的错误处理。要记住的重要一点，是 *让其崩溃*。当某个函数被以某个不正确参数调用时，千万不要返回值；而要抛出一个异常。假设调用者会修复这个错误。
+
+
+*知识点*：
+
+- a last-call optimization
+- let it crash
+
+
+## 快速喧闹地失败，抑或礼貌地失败
+
+
+在为出错编码时，我们需要考虑两个关键原则。首先，在错误发生时，我们应立即宣告失败，同时大声地宣告失败。有数种编程语言采用了悄无声息失败原则，而试图修复错误并继续运行；这会导致代码成为调试的噩梦。在 Erlang 中，当某个错误被系统于内部检测到，或由程序逻辑检测到时，正确方式是立即崩溃并生成有意义的错误消息。我们立即崩溃，是为了避免事情变得更糟。错误消息应写入某种永久的错误日志，并且要足够详细，以便我们在稍后可找出什么东西出错了。
+
+其次，“礼貌地失败” 是指只有程序员才应看到在程序崩溃时，所产生的详细错误消息。程序的用户永远不应该看到这些消息。另一方面，用户应被通知某个错误已发生的事实，并被告知他们可以采取什么措施纠正这个错误。
+
+
+对程序员来说，错误消息是难能可贵、不可多得的。他们绝不应在屏幕上滚动一下然后永远消失。他们应去到可在随后阅读的某个永久日志文件。
+
+
+> **译注**，原文，error messages are gold dust for programmers.
+
+
+到此为止，我们只介绍了顺序程序中的错误。在 [第 13 章 “并发程序中的错误”](../part-iii/Ch13-errors_in_concurrent_programs.md) 中，我们将了解在并发程序中的如何管理错误，并在 [23.2 小节 “错误记录器”](../part-iv/Ch23-making_a_system_with_otp.md#错误记录器) 中，我们将了解如何永久记录错误，以免丢失。
+
+
+下一章种，我们将学习二进制值与位语法。位语法是 Erlang 独有的，将模式匹配扩展到位的字段，其简化了操作二进制数据程序的编写。
+
+
+## 练习
+
+1. `file:read_file(File)` 会返回 `{ok, Bin}` 或 `{error, Why}`，其中 `File` 是文件名，`Bin` 包含了该文件的内容。请编写一个在可以读取文件时返回 `Bin`，在无法读取文件时抛出一个异常的函数 `myfile:read(File)`；
+
+
+```erlang
+read(File) ->
+    try file:read_file(File) of
+        Val -> Val
+    catch
+        E:X -> { E, X }
+    end.
+```
+
+2. 请重写 `try_test.erl` 中的代码，使其产生两条错误消息：给用户的礼貌消息，和给开发者的详细消息。

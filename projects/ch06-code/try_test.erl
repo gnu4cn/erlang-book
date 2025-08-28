@@ -1,7 +1,9 @@
 -module(try_test).
 -export([
          demo1/0,
-         demo2/0
+         demo2/0,
+         demo3/0,
+         read/1
         ]).
 
 generate_exception(1) -> a;
@@ -24,4 +26,19 @@ catcher(N) ->
         throw:X -> {N, caught, thrown, X};
         exit:X -> {N, caught, exited, X};
         error:X -> {N, caught, error, X}
+    end.
+
+
+demo3() ->
+    try generate_exception(5)
+    catch
+        C:E:S -> {C, E, S}
+    end.
+
+
+read(File) ->
+    try file:read_file(File) of
+        Val -> Val
+    catch
+        E:X -> { E, X }
     end.
