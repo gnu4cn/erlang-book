@@ -400,4 +400,71 @@ find_sync(Bin, N) ->
 ```
 
 
+这个函数使用了 `file:read_file` 将整个文件读入一个二进制值（请参阅 [将整个文件读入某个二进制值](../part-iv/Ch16-programming_with_files.md#将整个文件读入一个二进制值)）。现在是 `is_header`：
+
+
+
+[`mp3_sync.erl`](http://media.pragprog.com/titles/jaerlang2/code/mp3_sync.erl)
+
+
+```erlang
+is_header(N, Bin) ->
+    unpack_header(get_word(N, Bin)).
+
+get_word(N, Bin) ->
+    {_,<<C:4/binary,_/binary>>} = split_binary(Bin, N),
+    C.
+
+unpack_header(X) ->
+    try decode_header(X)
+    catch
+	    _:_ -> error
+    end.
+```
+
+
+这段代码稍微复杂一些。首先，我们提取 32 位数据来分析（通过 `get_word` 完成）；然后我们使用 `decode_header` 解包这个头部。现在，`decode_header` 被编写为当其参数不属于某个头部的开头时，就要崩溃（通过调用 `error/0`）。为捕获任何的错误，我们将到 `decode_header` 的调用，封装在一个 `try...catch` 语句中（请在 [6.1 节 “处理顺序代码中的错误”](Ch06-error_handling_in_sequential_programs.md#顺序代码中的错误处理) 中阅读有关此问题的更多内容）。这也将捕获任何可能由 `framelength/4` 中的错误代码引起的错误。`decode_header` 是全部乐趣开始之处。
+
+
+
+[`mp3_sync.erl`](http://media.pragprog.com/titles/jaerlang2/code/mp3_sync.erl)
+
+
+```erlang
+decode_header(<<2#11111111111:11,B:2,C:2,_D:1,E:4,F:2,G:1,Bits:9>>) ->
+    Vsn = case B of
+              0 -> {2,5};
+              1 -> exit(badVsn);
+              2 -> 2;
+              3 -> 1
+          end,
+    Layer = case C of
+                0 -> exit(badLayer);
+                1 -> 3;
+                2 -> 2;
+                3 -> 1
+            end,
+    %% Protection = D,
+    BitRate = bitrate(Vsn, Layer, E) * 1000,
+    SampleRate = samplerate(Vsn, F),
+    Padding = G,
+    FrameLength = framelength(Layer, BitRate, SampleRate, Padding),
+    if 
+        FrameLength < 21 ->
+            exit(frameSize);
+        true ->
+            {ok, FrameLength, {Layer,BitRate,SampleRate,Vsn,Bits}}
+    end;
+decode_header(_) -> exit(badHeader).
+```
+
+神奇之处藏在这段代码第一行中，那个令人震惊的表达式里。
+
+
+```erlang
+decode_header(<<2#11111111111:11,B:2,C:2,_D:1,E:4,F:2,G:1,Bits:9>>) ->
+```
+
+其中 `2#11111111111` 是个底数为 2 的整数，因此该模式会匹配 11 个连续的比特数 `1`，将 2 位匹配到 `B` 中，2 位匹配到 `C` 中，以此类推。请注意，这段代码完全遵循了早先给出的 MPEG 头部的位级规范。要写出更漂亮、更直接的代码会很难。这段代码优美而高效。Erlang 的编译器会将位语法的模式，转换为以最佳方式提取字段的高度优化代码。
+
 
