@@ -368,9 +368,9 @@ AAAAAAAA AAABBCCD EEEEFFGH IIJJKLMM
 ```erlang
 find_sync(Bin, N) ->
     case is_header(N, Bin) of
-        {ok, Len1, _} -> 
+        {ok, Len1, _} ->
             case is_header(N + Len1, Bin) of
-                {ok, Len2, _} -> 
+                {ok, Len2, _} ->
                     case is_header(N + Len1 + Len2, Bin) of
                         {ok, _, _} -> {ok, N};
                         error -> find_sync(Bin, N+1)
@@ -449,7 +449,7 @@ decode_header(<<2#11111111111:11,B:2,C:2,_D:1,E:4,F:2,G:1,Bits:9>>) ->
     SampleRate = samplerate(Vsn, F),
     Padding = G,
     FrameLength = framelength(Layer, BitRate, SampleRate, Padding),
-    if 
+    if
         FrameLength < 21 ->
             exit(frameSize);
         true ->
@@ -467,4 +467,51 @@ decode_header(<<2#11111111111:11,B:2,C:2,_D:1,E:4,F:2,G:1,Bits:9>>) ->
 
 其中 `2#11111111111` 是个底数为 2 的整数，因此该模式会匹配 11 个连续的比特数 `1`，将 2 位匹配到 `B` 中，2 位匹配到 `C` 中，以此类推。请注意，这段代码完全遵循了早先给出的 MPEG 头部的位级规范。要写出更漂亮、更直接的代码会很难。这段代码优美而高效。Erlang 的编译器会将位语法的模式，转换为以最佳方式提取字段的高度优化代码。
 
+- **解包 COFF 数据**
 
+
+数年前，我（决定）决定编写个构造可在 Windows 上运行的独立 Erlang 程序的程序 -- 我打算在任何可运行 Erlang 的机器上，构建出 Windows 的可执行文件。完成这点涉及理解及操作微软的通用对象文件格式，COFF，格式化的文件。了解 COFF 的细节相当困难，但 C++ 程序的各种应用程序接口都有记录。C++ 程序使用了 `DWORD`、`LONG`、`WORD` 及 `BYTE` 等的类型声明；这些类型声明对于那些编写过 Windows 内部程序的程序员，将不陌生。
+
+所涉及的数据结构都有记录，但只是从 C 或 C++ 程序员的角度。下面是个典型的 C 类型定义：
+
+```c
+typedef struct _IMAGE_RESOURCE_DIRECTORY {
+    DWORD Characteristics;
+    DWORD TimeDateStamp;
+    WORD MajorVersion;
+    WORD MinorVersion;
+    WORD NumberOfNamedEntries;
+    WORD NumberOfIdEntries;
+} IMAGE_RESOURCE_DIRECTORY, *PIMAGE_RESOURCE_DIRECTORY;
+```
+
+
+要编写出我的 Erlang 程序，我（作者）首先定义了在 Erlang 源码文件中，必须包含的四个宏。
+
+
+```erlang
+-define(DWORD, 32/unsigned-little-integer).
+-define(LONG, 32/unsigned-little-integer).
+-define(WORD, 16/unsigned-little-integer).
+-define(BYTE, 8/unsigned-little-integer).
+```
+
+*注意*：宏会在 [8.17 节 “宏”](../part-ii/Ch08-the_rest_of_sequential_erlang.md#宏) 中解释。为扩展这些宏，我们使用了 `?DWORD`、`?LONG` 等语法。例如，宏 `?DWORD` 将扩展为字面文本 `32/unsigned-little-integer`。
+
+
+这些宏特意使用了与其 C 语言对应宏相同的名称。有了这些宏，我（作者）就可以轻松写出一些将图像资源数据，解包为二进制数据的代码。
+
+
+```erlang
+unpack_image_resource_directory(Dir) ->
+    <<Characteristics : ?DWORD,
+      TimeDateStamp : ?DWORD,
+      MajorVersion : ?WORD,
+      MinorVersion : ?WORD,
+      NumberOfNamedEntries : ?WORD,
+      NumberOfIdEntries : ?WORD, _/binary>> = Dir,
+    ..
+```
+
+
+当咱们比较 C 和 Erlang 的代码时，就会发现他们非常相似。因此，通过留意这些宏的名字及 Erlang 代码的布局，我们就能缩小 C 代码和 Erlang 代码间的语义差距，这会使我们的程序更易理解，更不易出错。
