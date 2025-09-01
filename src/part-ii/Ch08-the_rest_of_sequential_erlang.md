@@ -13,7 +13,7 @@
 - [*布尔表达式*](#布尔表达式)
 - [*字符集*](#字符集)
 - [*注释*](#注释)
-- [*动态加载代码*](#动态加载代码)
+- [*动态代码加载*](#动态代码加载)
 - [*Erlang 的预处理器*](#erlang-的预处理器)
 - [*转义序列*](#转义序列)
 - [*表达式与表达式序列*](#表达式与表达式序列)
@@ -77,6 +77,223 @@ Mod:Func(A1, A2, ..., An, {Mod, P1, P2, ..., Pn})
 
 
 ## 算术表达式
+
+
+所有可能的算术表达式，都显示在下面的表格中。每种算术运算，都有一或两个参数 -- 这些参数在表中显示为整数或数值（*数值* 表示该参数可以是整数或浮点数）。
+
+
+| *运算* | *描述* | *参数类型* | *优先级* |
+| :-- | :-- | :-- | :-- |
+| `+ X` | `+ X` | 数字 | 1 |
+| `- X` | `- X` | 数字 | 1 |
+| `X * Y` | `X * Y` | 数字 | 2 |
+| `X / Y` | `X / Y` （浮点数除法） | 数字 | 2 |
+| `bnot X` | `X` 的比特非运算 | 整数 | 2 | 
+| `X div Y` | `X` 与 `Y` 的整数除法 | 整数 | 2 | 
+| `X rem Y` | `X` 除以 `Y` 的整数余数 | 整数 | 2 | 
+| `X band ` | `X` 和 `Y` 的比特与运算 | 整数 | 2 | 
+| `X + Y` | `X + Y` | 数字 | 3 | 
+| `X - Y` | `X - Y` | 数字 | 3 | 
+| `X bor Y` | `X` 和 `Y` 的比特或运算 | 整数 | 3 | 
+| `X bxor Y` | `X` 和 `Y` 的比特异或运算 | 整数 | 3 | 
+| `X bsl N` | 算术的 `X` 向左移 `N` 位运算 | 整数 | 3 | 
+| `X bsr N` | 算术的 `X` 向右移 `N` 位运算 | 整数 | 3 | 
+
+<a name="table-3"></a>
+**表格 3** -- **算术表达式**
+
+与每种运算符相关的，是个 *优先级*。复算术表达式的运算顺序，取决于运算符的优先级：优先级 1 的所有运算符，会被先求值，然后是优先级为 2 的所有运算符，依此类推。
+
+
+咱们可使用括号，改变求值的默认顺序 -- 任何括号括起来的表达式，都会被优先求值。同等优先级的运算符，会被视为左关联的，而会被从左到右计算。
+
+
+## 元数
+
+
+某个函数的 *元数*，是指该函数的参数个数。在 Erlang 下，同一模组中具有同样名字与不同元数的两个函数，表示 *完全* 不同的函数。除了凑巧使用了同一个名字外，他们之间 *没有任何关系*。
+
+
+依惯例，Erlang 程序员通常会将同名不同元数函数，用作辅助函数。下面是个示例：
+
+[`lib_misc.erl`](http://media.pragprog.com/titles/jaerlang2/code/lib_misc.erl)
+
+```erlang
+sum(L) -> sum(L, 0).
+
+sum([], N)	    -> N;
+sum([H|T], N)	-> sum(T, H+N).
+```
+
+
+咱们在这里看到的是两个不同函数，一个的元数为 1，另一个元数为 2。
+
+
+
+函数 `sum(L)` 会对列表 `L` 中的元素求和。他利用了个叫做 `sum/2` 的辅助例程，但这个例程可以叫做任何名字。咱们可以把这个例程叫做 `hedgehog/2`，而该程序的意义还是一样。不过，`sum/2` 是个更好的名字，因为他给了咱们程序的读者一个发生了什么事的线索，同时咱们也不必发明一个新名字（这总是很困难）。
+
+
+通常，我们会通过不导出那些辅助函数，而 “隐藏” 他们。因此，定义了 `sum(L)` 的模组，就只会导出 `sum/1`，而不会导出 `sum/2`。
+
+
+## 属性
+
+
+模组属性的语法是 `-AtomTag(...)`，并被用于定义某个文件的一些属性。(*注意*：`-record(...)` 及 `-include(...)` 有着类似语法，但他们不属于模组属性）。模组属性有两种类型：预定义的和用户定义的。
+
+
+### 预定义的模组属性
+
+
+以下模组属性有着预定义的含义，而必须放在任何的函数定义前：
+
+
+
+- `-module(modname).`
+
+模组的声明。`modname` 必须是个原子。该属性必须是文件中的首个属性。通常，`modname` 的代码，应存储在一个名为 `modname.erl` 的文件中。若咱们不这样做，那么自动的代码加载，就将无法正常工作；详情请参见 [8.10 小节，*动态代码加载*](#动态代码加载)。
+
+- `-import(Mod, [Name1/Arity1, Name2/Arity2,...]).`
+
+
+`import` 声明指定了要导入某个模组的函数。上面的声明表示有着 `Arity1` 个参数的函数 `Name1`、有着 `Arity2` 个参数的函数 `Name2` 等，将从模组 `Mod` 导入。
+
+
+在某个函数已从某个模组导入后，那么在 *无需* 指定模组名字下，调用该函数即可达成。下面是个示例：
+
+
+```erlang
+-module(abc).
+-export([f/1]).
+-import(lists, [map/2]).
+
+f(L) ->
+    L1 = map(fun(X) -> 2*X end, L),
+    lists:sum(L1).
+```
+
+
+到 `map/2` 的调用不需要限定的模组名，而要调用 `sum/1`，我们需要在该函数调用中，包含模组的名字。
+
+- `-export([Name1/Arity1, Name2/Arity2,...]).`
+
+导出当前模组中的 `Name1/Arity1`、`Name2/Arity2` 等函数。只有导出的函数，才能从模组外部调用。下面是个示例：
+
+
+```erlang
+-module(abc).
+-export([f/1, a/2, b/1]).
+-import(lists, [map/2]).
+
+f(L) ->
+    L1 = map(fun(X) -> 2*X end, L),
+    lists:sum(L1).
+
+
+a(X, Y) -> c(X) + a(Y).
+a(X) -> 2 * X.
+b(X) -> X * X.
+c(X) -> 3 * X.
+```
+
+这个导出声明意味着只有 `a/2` 和 `b/1` 可从 `abc` 这个模组外部调用。因此，比如从 shell（属于模组外部）调用 `abc:a(5)`，就将导致错误，因为 `a/1` 未从模组导出。
+
+
+```erlang
+1> abc:a(1,2).
+7
+2> abc:b(12).
+144
+3> abc:a(5).
+** exception error: undefined function abc:a/1
+```
+
+这里的错误消息可能引起混淆。因相关函数未定义，这个到 `abc:a(5)` 的调用失败。其实际上在这个模组被定义了，只是他未被导出。
+
+- `-compile(Options).`
+
+将 `Options` 添加到编译器选项的列表。`Options` 可以是单个编译器选项，也可以是个编译器选项的列表（这些选项在 `compile` 模组手册页中有说明）。
+
+
+*注意*：在调试程序时，编译器选项 `-compile(export_all).` 会经常被用到。这会在无需显式使用 `-export` 注解下，导出模组中的全部函数。
+
+
+- `-vsn(Version).`
+
+指定模组版本。`Version` 是个任意的字面值项。`Version` 的值没有特定的语法或含义，但可用于分析程序，或文档目的。
+
+
+
+### 用户定义的属性
+
+
+用户定义属性的语法如下：
+
+
+```erlang
+-SomeTag(Value).
+```
+
+
+`SomeTag` 必须是个原子，而 `Value` 必须是个字面值项。这些模组属性的值，会被编译到模组中，并可在运行时被提取到。下面是个包含了一些用户定义属性的模组示例：
+
+
+```erlang
+-module(attrs).
+-vsn("0.0.1").
+-author({joe,armstrong}).
+-purpose("example of attributes").
+-export([fac/1]).
+
+
+fac(1) -> 1;
+fac(N) -> N * fac(N-1).
+```
+
+
+我们可如下提取到这些属性：
+
+
+```erlang
+1> attrs:module_info().
+[{module,attrs},
+ {exports,[{fac,1},{module_info,1},{module_info,0}]},
+ {attributes,[{vsn,"0.0.1"},
+              {author,[{joe,armstrong}]},
+              {purpose,"example of attributes"}]},
+ {compile,[{version,"9.0.1"},
+           {options,[]},
+           {source,"c:/Users/Hector/erlang-book/projects/ch08-code/attrs.erl"}]},
+ {md5,<<133,23,25,113,143,224,222,86,254,91,190,122,9,27,
+        43,91>>}]
+```
+
+包含在源码文件中的用户定义属性，会作为 `{attributes, ...}` 的子项重现。元组 `{compile, ...}` 包含由编译器添加的信息。`值 {version, "9.0.1"}` 是编译器的版本，而不应与模组属性中定义的 `vsn` 标记混淆。
+
+在前面的示例中，`attrs:module_info()` 返回了个与某个已编译模组相关的所有元数据的属性列表。`attrs:module_info(X)`，其中 `X` 是 `exports`、`imports`、`attributes` 或 `compile` 之一，会返回了与该模组相关的各个属性。
+
+> **译注**：分别对 `module_info/1` 运行上述原子参数的输出如下。
+
+
+```erlang
+2> attrs:module_info(attributes).
+[{vsn,"0.0.1"},
+ {author,[{joe,armstrong}]},
+ {purpose,"example of attributes"}]
+3> attrs:module_info(compile).
+[{version,"9.0.1"},
+ {options,[]},
+ {source,"c:/Users/ZBT7RX/erlang-book/projects/ch08-code/attrs.erl"}]
+4> attrs:module_info(exports).
+[{fac,1},{module_info,1},{module_info,0}]
+5> attrs:module_info(imports).
+** exception error: bad argument
+     in function  erlang:get_module_info/2
+        called as erlang:get_module_info(attrs,imports)
+     in call from attrs:module_info/1
+```
+
+
 
 
 ### 整数
