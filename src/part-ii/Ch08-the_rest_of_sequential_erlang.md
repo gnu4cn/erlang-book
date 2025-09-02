@@ -452,6 +452,337 @@ x() -> 1.
 ```
 
 
+现在我们将编写 `a`。
+
+
+[`a.erl`](http://media.pragprog.com/titles/jaerlang2/code/a.erl)
+
+
+```erlang
+-module(a).
+-compile(export_all).
+
+start(Tag) ->
+    spawn(fun() -> loop(Tag) end).
+
+loop(Tag) ->
+    sleep(),
+    Val = b:x(),
+    io:format("Vsn1 (~p) b:x() = ~p~n", [Tag, Val]),
+    loop(Tag).
+
+
+sleep() ->
+    receive
+        after 3000 -> true
+    end.
+```
+
+现在我们可以编译 `a` 和 `b`，并启动数个 `a` 的进程。
+
+
+```erlang
+1> c(b).
+{ok,b}
+2> c(a).
+a.erl:2:2: Warning: export_all flag enabled - all functions will be exported
+%    2| -compile(export_all).
+%     |  ^
+
+{ok,a}
+3> a:start(one).
+<0.96.0>
+4> a:start(two).
+<0.98.0>
+Vsn1 (one) b:x() = 1
+Vsn1 (two) b:x() = 1
+Vsn1 (one) b:x() = 1
+Vsn1 (two) b:x() = 1
+```
+
+`a` 的进程会休眠三秒钟，醒来并调用 `b:x()`，然后打印结果。现在我们将进入编辑器，将模组 `b` 改为如下内容：
+
+
+```erlang
+-module(b).
+-export([x/0]).
+
+
+x() -> 2.
+```
+
+然后在 shell 中重新编译 `b`。这就是发生的事情：
+
+
+```erlang
+5> c(b).
+{ok,b}
+Vsn1 (one) b:x() = 2
+Vsn1 (two) b:x() = 2
+Vsn1 (one) b:x() = 2
+Vsn1 (two) b:x() = 2
+...
+```
+
+
+两个原始版本的 `a` 仍在运行，但现在他们会调用 *新* 版本的 `b`。因此，当我们模组 `a` 中调用 `b:x()` 时，我们真正调用的是 “最新版本的 `b`”。我们可随意更改并重新编译 `b`，所有调用他的模组，都将自动调用新版本的 `b`，无需做任何特殊处理。
+
+
+现在我们已重新编译过 `b`，但若我们修改并重新编译 `a`，会发生什么呢？我们将做个实验，并把 `a` 改成下面这样：
+
+
+```erlang
+-module(a).
+-compile(export_all).
+
+start(Tag) ->
+    spawn(fun() -> loop(Tag) end).
+
+loop(Tag) ->
+    sleep(),
+    Val = b:x(),
+    io:format("Vsn2 (~p) b:x() = ~p~n", [Tag, Val]),
+    loop(Tag).
+
+
+sleep() ->
+    receive
+        after 3000 -> true
+    end.
+```
+
+
+现在我们编译并启动 `a`。
+
+
+```erl
+6> c(a).
+a.erl:2:2: Warning: export_all flag enabled - all functions will be exported
+%    2| -compile(export_all).
+%     |  ^
+
+{ok,a}
+Vsn1 (one) b:x() = 2
+Vsn1 (two) b:x() = 2
+...
+7> a:start(three).
+<0.153.0>
+Vsn1 (one) b:x() = 2
+Vsn2 (three) b:x() = 2
+Vsn1 (two) b:x() = 2
+Vsn1 (one) b:x() = 2
+Vsn2 (three) b:x() = 2
+...
+```
+
+
+这里发生了些有趣的事情。当我们启动新版本的 `a` 时，我们看到新版本在运行。但是，运行第一个版本 `a` 的现有进程，仍在没有任何问题的运行旧版本 `a`。
+
+
+现在，我们可尝试再次修改 `b`。
+
+
+```erlang
+-module(b).
+-export([x/0]).
+
+
+x() -> 3.
+```
+
+
+我们将在 shell 中重新编译 `b`。请观察会发生什么。
+
+
+```erlang
+8> c(b).
+{ok,b}
+Vsn1 (two) b:x() = 3
+Vsn1 (one) b:x() = 3
+Vsn2 (three) b:x() = 3
+...
+```
+
+
+现在，新旧两个版本的 `a` 都会调用最新版本的 `b`。
+
+最后，我们将再次修改 `a`（这是第三次对 `a` 的修改）。
+
+
+
+```erlang
+-module(a).
+-compile(export_all).
+
+start(Tag) ->
+    spawn(fun() -> loop(Tag) end).
+
+loop(Tag) ->
+    sleep(),
+    Val = b:x(),
+    io:format("Vsn2 (~p) b:x() = ~p~n", [Tag, Val]),
+    loop(Tag).
+
+
+sleep() ->
+    receive
+        after 3000 -> true
+    end.
+```
+
+
+现在当我们重新编译 `a` 并启动一个新版本的 `a` 时，我们会看到如下内容：
+
+```erlang
+9> c(a).
+a.erl:2:2: Warning: export_all flag enabled - all functions will be exported
+%    2| -compile(export_all).
+%     |  ^
+
+{ok,a}
+Vsn2 (three) b:x() = 3
+Vsn2 (three) b:x() = 3
+10> a:start(four).
+<0.230.0>
+Vsn2 (three) b:x() = 3
+Vsn3 (four) b:x() = 3
+Vsn2 (three) b:x() = 3
+Vsn3 (four) b:x() = 3
+...
+```
+
+
+输出结果包含由最后两个版本 `a`（版本 2 和 3）生成的字符串；运行版本 1 `a` 代码的那个进程，已经死亡。
+
+
+
+Erlang 可同时运行某个模组的两个版本，即当前版本与原有版本。当咱们重新编译某个模组时，运行旧版本代码的任何进程都会被杀死，当前版本会变成原有版本，而新近编译的那个模组，则变成当前版本。请把这想象成有两个版本代码的某种移位寄存器。随着我们添加新代码，最早版本的代码就会被删除。一些进程可以运行该代码的原有版本，而另一些进程则可以同时运行该代码的新版本。
+
+
+请阅读 [`purge_module` 文档](https://www.erlang.org/doc/apps/erts/erlang.html#purge_module/1) 了解更多详情。
+
+
+## Erlang 的预处理器
+
+
+在某个 Erlang 模组被编译前，其会被 Erlang 预处理器自动处理。预处理器会展开源文件中可能的任何宏，并插入任何必要的包含文件。
+
+
+通常情况下，咱们将无需查看预处理器的输出，但在特殊情况下（例如，在调试某个问题宏时），咱们可能会要保存预处理器的输出。要查看模组 `some_module.erl` 的预处理结果，就要操作系统的 shell 命令。
+
+
+```erlang
+$ erlc -P some_module.erl
+```
+
+这会产生一个名为 `some_module.P` 的清单文件。
+
+
+> **译注**：`abc.erl` 源文件内容如下。
+
+```erlang
+-module(abc).
+-export([f/1, a/2, b/1]).
+-import(lists, [map/2]).
+
+f(L) ->
+    L1 = map(fun(X) -> 2*X end, L),
+    lists:sum(L1).
+
+
+a(X, Y) -> c(X) + a(Y).
+a(X) -> 2 * X.
+b(X) -> X * X.
+c(X) -> 3 * X.
+```
+
+> 运行 `erlc -P abc.erl` 后得到的 `abc.P` 文件内容如下。
+
+```erlang
+-file("abc.erl", 1).
+
+-module(abc).
+
+-export([f/1,a/2,b/1]).
+
+-import(lists, [map/2]).
+
+f(L) ->
+    L1 =
+        map(fun(X) ->
+                   2 * X
+            end,
+            L),
+    lists:sum(L1).
+
+a(X, Y) ->
+    c(X) + a(Y).
+
+a(X) ->
+    2 * X.
+
+b(X) ->
+    X * X.
+
+c(X) ->
+    3 * X.
+
+
+
+```
+
+
+## 转义序列
+
+
+咱们可在字符串和带引号原子内，使用转义序列输入任何的不可打印字符。所有可能的转义序列如 [表 4，*转义序列*](#table-4) 所示。
+
+
+我们来在 shell 下给出几个示例，说明这些约定是如何起作用的。(注意：格式字符串中的 `~w` 会在不带任何美化打印结果的尝试下，打印出列表。）
+
+
+```erlang
+%% Control characters
+1> io:format("~w~n", ["\b\d\e\f\n\r\s\t\v"]).
+[8,127,27,12,10,13,32,9,11]
+ok
+%% Octal characters in a string
+2> io:format("~w~n", ["\123\12\1"]).
+[83,10,1]
+ok
+%% Quotes and escapes in a string
+3> io:format("~w~n", ["\'\"\\"]).
+[39,34,92]
+ok
+%% Character codes
+4> io:format("~w~n", ["\a\z\A\Z"]).
+[97,122,65,90]
+ok
+```
+
+
+| *转义序列* | *意义* | *整数代码* |
+| :-- | :-- | :-- |
+| `\b` | 退格 | 8 |
+| `\d` | 删除 | 127 |
+| `\e` | 转义，escape | 27 |
+| `\f` | 换页，form feed | 12 |
+| `\n` | 新行，new line | 10 |
+| `\r` | 回车，catriage return | 13 |
+| `\s` | 空格 | 32 |
+| `\t` | 制表符，tab | 9 |
+| `\v` | 竖向制表符，vertical tab | 11 |
+| `\x{...}` | 十六进制字符（`...` 为十六进制字符） |  |
+| `\^a..\^z` 或 `\^A..\^Z` | `Ctrl+A` 到 `Ctrl+Z` | 1 到 26 |
+| `\'` | 单引号 | 39 |
+| `\"` | 双引号 | 34 |
+| `\\` | 反斜杠 | 92 |
+| `\C` | `C` 的 ASCII 代码（`C` 是个字符） | （某个整数） |
+
+
+<a name="table-4"></a>
+**表 4** -- **转义序列**
+
 
 
 
