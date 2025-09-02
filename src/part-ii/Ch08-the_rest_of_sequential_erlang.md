@@ -373,6 +373,88 @@ lists:partition(fun(X) ->
 ## 布尔值表达式
 
 
+有四种可能的布尔表达式。
+
+- `not B1`：逻辑非；
+- `B1 and B2`：逻辑与；
+- `B1 or B2`：逻辑或；
+- `B1 xor B2`：逻辑异或。
+
+
+在所有布尔表达式中，`B1` 和 `B2` 必须是布尔的字面量，或求值到布尔值的表达式。下面是一些示例：
+
+
+```erlang
+1> not true.
+false
+2> true and false.
+false
+3> true or false.
+true
+4> (2 > 1) or (3 > 4).
+true
+```
+
+> **译注**：重置 shell 终端，按下 `Ctrl+g`，再按下 `s`、`c`。
+>
+> 参考：[How do I reset/clear erlang terminal](https://stackoverflow.com/a/37834853/12288760)
+
+
+## 字符集
+
+
+自 Erlang R16B 版本起，Erlang 源码文件被假定为是以 UTF-8 字符集编码的。在此之前，使用的是 ISO-8859-1 (Latin-1) 字符集。这意味着在无需使用任何转义序列下，源代码文件中即可使用所有 UTF-8 的可打印字符。
+
+
+Erlang 内部并无字符数据类型。字符串实际上并不存在，而是以整数的列表表示。Unicode 的字符串可毫无问题地以整数列表表示。
+
+
+## 注释
+
+
+Erlang 中的注释以百分号字符 (`%`) 开始，一直延伸到行尾。没有块的注释。
+
+
+*注意*：咱们经常会在代码示例中，看到双百分号字符 (`%%`)。Emacs 的 erlang 模式下双百分号可被识别到，而开启自动的注释行缩进。
+
+
+```erlang
+% This is a comment
+my_function(Arg1, Arg2) ->
+    case f(Arg1) of 
+        {yes, X} -> % it worked
+            ..
+```
+
+
+## 动态代码加载
+
+
+动态代码加载，是构建于 Erlang 核心中最令人惊讶的特性之一。最棒的是，他会在咱们无需关心后台发生了什么下，发挥作用。
+
+
+其思路很简单：每次我们调用 `someModule:someFunction(...)` 时，我们将始终调用最新版本的这个模组中，该函数的最新版本，*即使在这个模组中的代码正在运行时，我们重新编译了该模组*。
+
+
+当 `a` 在某个循环中调用了 `b`，而我们重新编译了 `b`，那么在下次调用 `b` 时，`a` 将自动调用 `b` 的新版本。当有许多不同正在运行，且所有进程都调用了 `b` 时，那么在 `b` 被重新编译了时，所有这些进程都将调用 `b` 的新版本。为了解其工作原理，我们将编写两个小模组：`a` 和 `b`。
+
+
+[`b.erl`](http://media.pragprog.com/titles/jaerlang2/code/b.erl)
+
+
+
+```erlang
+-module(b).
+-export([x/0]).
+
+
+x() -> 1.
+```
+
+
+
+
+
 ### 整数
 
 
