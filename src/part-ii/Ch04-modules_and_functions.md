@@ -67,7 +67,7 @@
 -export([area/1]).
 
 area({rectangle, Width, Height}) -> Width * Height;
-area({square, Side})			 ->	Side * Side.
+area({square, Side})	         -> Side * Side.
 ```
 
 该文件的第一行，是个 *模组声明*。声明中的模组名字，必须与模组所在文件的基本名称相同。

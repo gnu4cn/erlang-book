@@ -293,7 +293,84 @@ fac(N) -> N * fac(N-1).
      in call from attrs:module_info/1
 ```
 
+> 可以看出，在 Erlang/OTP 28 下 `moduel_info/1` 函数已不支持原子参数 `imports`。
+>
+> 参考：[`module_info/0` and `module_info/1` functions](https://www.erlang.org/docs/28/system/modules.html#module_info-0-and-module_info-1-functions)
 
+
+请注意，每次某个模组被编译时，`module_info/0` 和 `module_info/1` 两个函数都会被自动创建出来。
+
+
+要运行 `attrs:module_info`，我们必须把 `attrs` 这个模组的 beam 代码，加载到 Erlang 的虚拟机中。通过使用 `beam_lib` 模组，我们可在 *无需* 加载该模组下，提取到同样的信息。
+
+
+```erlang
+3> beam_lib:chunks("attrs.beam", [attributes]).
+{ok,{attrs,[{attributes,[{author,[{joe,armstrong}]},
+                         {purpose,"example of attributes"},
+                         {vsn,"0.0.1"}]}]}}
+```
+
+
+> **译注**：`beam_lib:chunks/2` 只支持 `attributes` 这一个属性，而不支持 `compile`、`exports` 等其他属性。
+
+
+`beam_lib:chunks` 在无需加载模组代码下，提取提取到某个模组中的属性数据。
+
+
+## 块表达式
+
+
+当 Erlang 语法要求使用单一表达式，但我们希望代码中的这一点处，使用一个表达式序列时，块表达式就会被用到。例如，在一个形式为 `[E || ...]` 的列表综合中，语法就要求 `E` 是个单一表达式，但我们可能打算在 `E` 中，完成好几件事。
+
+
+
+```erlang
+begin
+    Expr1,
+    ...,
+    ExprN
+end
+```
+
+咱们可使用块表达式，分组表达式序列，这类似于子句体。某个 `begin ... end` 块的值，为该块中最后一个表达式的值。
+
+
+## 布尔值
+
+
+Erlang 中并无明确的布尔类型；相反，原子 `true` 和 `false` 被赋予了特殊解释，而被用于表示布尔的两个字面值。
+
+
+有时，我们会编写返回两个可能的原子值中一个的函数。在这种情况下，好的做法是确保他们要返回一个布尔值。此外，将咱们的函数，命名成明确反映其返回布尔值，也是个好主意。
+
+
+例如，设想我们要编写个表示某文件状态的程序。我们可能发现咱们自己写了个返回 `open` 或 `closed` 的函数 `file_state(File)`。当我们编写这个函数时，我们可以考虑重新命名该函数，并让他返回布尔值。只要稍加思考，我们就可以把我们的程序，重写为使用一个名为 `is_file_open(File)`、返回 `true` 或 `false` 的函数。
+
+
+使用布尔值而不是选择两个不同原子，表示状态的原因很简单。在标准库中，有大量工作于函数上的函数，都返回了布尔值。因此，当我们确保我们的所有函数都返回布尔值时，那么我们就可以将他们与标准库函数一起使用。
+
+
+例如，设想我们有个文件列表 `L`，同时我们打算将其划分为一个打开文件列表，和一个关闭文件列表。在使用标准库时，我们可以写下如下代码：
+
+
+```erlang
+lists:partition(fun is_file_open/1, L)
+```
+
+而在使用咱们的 `file_state/1` 函数时，我们就不得不在调用这个库例程前，编写一个转换函数。
+
+
+```erlang
+lists:partition(fun(X) ->
+                    case file_state(X) of
+                        open   -> true;
+                        closed -> false
+                    end, L)
+```
+
+
+## 布尔值表达式
 
 
 ### 整数
