@@ -1,0 +1,9 @@
+-file("macro_demo.erl", 1).
+
+-module(macro_demo).
+
+foo(A) ->
+    {a, A + 10, b}.
+
+
+
