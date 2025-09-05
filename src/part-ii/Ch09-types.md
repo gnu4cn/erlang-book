@@ -343,4 +343,76 @@ Tuple :: tuple() | {T1, T2, ... Tn}
 ...
 ```
 
+下面这个语句：
 
+
+```erlang
+-opaque rich_text() :: [{font(), char()}].
+```
+
+
+创建了个名为 `rich_text()` 的不透明类型。现在我们来看看一些尝试操作 `rich_text()` 对象的代码：
+
+
+```erlang
+-module(b).
+...
+
+do_this() ->
+    X = a:make_text("hello world"),
+    {W, H} = a:bounding_box(X)
+```
+
+
+模组 `b` 永远不需要知道变量 `X` 的内部结构。`X` 是在模组 `a` 内创建的，并在我们调用 `bounding_box(X)` 时，`X` 又被传回 `a`。
+
+
+现在，设想我们要编写会用到一些有关 `rich_text` 对象形状知识的代码。例如，设想我们要创建一个 `rich_text()` 对象，然后询问渲染该对象需要哪些字体。我们可能写下这段代码：
+
+
+```erlang
+-module(c).
+...
+
+fonts_in(Str) ->
+    X = a:make_text(Str),
+    [F || {F,_} <- X].
+```
+
+
+在列表综合下，我们 “知道” `X` 是个 2 元元组的列表。在模组 `a` 中，我们曾将 `make_text` 的返回类型,声明为一个不透明类型，这意味着我们不应知道该类型内部结构的任何情况。当我们在有关函数中，正确地声明了类型的可见性时，利用类型的内部结构，就被称为一次 *抽象背离*<sup>1</sup>，同时这会被 `dialyzer` 检测到。
+
+
+> **译注**：
+> 
+> <sup>1</sup>：an *abstraction violation*，一次抽象背离
+>
+> 参考：[Violating Data Abstraction](https://berkeley-cs61as.github.io/textbook/violating-data-abstraction.html)
+
+
+## 与 `dialyzer` 的一次交谈
+
+首次运行 `dialyzer` 时，咱们需要构建出标准库中，咱们打算用到的所有类型的缓存。这是个一次性操作。当咱们启动 `dialyzer` 时，他会告诉咱们该做什么。
+
+
+```console
+$ dialyzer
+  Checking whether the PLT c:/Users/ZBT7RX/AppData/Local/erlang/Cache/.dialyzer_plt is up-to-date...
+dialyzer: Could not find the PLT: c:/Users/ZBT7RX/AppData/Local/erlang/Cache/.dialyzer_plt
+Use the options:
+   --build_plt   to build a new PLT; or
+   --add_to_plt  to add to an existing PLT
+
+For example, use a command like the following:
+   dialyzer --build_plt --apps erts kernel stdlib mnesia
+Note that building a PLT such as the above may take 20 mins or so
+
+If you later need information about other applications, say crypto,
+you can extend the PLT by the command:
+  dialyzer --add_to_plt --apps crypto
+For applications that are not in Erlang/OTP use an absolute file name.
+
+```
+
+
+PLT 是的简称。PLT 应包含标准系统中所有类型的缓存。构建 PLT 需要几分钟时间。我们下达的第一条命令是为 erts、stdlib 和 kernel 构建 PLT。
