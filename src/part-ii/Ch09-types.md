@@ -218,4 +218,129 @@ Tuple :: tuple() | {T1, T2, ... Tn}
 ### 指定函数的输入与输出类型
 
 
+函数规范指出了某个函数的参数类型为何，以及该函数的返回值类型为何。函数规范被写如下：
+
+
+```erlang
+-spec functionName(T1, T2, ..., Tn) -> Tret when
+    Ti :: Typei,
+    Tj :: Typej,
+    ...
+```
+
+
+这里 `T1, T2, ..., Tn` 描述某个函数参数的类型，`Tret` 描述该函数返回值的类型。必要时可在可选的 `when` 关键字后，引入其他类型变量。
+
+
+我们将以一个示例开始。下面的类型规范：
+
+
+```erlang
+-spec file:open(FileName, Modes) -> {ok, Handle} | {error, Why} When
+    FileName	:: string(),
+    Modes	    :: [Mode],
+    Mode	    :: read | write | ...
+    Handle	    :: file_handle(),
+    Why	        :: error_term().
+```
+
+
+是说，当我们打开文件 `FileName` 时，我们将得到一个要么是 `{ok，Handle}` 或 `{error，Why}` 的返回值。`FileName` 是个字符串，`Modes` 是个 `Mode` 的列表，而 `Mode` 则是 `read`、`write` 等之一。
+
+
+上面的函数规范，可以有多种等价写法，例如，我们可能写成下面这样，而不使用 `when` 的限定符：
+
+
+```erlang
+-spec file:open(string(), [read|write|...]) -> {ok, Handle} | {error, Why}
+```
+
+
+
+这种写法的问题是，首先，我们失去了 `FileName` 和 `Modes` 等描述性变量等；其次，类型规范会变得更长，而因此在印刷文档中更难阅读和格式化。当函数参数没有命名时，我们就无法在理想情况下程序后的文档中，引用这些参数。
+
+
+在第一种规范编写方式中，我们写下了以下内容：
+
+
+```erlang
+-spec file:open(FileName, Modes) -> {ok, Handle} | {error, Why} When
+    FileName	:: string(),
+    ...
+```
+
+
+因此，这个函数的全部文档，都可以 `FileName` 这个名称，明确指代正在打开的文件。而当我们写下这个：
+
+
+```erlang
+-spec file:open(string(), [read|write|...]) -> {ok, Handle} | {error, Why}
+```
+
+而丢弃 `when` 这个限定符时，那么文档就不得不将正在打开的文件，称为 "`open` 函数的第一个参数"，这是第一种函数规范写法中，不必要的省略。
+
+
+类型变量可用于参数，如下面的示例：
+
+
+```erlang
+-spec lists:map(fun(A) -> B, [A]) -> [B].
+-spec lists:filters(fun(X) -> bool(), [X]) -> [X].
+```
+
+
+这表示 `map` 会取一个从类型 `A` 到类型 `B` 函数，以及一个类型 `A` 对象的列表，并返回一个类型 `B` 对象的列表，以此类推。
+
+
+
+### 导出与本地类型
+
+
+有时我们希望某个类型的定义，属于定义他的模组本地；而在别的情况下，我们则打算导出该类型到另一模组。设想有两个模组 `a` 和 `b`，模组 `a` 生成了一些 `rich_text` 类型的对象，模组 `b` 会操作这些对象。在模组 `a` 中，我们构造了以下一些注解：
+
+
+```erlang
+-module(a).
+-type rich_text() :: [{font(), char()}].
+-type font()	  :: integer().
+-export_type([rich_text/0, font/0]).
+```
+
+
+我们不仅要声明 `rich_text` 和 `font` 类型，我们还要使用一个 `-export_type(...)` 注解，导出他们。
+
+
+设想模组 `b` 会操作一些 `rich_text` 的实例；其中可能存在某个计算 `rich_text` 对象长度的函数 `rich_text_length`。我们可将这个函数的类型规范，写作如下：
+
+
+```erlang
+-module(b).
+...
+-spec rich_text_length(a:rich_text()) -> integer().
+...
+```
+
+`rich_text_length` 的输入参数，使用了完全限定的类型名称 `a:rich_text()`，即导出自模组 `a` 的类型 `rich_text()`。
+
+
+### 不透明类型
+
+
+在上一小节中，两个模组 `a` 和 `b` 以操作表示富文本的对象内部结构，相互合作。不过，我们可能希望隐藏这个富文本数据结构的内部细节，这样只有创建这个数据结构的模组，才知道该类型的细节。这最好一个示例，加以解释。
+
+
+假定模组 `a` 像下面这样开头：
+
+
+```erlang
+-module(a).
+-opaque rich_text() :: [{font(), char()}].
+-export_type([rich_text/0]).
+
+-export([make_text/1, bounding_box/1]).
+-spec make_text(string()) -> rich_text().
+-spec bounding_box(rich_text()) -> {Height::integer(), Width::integer()}.
+...
+```
+
 
