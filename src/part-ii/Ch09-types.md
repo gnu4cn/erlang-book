@@ -134,7 +134,7 @@ T1 :: A | B | C ...
 
 ```erlang
 Type :: any() | none() | pid() | port() | reference() | []
-      | Atom | binary() | float() | Fun | Integer | [Type] 
+      | Atom | binary() | float() | Fun | Integer | [Type]
       | Tuple | Union | UserDefined
 
 Union :: Type1 | Type2 | ...
@@ -384,7 +384,7 @@ fonts_in(Str) ->
 
 
 > **译注**：
-> 
+>
 > <sup>1</sup>：an *abstraction violation*，一次抽象背离
 >
 > 参考：[Violating Data Abstraction](https://berkeley-cs61as.github.io/textbook/violating-data-abstraction.html)
@@ -415,4 +415,133 @@ For applications that are not in Erlang/OTP use an absolute file name.
 ```
 
 
-PLT 是的简称。PLT 应包含标准系统中所有类型的缓存。构建 PLT 需要几分钟时间。我们下达的第一条命令是为 erts、stdlib 和 kernel 构建 PLT。
+PLT 是 *持久查找表，persistent lookup table* 的简称。PLT 应包含标准系统中所有类型的缓存。构建 PLT 需要几分钟时间。我们下达的第一条命令，会构建出 `erts`、`stdlib` 及 `kernel` 的 PLT。
+
+
+```console
+$ dialyzer --build_plt --apps erts kernel stdlib compiler crypto syntax_tools parsetools
+  Creating PLT /home/hector/.cache/erlang/.dialyzer_plt ... done in 0m25.10s
+done (passed successfully)
+```
+
+
+> **译注** 其中 `parsetools` 对应 YECC -- Erlang 的解析器生成器，是 `parsetools` 应用的一部分；`syntax_tools` 选项对应 `erlang_syntax`； `crypto` 对应 `crypto`；`compiler` 对应 `compile`。若没有后面 4 个选项，输出如下所示。
+
+
+
+```console
+$ dialyzer --build_plt --apps erts kernel stdlib
+  Creating PLT /home/hector/.cache/erlang/.dialyzer_plt ...
+Unknown functions:
+  compile:file/2 (c.erl:509:10)
+  compile:forms/2 (escript.erl:803:12)
+  compile:noenv_forms/2 (erl_abstract_code.erl:34:9)
+  compile:noenv_forms/2 (qlc_pt.erl:455:14)
+  compile:output_generated/1 (c.erl:568:10)
+  crypto:crypto_one_time/5 (beam_lib.erl:1411:11)
+  crypto:hash_info/1 (inet_dns_tsig.erl:184:31)
+  crypto:mac_finalN/2 (inet_dns_tsig.erl:317:5)
+  crypto:mac_init/3 (inet_dns_tsig.erl:276:16)
+  crypto:mac_update/2 (inet_dns_tsig.erl:303:16)
+  crypto:strong_rand_bytes/1 (net_kernel.erl:2632:37)
+  erl_syntax:map_field_assoc_name/1 (shell_docs_test.erl:386:24)
+  erl_syntax:map_field_assoc_value/1 (shell_docs_test.erl:387:25)
+  erl_syntax:map_field_exact/2 (shell_docs_test.erl:388:17)
+  erl_syntax:revert/1 (shell_docs_test.erl:382:5)
+  erl_syntax:type/1 (shell_docs_test.erl:384:14)
+  erl_syntax_lib:map/2 (shell_docs_test.erl:383:5)
+Unknown types:
+  compile:option/0 (c.erl:149:19)
+  compile:option/0 (erl_expand_records.erl:56:26)
+  compile:option/0 (erl_lint.erl:100:47)
+  compile:option/0 (qlc.erl:746:32)
+  compile:option/0 (qlc_pt.erl:78:32)
+  crypto:mac_state/0 (inet_dns_tsig.erl:71:48)
+  yecc:option/0 (c.erl:1411:23)
+  yecc:yecc_ret/0 (c.erl:1411:57)
+ done in 0m14.62s
+done (warnings were emitted)
+```
+
+
+现在我们已构建好 PLT，那么就可以运行 `dialyzer` 了。之所以会出现未知函数的告警，是因为提及的那些函数，不在我们选择分析的三个应用中。
+
+
+`dialyzer` 是 *保守的*。当他抱怨时，那么程序中必然有不合理之处。构造 `dialyzer` 的项目目标之一，就是要消除虚假警告消息，即那些并非属于真正错误的警告消息。
+
+
+在后面的小节中，我们给出一些不当程序的示例；我们将对这些程序运行 `dialyzer`，并说明我们可依赖 `dialyzer` 报告哪些错误。
+
+
+
+### BIF 返回值的不当使用
+
+[`dialyzer/test1.erl`](http://media.pragprog.com/titles/jaerlang2/code/dialyzer/test1.erl)
+
+
+
+```erlang
+-module(test1).
+-export([f1/0]).
+
+
+f1() ->
+    X = erlang:time(),
+    seconds(X).
+
+
+seconds({_Year, _Month, _Day, Hour, Min, Sec}) ->
+    (Hour * 60 + Min)*60 + Sec.
+```
+
+```console
+$ dialyzer test1.erl
+  Checking whether the PLT /home/hector/.cache/erlang/.dialyzer_plt is up-to-date... yes
+  Proceeding with analysis...
+test1.erl:5:1: Function f1/0 has no local return
+test1.erl:7:13: The call test1:seconds
+         (X :: {byte(), byte(), byte()}) will never return since it differs in the 1st argument from the success typing arguments:
+         ({_, _, _, number(), number(), number()})
+test1.erl:10:1: Function seconds/1 has no local return
+test1.erl:10:1: The pattern
+          {_Year, _Month, _Day, Hour, Min, Sec} can never match the type
+          {byte(), byte(), byte()}
+ done in 0m0.16s
+done (warnings were emitted)
+```
+
+
+这个相当可怕的错误消息，是由于 `erlang:time()` 返回的是个名为 `{Hour, Min, Sec}` 的 3 元组，而不是我们所期望的 6 元组。“函数 `f1/0` 不会有本地返回值” 这个消息，意味着 `f1/0` 将崩溃。`dialyzer` 知道 `erlang:time()` 的返回值是 `{non_neg_integer(), non_neg_integer(), non_neg_integer()}` 类型的实例，因此绝不会与其中的 6 元组模式，也就是 `seconds/1` 的参数匹配。
+
+
+### 某个 BIF 的不当参数
+
+
+当我们以不当参数，调用某个 BIF 时，我们可使用 `dialyzer` 告诉我们 。下面是这方面的一个示例：
+
+
+[`dialyzer/test2.erl`](http://media.pragprog.com/titles/jaerlang2/code/dialyzer/test2.erl)
+
+```erlang
+-module(test2).
+-export([f1/0]).
+
+
+f1() ->
+    tuple_size(list_to_tuple({a, b, c})).
+```
+
+```console
+$ dialyzer test2.erl
+  Checking whether the PLT /home/hector/.cache/erlang/.dialyzer_plt is up-to-date... yes
+  Proceeding with analysis...
+test2.erl:5:1: Function f1/0 has no local return
+test2.erl:6:30: The call erlang:list_to_tuple
+         ({'a', 'b', 'c'}) breaks the contract
+          (List) -> tuple() when List :: [term()]
+ done in 0m0.16s
+done (warnings were emitted)
+```
+
+
+
