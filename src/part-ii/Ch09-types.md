@@ -880,5 +880,11 @@ $ typer types2.erl
 
 `typer` 知道 `+` 会取两个数字作参数并返回一个数字，因此他会推断出 `X` 和 `Y` 都是数字。他还推断出 `myand1` 的参数可以是任何内容，这与 `X` 和 `Y` 都是数字是一致的。当我们对这个模块运行 `dialyzer` 时，将不返回任何错误。`typer` 认为以两个数字参数调用 `bug1`， 将返回一个数字，但他并不会。他将崩溃。这个示例展示了，参数类型指定不足（即使用 `_` 而不是 `boolean()` 作为类型），如何导致在分析程序时，无法检测的错误。
 
-现在，我们了解了有关类型的所有知识。在下一章中，我们将以介绍编译和运行程序的多种方法，结束本书的第二部分。在 shell 中我们可以完成的很多事情，都可以自动化，我们将探讨实现自动化的方法。当你读完下一章时，你就会对编译和运行顺序 Erlang 代码了如指掌。之后，我们可以转向并发编程，这实际上是本书的主要内容，但在运行之前，你必须先学会走，在编写并发程序之前，你必须先编写顺序程序。
-We now know all we need to know about types. In the next chapter, we’ll wrap up Part II of the book by looking at a number of ways to compile and run your programs. A lot of what we can do in the shell can be automated, and we’ll look at ways of doing this. By the time you have finished the next chapter, you’ll know all there is to know about building and running sequential Erlang code. After that, we can turn to concurrent programming, which is actually the main subject of the book, but you have to learn to walk before you can run and to write sequential programs before you can write concurrent programs.
+现在，我们了解了有关类型的所有知识。在下一章中，我们将以介绍编译和运行程序的多种方法，结束本书的第二部分。在 shell 中我们可以完成的很多事情，都可以自动化，我们将探讨实现自动化的方法。当咱们读完下一章时，咱们将就会对构建与运行顺序 Erlang 代码了如指掌。在那之后，我们就可以转向并发编程，这才是本书主旨，但在会跑之前咱们必须先学会走，而在能编写并发程序前，咱们必须会编写顺序程序。
+
+
+## 练习
+
+
+1. 请编写导出单个函数的一些小型模组。编写这些导出函数的类型规范。在这些函数中构造一些类型错误；然后对这些程序运行 `dialyzer`，并尝试理解错误消息。有时咱们将构造出 `dialyzer` 找不出的错误；请仔细观察程序，试着找出为何咱们没有得到预期错误的原因；
+2. 请查看标准库代码中的类型注解。查找模块 lists.erl 的源代码，阅读所有类型注解。
