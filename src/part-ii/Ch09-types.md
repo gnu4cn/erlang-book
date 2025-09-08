@@ -544,4 +544,341 @@ done (warnings were emitted)
 ```
 
 
+这告诉我们，`list_to_tuple` 期望一个类型 `[term()]` 的参数，而不是 `{'a'、'b'、'c'}`。
 
+> **译注**：原文为 “`list_to_tuple` 期望一个类型 `[any()]` 参数......”，这里由于 `dialyzer` 版本更新等原因，其输出已更新。
+
+
+### 不当的程序逻辑
+
+
+`dialyzer` 还能检测到错误的程序逻辑。下面是个示例：
+
+
+[`dialyzer/test3.erl`](http://media.pragprog.com/titles/jaerlang2/code/dialyzer/test3.erl)
+
+
+
+```erlang
+-module(test3).
+-export([test/0, factorial/1]).
+
+
+test() -> factorial(-5).
+
+factorial(0) -> 1;
+factorial(N) -> N*factorial(N-1).
+```
+
+
+```console
+$ dialyzer test3.erl
+  Checking whether the PLT c:/Users/ZBT7RX/AppData/Local/erlang/Cache/.dialyzer_plt is up-to-date... yes
+  Proceeding with analysis...
+test3.erl:5:1: Function test/0 has no local return
+test3.erl:5:21: The call test3:factorial
+         (-5) will never return since it differs in the 1st argument from the success typing arguments:
+         (non_neg_integer())
+ done in 0m0.33s
+done (warnings were emitted)
+```
+
+这实际上是相当了不起的。其中阶乘的定义是不当的。当使用某个负的参数调用 `factorial` 时，这个程序将进入无限循环，耗尽栈空间，最终 Erlang 将耗尽内存而死亡。`dialyzer` 已推断出，`factorial` 的参数，为 `non_neg_integer()` 类型，因此，那个到 `factorial(-5)` 的调用，便是个错误。
+
+
+`dialyzer` 不会打印函数的推断类型，因此我们将询问 `typer`，这些类型是什么。
+
+
+```console
+$ typer test3.erl
+
+%% File: "test3.erl"
+%% -----------------
+-spec test() -> none().
+-spec factorial(non_neg_integer()) -> pos_integer().
+```
+
+
+`typer` 已推导出，`factorial` 的类型是 `(non_neg_integer()) -> pos_integer()`，同时 `test()` 的类型是 `none()`。
+
+
+程序的推理如下：其中递归的基础情形，是 `factorial(0)`，因此 `factorial` 的参数要为零，调用 `factorial(N-1)` 最终必须要降至零；因此 `N` 必须大于或等于 1，这就是上面推断出的阶乘类型的原因。这一点非常巧妙。
+
+
+
+### 使用 `dialyzer`
+
+
+使用 `dialyzer` 检查咱们程序的类型错误，涉及一项特定工作流程。咱们不应做的是，在无类型注释下编写整个程序，然后，当咱们认为程序就绪时，回头将类型注释添加到所有程序项目，然后运行 `dialyzer`。当咱们这样做，咱们将很可能会得到大量令人费解的错误，而且不知道从哪里开始，修复错误这些错误。
+
+
+使用 `dialyzer` 的最佳方式，是在开发的每一阶段都使用他。当咱们开始编写某个新模组时，*首先要考虑类型*，并在咱们编写咱们代码前，声明这些类型。编写咱们模组中所有导出函数的类型规范。要在咱们开始编写代码前，完成这件事情。咱们可以注释掉那些尚未实现函数的类型规范，然后在实现了这些函数时，取消他们的注释。
+
+
+现在逐个编写咱们的函数，并在咱们编写完各个新的函数后，检查 `dialyzer` 是否找到咱们程序中任何的错误。当该函数被导出时，就要添加类型规范。当该函数没有被导出时，则在咱们认为其将有助于类型分析，或帮助我们理解程序（请记住，类型注解会提供程序的良好文档）时，添加类型规范。当 `dialyzer` 发现了任何的错误时，那么就要停下来，思考并找出错误的确切含义。
+
+
+
+### 会迷惑 `dialyzer` 的东西
+
+
+`dialyzer` 会很容易变得迷惑。通过遵循几条简单规则，我们可帮助避免这种情况。
+
+- 要避免使用 `-compile(export_all)`。当咱们导出模组中的所有函数时，`dialyzer` 就可能无法推理出那些咱们的导出函数参数；这些导出函数可从任何地方调用，并有着任意的类型。这些参数的值，可传播到模组中的其他函数，而产生令人困惑的错误；
+- 提供模组中 *导出的* 函数所有参数的详细类型规范。要尽量严格约束导出函数的参数。例如，乍一看咱们可能会认为某个函数的一个参数是个整数，但稍加思考后，咱们可能就确定了该参数是个正整数，甚至是个有界整数。咱们对咱们的类型越精确，咱们从 `dialyzer` 得到的结果就将越好。此外，当可行时，咱们要添加精确的条件测试到咱们的代码。这样做将有助于程序分析，并通常还将帮助编译器，生成质量更佳的代码；
+- 提供某个记录定义中所有元素的默认参数。当咱们不提供默认参数时，原子 `undefined` 就会被取作默认参数，而这种类型将在程序中传播，而可能产生奇怪的类型错误；
+- 在某个函数的参数中使用匿名变量，往往会造成远不如咱们预期那么具体的一些类型；要尽量限制变量。
+
+
+
+## 类型推断与继承类型
+
+
+`dialyzer` 产生的一些错误，会非常奇怪。要理解这些错误，我们必须了解 `dialyzer` 推导 Erlang 函数类型的过程。理解这一点将有助于我们解释这些令人费解的错误消息。
+
+
+所谓 *类型推断*，是通过分析代码，推导出某个函数类型的过程。要完成这点，我们会分析程序，寻找 *约束条件*；根据约束条件，我们会构建一组约束方程，然后求解这些方程。求解结果就是一个我们称之为该程序的 *成功类型* 的类型集。我们来看一个简单的模组，看看他会告诉我们什么。
+
+
+[`dialyzer/types1.erl`](http://media.pragprog.com/titles/jaerlang2/code/dialyzer/types1.erl)
+
+
+```erlang
+-module(types1).
+-export([f1/1, f2/1, f3/1]).
+
+
+f1({H,M,S}) -> (H+M*60)*60+S.
+f2({H,M,S}) when is_integer(H) -> (H+M*60)*60+S.
+f3({H,M,S}) ->
+    print(H,M,S),
+    (H+M*60)*60+S.
+
+
+print(H,M,S) ->
+    Str = integer_to_list(H) ++ ":" ++ integer_to_list(M) ++ ":" ++
+        integer_to_list(S),
+    io:format("~s", [Str]).
+```
+
+
+在阅读下一小节前，请花点时间仔细阅读这段代码，并尝试找出那些在这段代码中出现变量的类型。
+
+
+下面是当我们运行 `dialyzer` 时发生的情况：
+
+
+```console
+$ dialyzer types1.erl
+  Checking whether the PLT c:/Users/ZBT7RX/AppData/Local/erlang/Cache/.dialyzer_plt is up-to-date... yes
+  Proceeding with analysis... done in 0m0.31s
+done (passed successfully)
+```
+
+
+`dialyzer` 发现这段代码中没有类型错误。但这并不意味着这段代码是正确的；这只意味着该程序中所有数据类型，都被一致地使用。在将小时、分钟和秒转换为秒时，我（作者）写了 `(H+M*60)*60+S` ，这完全是错误的 -- 应是 `(H*60+M)*60+S`。任何类型系统都将检测不到这点。即使咱们有个类型良好的程序，咱们仍必须提供测试用例。
+
+
+对这个同一个程序运行 `typer`，会产生如下内容：
+
+
+```erlang
+$ typer types1.erl
+
+%% File: "types1.erl"
+%% ------------------
+-spec f1({number(),number(),number()}) -> number().
+-spec f2({integer(),number(),number()}) -> number().
+-spec f3({integer(),integer(),integer()}) -> integer().
+-spec print(integer(),integer(),integer()) -> 'ok'.
+```
+
+
+`typer` 报告了他分析的该模组中所有函数的类型。`types` 指出函数 `f1` 的类型如下：
+
+
+```erlang
+-spec f1({number(),number(),number()}) -> number().
+```
+
+
+这是通过查看 `f1` 的定义得出，该定义如下：
+
+
+```erlang
+f1({H,M,S}) -> (H+M*60)*60+S.
+```
+
+这个函数提供给我们五个不同的约束条件。首先，`f1` 的参数必须是个三个元素的元组。每个算术运算符都提供了个额外约束。例如，子表达式 `M*60` 告诉我们，`M` 必须是个 `number()` 类型，因为乘法运算符的两个参数，都必须是个数字。同样，`...+S` 告诉我们，`S` 必须是个数字。
+
+现在看看 `f2`。下面是函数 `f2` 的代码与推导出的类型：
+
+
+
+```erlang
+f2({H,M,S}) when is_integer(H) -> (H+M*60)*60+S.
+
+-spec f2({integer(),number(),number()}) -> number().
+```
+
+
+`is_integer(H)` 条件的补充，增加了 `H` 必须是个整数的额外约束条件，同时这个约束条件将 `f2` 的元组参数的第一个元素类型，从 `number()` 改变为更精确的 `integer()` 类型。
+
+
+请注意，要严格正确地说，我们应说 “添加了当该函数成功时，那么 `H` 必须是个整数的额外约束"。这就是为什么我们将函数的推断类型，称为 *成功类型* --他字面上表示 “为了使函数求值成功，函数中的参数而必须有的类型。”
+
+现在我们来看看 `types1.erl` 中的最后那个函数。
+
+
+```erlang
+f3({H,M,S}) ->
+    print(H,M,S),
+    (H+M*60)*60+S.
+
+print(H,M,S) ->
+    Str = integer_to_list(H) ++ ":" ++ integer_to_list(M) ++ ":" ++
+        integer_to_list(S),
+    io:format("~s", [Str]).
+```
+
+
+推导出的类型如下：
+
+```erlang
+-spec f3({integer(),integer(),integer()}) -> integer().
+-spec print(integer(),integer(),integer()) -> 'ok'.
+```
+
+
+这里，咱们可以看到调用 `integer_too_list` 如何将其参数，约束为一个整数。函数 `print` 中出现的这个约束条件，会传播到函数 `f3` 的主体中。
+
+
+正如我们所见，类型分析分两个阶段进行。首先，我们推导出一个约束方程集合；然后，我们求解这些方程。当 `dialyzer` 没有发现任何错误时，说明这个约束方程集是可解的，而 `typer` 会打印出这些方程的解。当这些方程不一致且无法求解时，`dialyzer` 就会报告一个错误。
+
+
+
+现在我们将对前一程序稍作修改，引入一个错误，看看他对分析有什么影响。
+
+
+
+[`dialyzer/types1_bug.erl`](http://media.pragprog.com/titles/jaerlang2/code/dialyzer/types1_bug.erl)
+
+
+
+```erlang
+-module(types1_bug).
+-export([f4/1]).
+
+
+f4({H,M,S}) when is_float(H) ->
+    print(H,M,S),
+    (H+M*60)*60+S.
+
+
+print(H,M,S) ->
+    Str = integer_to_list(H) ++ ":" ++ integer_to_list(M) ++ ":" ++
+        integer_to_list(S),
+    io:format("~s", [Str]).
+```
+
+
+我们将首先运行 `typer`。
+
+
+```console
+$ typer types1_bug.erl
+
+%% File: "types1_bug.erl"
+%% ----------------------
+-spec f4(_) -> none().
+-spec print(integer(),integer(),integer()) -> 'ok'.
+```
+
+
+`typer` 指出 `f4` 的返回类型是 `none()`。这是表示 “此函数将永不返回” 的一种特殊类型。
+
+
+当我们运行 `dialyzer` 时，我们会看到以下结果：
+
+```console
+$ dialyzer types1_bug.erl
+  Checking whether the PLT c:/Users/ZBT7RX/AppData/Local/erlang/Cache/.dialyzer_plt is up-to-date... yes
+  Proceeding with analysis...
+types1_bug.erl:5:1: Function f4/1 has no local return
+types1_bug.erl:6:11: The call types1_bug:print
+         (H :: float(),
+          M :: any(),
+          S :: any()) will never return since it differs in the 1st argument from the success typing arguments:
+         (integer(),
+          integer(),
+          integer())
+types1_bug.erl:10:1: Function print/3 has no local return
+types1_bug.erl:11:27: The call erlang:integer_to_list
+         (H :: float()) breaks the contract
+          (Integer) -> string() when Integer :: integer()
+ done in 0m0.36s
+done (warnings were emitted)
+```
+
+
+现在回头看一下这段代码。条件测试 `is_float(H)` 告诉系统，`H` 必须是个浮点数。但 `H` 会被传播到函数 `print` 中，而 `print` 中的函数调用 `integer_too_list(H)` 则告诉系统，`H` 必须是个整数。现在，`dialyzer` 就不知道这两条语句中，哪条是正确的，所以他认为这两条语句都是错误的。这就是为什么他会说 `Function print/3 has no local return`。这就是类型系统的局限之一；他们只能指出程序不一致，然后将其留给程序员找出原因。
+
+
+## 类型系统的局限
+
+
+我们来看看当我们添加了类型规范到代码时，会发生什么。我们将从众所周知的布尔 `and` 函数开始。当 `and` 的两个参数都为 `true` 时，`and` 为真；而当其任何一个参数为 `false` 时，`and` 为 `false`。我们将如下定义一个函数 `myand1`（其被假定为与 `and` 工作相似）：
+
+[`types2.erl`](http://media.pragprog.com/titles/jaerlang2/code/types1.erl)
+
+
+```erlang
+myand1(true, true) -> true;
+myand1(false, _) -> false;
+myand1(_, false) -> false.
+```
+
+
+对这段代码运行 `typer`，我们会看到如下结果：
+
+
+```console
+$ typer types2.erl
+
+%% File: "types2.erl"
+%% ------------------
+-spec myand1(_,_) -> boolean().
+```
+
+
+推断出的 `myand1` 是 `(_,_) -> boolean()`，这表示 `myand1` 的各个参数，都可以是咱们喜欢的任何类型，而返回类型将是 `boolean`。由于参数位置处的那些下划线，`typer` 推断出 `myand1` 的两个参数，可以是任何内容。例如，`myand1` 的第二个子句为 `myand1(false, _) -> false`，由此 `typer` 推断了第二个参数可以是任何值。
+
+
+现在，设想我们将一个错误函数 `bug1` 添加到该模组，如下所示：
+
+
+```erlang
+bug1(X, Y) -> 
+    case myand1(X, Y) of
+        true -> X + Y
+    end.
+```
+
+
+然后我们让 `typer` 分析这个模组。
+
+
+```console
+$ typer types2.erl
+
+%% File: "types2.erl"
+%% ------------------
+-spec myand1(_,_) -> boolean().
+-spec bug1(number(),number()) -> number().
+```
+
+
+`typer` 知道 `+` 会取两个数字作参数并返回一个数字，因此他会推断出 `X` 和 `Y` 都是数字。他还推断出 `myand1` 的参数可以是任何内容，这与 `X` 和 `Y` 都是数字是一致的。当我们对这个模块运行 `dialyzer` 时，将不返回任何错误。`typer` 认为以两个数字参数调用 `bug1`， 将返回一个数字，但他并不会。他将崩溃。这个示例展示了，参数类型指定不足（即使用 `_` 而不是 `boolean()` 作为类型），如何导致在分析程序时，无法检测的错误。
+
+现在，我们了解了有关类型的所有知识。在下一章中，我们将以介绍编译和运行程序的多种方法，结束本书的第二部分。在 shell 中我们可以完成的很多事情，都可以自动化，我们将探讨实现自动化的方法。当你读完下一章时，你就会对编译和运行顺序 Erlang 代码了如指掌。之后，我们可以转向并发编程，这实际上是本书的主要内容，但在运行之前，你必须先学会走，在编写并发程序之前，你必须先编写顺序程序。
+We now know all we need to know about types. In the next chapter, we’ll wrap up Part II of the book by looking at a number of ways to compile and run your programs. A lot of what we can do in the shell can be automated, and we’ll look at ways of doing this. By the time you have finished the next chapter, you’ll know all there is to know about building and running sequential Erlang code. After that, we can turn to concurrent programming, which is actually the main subject of the book, but you have to learn to walk before you can run and to write sequential programs before you can write concurrent programs.
