@@ -676,7 +676,7 @@ make: *** No rule to make target 'glurk.beam', needed by 'compile'.  Stop.
 ### Erlang 崩溃了，咱们想要读取崩溃转储
 
 
-当 Erlang 时，他会留下一个名为 `erl_crash.dump` 的文件。这个文件的内容可能会提供到咱们出错的线索。要分析崩溃转储，有个 ~~基于 web~~ （在 Erlang/OTP 28 中，这已是个 GUI 应用） 的崩溃分析器。要启动分析器，请执行以下命令：
+当 Erlang 时，他会留下一个名为 `erl_crash.dump` 的文件。这个文件的内容可能会提供到咱们出错的线索。要分析崩溃转储，有个 ~~基于 web~~ （译注：在 Erlang/OTP 28 中，这已是个 GUI 应用） 的崩溃分析器。要启动分析器，请执行以下命令：
 
 
 ```erlang
@@ -686,13 +686,128 @@ ok
 ```
 
 
-~~ 然后将咱们的浏览器指向 `http://localhost:8888/`。咱们就可以愉快地浏览错误日志了~~。
+~~然后将咱们的浏览器指向 `http://localhost:8888/`。咱们就可以愉快地浏览错误日志了~~。
 
 
 ![Crashdump Viewer](../images/crashdump_viewer.png)
 
 
 ## 获取帮助
+
+
+在 Unix 系统上，我们可如下访问手册页面：
+
+
+```console
+$ erl -man erl
+NAME
+erl - The Erlang Emulator
+
+DESCRIPTION
+The erl program starts the Erlang runtime system.
+The exact details (e.g. whether erl is a script
+or a program and which other programs it calls) are system-dependent.
+...
+```
+
+
+> **译注**：在 Windows 上，`-man` 选项不被支持。
+
+
+```console
+$ erl -man erl
+-man not supported on Windows
+```
+
+
+我们还能如下获取到单个模组的帮助信息：
+
+
+```console
+$ erl -man lists
+MODULE
+lists - List Processing Functions
+
+DESCRIPTION
+This module contains functions for list processing.
+The functions are organized in two groups:
+...
+```
+
+
+*注意*：在 Unix 系统上，手册页默认情况下未被安装。当命令 `erl -man ...` 不起作用时，咱们就需要安装手册页。全部手册页都在一个 [压缩归档](https://www.erlang.org/docs/21/man_index) 中。 这些手册也应解压到 Erlang 安装目录的根目录下（通常为 `/usr/local/lib/erlang`）。
+
+
+文档还可以作为 HTML 文件集下载。在 Windows 系统中，HTML 文档默认已安装，可通过 “开始” 菜单的 Erlang 部分访问。
+
+
+
+## 环境微调
+
+
+Erlang shell 有许多内置命令。咱们可使用 shell 命令 `help()`，查看所有这些命令。
+
+
+```erlang
+1> help().
+** shell internal commands **
+b()        -- display all variable bindings
+e(N)       -- repeat the expression in query <N>
+exit()     -- terminate the shell instance
+f()        -- forget all variable bindings
+f(X)       -- forget the binding of variable X
+ff()       -- forget all locally defined functions
+ff(F,A)    -- forget locally defined function named as atom F and arity A
+fl()       -- forget all locally defined functions, types and records
+h()        -- history
+h(Mod)     -- help about module
+h(Mod,Func) -- help about function in module
+h(Mod,Func,Arity) -- help about function with arity in module
+lf()       -- list locally defined functions
+lr()       -- list locally defined records
+lt()       -- list locally defined types
+rd(R,D)    -- define a record
+rf()       -- remove all record information
+rf(R)      -- remove record information about R
+rl()       -- display all record information
+rl(R)      -- display record information about R
+ls(Dir)    -- list files in directory <Dir>
+m()        -- which modules are loaded
+m(Mod)     -- information about module <Mod>
+memory()   -- memory allocation information
+memory(T)  -- memory allocation information of type <T>
+mm()       -- list all modified modules
+nc(File)   -- compile and load code in <File> on all nodes
+ni()       -- information about the networked system
+nl(Module) -- load module on all nodes
+nregs()    -- information about all registered processes
+pid(X,Y,Z) -- convert X,Y,Z to a Pid
+pwd()      -- print working directory
+q()        -- quit - shorthand for init:stop()
+regs()     -- information about registered processes
+uptime()   -- print node uptime
+xm(M)      -- cross reference check a module
+y(File)    -- generate a Yecc parser
+** commands in module i (interpreter interface) **
+ih()       -- print help for the i module
+true
+```
+
+
+若咱们打算定义咱们自己的命令，只需创建一个名为 `user_default` 的模组。下面是个示例：
+
+
+```erlang
+-module(user_default).
+
+-compile(export_all).
+
+hello() -> "Hello Joe how are you?".
+
+away(Time) -> 
+    io:format("Joe is away and will be back in ~w minutes~n", 
+              [Time]).
+```
 
 
 
