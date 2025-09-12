@@ -563,7 +563,136 @@ Erlang 有时会很难停止。以下是一些可能原因：
 ### 未定义的（缺失）代码
 
 
+当咱们试图运行在某个代码加载器无法找到（由于代码搜索路径错误）模组中的代码时，咱们将遇到 `undef` 错误消息。下面是个示例：
 
+
+```erlang
+1> glurk:oops(1, 23).
+** exception error: undefined function glurk:oops/2
+```
+
+
+事实上，并没有叫做 `glurk` 的模组，但这不是问题所在。咱们应关注的是那条错误消息。该错误消息告诉我们，系统试图以两个参数，调用 `glurk` 模组中的函数 `oops`。因此，可能发生了以下四种情况之一。
+
+- 真的没有 `glurk` 这个模组 -- 到处都不有。这可能是因为拼写错误；
+
+- 有个 `glurk` 模组，但其尚未被编译。系统正在代码搜索路径的某处，查找名为 `glurk.beam` 的文件；
+
+- 有个 `glurk` 模组且其已被编译，但包含 `glurk.beam` 的目录，不是代码搜索路径中的目录之一。要解决这个问题，咱们必须修改这个搜索路径；
+
+- 代码加载路径中有数个不同版本的 `glurk`，而我们选择了错误版本。这是一种很少见的错误，但也有可能发生。
+  当咱们怀疑这种情况发生时，咱们可运行会报告代码搜索路径中所有重复模组的 `code:clash()` 函数。
+
+
+> **有人看到我的分号吗？**
+>
+> 当咱们忘记函数中分句之间的分号，或者用句点代替分号时，咱们就会有麻烦 -- 真正的麻烦。
+>
+> 当咱们正在 `bar` 模组的第 1234 行处，定义函数 `foo/2`，并用一个句点代替分号，编译器会这样说：
+
+```erlang
+bar.erl:1234 function foo/2 already defined.
+```
+> 请不要这样做。要确保咱们的函数子句，始终是以分号隔开。
+
+
+
+### shell 失去响应
+
+当 shell 不响应命令时，那么有情况可能发生。shell 进程本身可能已经崩溃，或者咱们执行了某个永不终止的命令。咱们甚至可能忘了键入某个结束的引号，或者忘了在咱们命令结尾键入 `dot-carriage-return`。
+
+不管原因为何，都咱们可通过按下 `Ctrl+G`，中断当前 shell，然后按下面的示例继续操作：
+
+
+```erlang
+1> receive foo -> true end.	                                    %% (1)
+
+User switch command (enter 'h' for help)
+ --> h	                                                        %% (2)
+
+  c [nn]            - connect to job
+  i [nn]            - interrupt job
+  k [nn]            - kill job
+  j                 - list all jobs
+  s [shell]         - start local shell
+  r [node [shell]]  - start remote shell
+  q                 - quit erlang
+  ? | h             - this message
+ --> j	                                                        %% (3)
+
+   1* {shell,start,[init]}
+ --> s	                                                        %% (4)
+
+ --> j
+
+   1  {shell,start,[init]}
+   2* {shell,start,[]}
+ --> c 2	                                                    %% (5)
+
+Eshell V16.0.2 (press Ctrl+G to abort, type help(). for help)
+1> init:stop().
+ok
+2> %                                                                     
+```
+
+
+1. 这里，我们告诉 shell 要接收一条 `foo` 的消息。但由于从未有人向 shell 发送这条信息，这个 shell 就进入了一次无限等待。我们按下了 `Ctrl+G` 进入这个 shell；
+
+2. 系统进入 “shell JCL，Job Control Language” 模式。我们输入了 `h` 获取帮助；
+
+3. 输入 `j` 列出了所有作业。作业 1 标记了个星号，表示他是默认 shell。除非提供了特定参数，所有带可选参数 `[nn]` 的命令，都会使用默认 shell；
+
+4. 输入 `s` 命令启动了个新的 shell，然后又输入一个 `j` 命令。这次我们可以看到有两个分别标记为 1 和 2 的 shell，同时 shell 2 已成为默认 shell；
+
+
+5. 我们键入了 `c 2`，这将我们连接到那个新启动的 shell 2；之后，我们停止了系统。
+
+
+
+正如我们所见，我们可让多个 shell 运行，并通过按下 `Ctrl+G` 及相应命令，在他们之间切换。我们甚至可以 `r` 命令，在某个远端节点上启动 shell。
+
+
+### 我的 Makefile 没有构建
+
+
+
+*Makefile 会出什么岔子*？其实有很多。但这不是一本关于 makefile 的书，所以我（作者）只讨论最常见的一些错误。以下是我最常犯的两个错误：
+
+
+- *Makefile 中的空白*：Makefile 非常挑剔。虽然咱们看不到，但 makefile 中的每一个缩进行（*前一行* 以 `\` 字符结束的续航除外）都应该以制表符开始。当其中有任何空格时，`make` 就会犯迷糊，而咱们将开始看到错误；
+
+- *缺少 erlang 文件*：当 `MODS` 中声明的模组之一缺失时，咱们将得到一条错误消息。为说明这一点，假设 `MODS` 包含了个名为 `glurk` 的模组，但代码目录中没有名为 `glurk.erl` 的文件。在这种情况下，`make` 将以如下消息失败：
+
+
+```console
+$ make
+make: *** No rule to make target 'glurk.beam', needed by 'compile'.  Stop.
+```
+
+
+或者是，没有缺失的模组，但 makefile 中的模组名拼写错了。
 
 
 ### Erlang 崩溃了，咱们想要读取崩溃转储
+
+
+当 Erlang 时，他会留下一个名为 `erl_crash.dump` 的文件。这个文件的内容可能会提供到咱们出错的线索。要分析崩溃转储，有个 ~~基于 web~~ （在 Erlang/OTP 28 中，这已是个 GUI 应用） 的崩溃分析器。要启动分析器，请执行以下命令：
+
+
+```erlang
+1> crashdump_viewer:start().
+Command is taking a long time, type Ctrl+G, then enter 'i' to interrupt
+ok
+```
+
+
+~~ 然后将咱们的浏览器指向 `http://localhost:8888/`。咱们就可以愉快地浏览错误日志了~~。
+
+
+![Crashdump Viewer](../images/crashdump_viewer.png)
+
+
+## 获取帮助
+
+
+
