@@ -15,4 +15,4 @@ Erlang 貌似一门很有趣的语言，Elixir 也是很热门的讨论。因此
 ## 目录
 
 
-{{#include SUMMARY:3:}}
+{{#include SUMMARY.md:3:}}
