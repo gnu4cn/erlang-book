@@ -24,3 +24,4 @@
 
 + [并发与分布式程序](src/part-iii.md)
     - [真实世界的并发](src/part-iii/Ch11-real-world_concurrency.md)
+    - [并发编程](src/part-iii/Ch12-concurrent_programming.md)
