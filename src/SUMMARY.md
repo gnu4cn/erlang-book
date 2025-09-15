@@ -22,6 +22,6 @@
     - [编译与运行咱们的程序](part-ii/Ch10-compiling_and_running_your_program.md)
 
 
-+ [并发与分布式程序](src/part-iii.md)
-    - [真实世界的并发](src/part-iii/Ch11-real-world_concurrency.md)
-    - [并发编程](src/part-iii/Ch12-concurrent_programming.md)
++ [并发与分布式程序](part-iii.md)
+    - [真实世界的并发](part-iii/Ch11-real-world_concurrency.md)
+    - [并发编程](part-iii/Ch12-concurrent_programming.md)
