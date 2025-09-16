@@ -5,3 +5,12 @@ receive
         Expression2;
     ...
 end
+
+
+loop() ->
+    receive
+        {From, ...} ->
+            From ! {self(), ...},
+            loop()
+        ...
+    end.

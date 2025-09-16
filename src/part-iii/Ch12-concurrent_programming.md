@@ -99,7 +99,7 @@ end
 - threading
 - locking
 - semaphore
-- artifial control
+- artificial control
 
 
 
@@ -174,4 +174,154 @@ Area of circle is 50.26544
 在上一程序中，我们只需将一个请求，发送给接收并打印该请求进程。现在，我们打算做的是，将一次响应发送给发送原始请求的那个进程。问题是我们不知道要向谁发送这个响应。要发送某个响应，客户端就必须包含一个服务器可回复的地址。这就好比寄一封信给某人 -- 当咱们想要得到回复时，咱们最好在信中附上咱们的地址！
 
 
-因此，消息发送方必须包含一个回复地址。这可通过更改这里完成：
+因此，消息发送方必须包含一个回复地址。这可通过修改这里完成：
+
+
+```erlang
+Pid ! {rectangle, 6, 10}
+```
+
+改为下面这样：
+
+
+```erlang
+Pid ! {self(), {rectangle, 6, 10}}
+```
+
+
+其中 `self()` 是这个客户端进程的 PID。
+
+
+要响应该请求，我们必须修改接收请求的代码：
+
+
+```erlang
+{{#include ../../projects/ch12-code/area_server0.erl:6:10}}
+```
+
+
+为下面的代码：
+
+
+```erlang
+{{#include ../../projects/ch12-code/area_server1.erl:11:15}}
+```
+
+
+请注意我们现在将咱们的计算结果，发送回由 `From` 参数所标识进程的方式。由于客户端将这个参数，设置为了其自己的进程 ID，因此他将收到结果。
+
+
+发送请求的进程，通常称为 *客户端*。接收请求并回复客户端的进程，称为 *服务器*。
+
+
+此外，确保发送给某个进程的每条信息都能被真正接收，是种好的做法。当我们将一条与原始接收语句中的三种模式，都不匹配的消息发送给该进程时，那么该消息最终将进入该进程的邮箱，而永远不会被接收。为处理这一情况，我们要在接收语句末尾，添加了一个保证会匹配发送到该进程任何消息的子句。
+
+
+最后，我们添加了个名为 `rpc`（*remote procedure call* 的缩写），封装了向某个服务器发送请求，并等待响应的小实用工具。
+
+
+[`area_server1.erl`](http://media.pragprog.com/titles/jaerlang2/code/area_server1.erl)
+
+
+```erlang
+{{#include ../../projects/ch12-code/area_server1.erl:5:9}}
+```
+
+
+把全部这些放在一起，我们得到下面的代码：
+
+
+
+[`area_server1.erl`](http://media.pragprog.com/titles/jaerlang2/code/area_server1.erl)
+
+
+```erlang
+{{#include ../../projects/ch12-code/area_server1.erl}}
+```
+
+
+我们可在 shell 中对此实验。
+
+
+```erlang
+1> Pid = spawn(area_server1, loop, []).
+<0.85.0>
+2> area_server1:rpc(Pid, {rectangle,6,8}).
+48
+3> area_server1:rpc(Pid, {circle,6}).
+113.09723999999999
+4> area_server1:rpc(Pid, {square,6}).
+36
+5> area_server1:rpc(Pid, socks).
+{error,socks}
+```
+
+这段代码有个小问题。在函数 `rpc/2` 中，我们将某次请求发往服务器，然后等待一次响应。*但我们等待的不是该服务器的一次响应**，我们在等待任何消息。当这个客户端在等待这个服务器的响应期间，某个别的进程向他发送了一条消息时，他就会这条消息，错误地解析为是来自该服务器的响应。通过将其中的接收语句形式，修改为下面这样：
+
+
+```erlang
+loop() ->
+    receive
+        {From, ...} ->
+            From ! {self(), ...},
+            loop()
+        ...
+    end.
+```
+
+
+并通过将 `rpc` 修改为下面这样，纠正这个问题
+
+
+```erlang
+{{#include ../../projects/ch12-code/area_server2.erl:5:9}}
+```
+
+当我们调用函数 `rpc` 时，`Pid` 被绑定到某个值，因此在模式 `{Pid, Response}` 中，`Pid` 是绑定值，`Response` 是未绑定值。这个模式将只匹配包含两个元素元组的消息，其中第一个元素是 `Pid`。所有其他消息都将被排队。（接收提供了叫做 *选择性接收*，我（作者）将在这个小节后介绍）。在这种改变下，我们得到了下面的代码：
+
+
+[`area_server2.erl`](http://media.pragprog.com/titles/jaerlang2/code/area_server2.erl)
+
+```erlang
+{{#include ../../projects/ch12-code/area_server2.erl}}
+```
+
+
+这会如预期那样工作。
+
+
+```erlang
+1> Pid = spawn(area_server2, loop, []).
+<0.85.0>
+2> area_server2:rpc(Pid, {circle,5}).
+78.53975
+```
+
+
+有一项我们可做的最后改进。我们可将 `spawn` 和 `rpc`，*隐藏* 于该模组 *内部*。请注意，我们还必须导出该模组中 `spawn` 的参数（即 `loop/0`）。这是一种好做法，因为我们可在不改变客户端代码的情况下，改变服务器的内部细节。最后，我们得到了这段代码：
+
+
+[`area_server_final`](http://media.pragprog.com/titles/jaerlang2/code/area_server_final.erl)
+
+
+```erlang
+{{#include ../../projects/ch12-code/area_server_final.erl}}
+```
+
+要运行这个程序，我们调用的是 `start/0` 和 `area/2` 函数（之前我们调用的是 `spawn` 和 `rpc`）。这些名称更准确地描述了服务器的功能。
+
+```erlang
+1> Pid = area_server_final:start().
+<0.85.0>
+2> area_server_final:area(Pid, {rectangle, 10, 8}).
+80
+3> area_server_final:area(Pid, {circle, 4}).
+50.26544
+```
+
+那么现在我们已经构建了一个简单的客户端-服务器模组。我们只需要三个原语：`spawn`、`send` 和 `receive`。这种模式会以大大小小的变化反复出现，但底层思想始终如一。
+
+
+## 进程是廉价的
+
+
