@@ -324,4 +324,164 @@ loop() ->
 
 ## 进程是廉价的
 
+此时，咱们可能会担心性能问题。毕竟，当我们正创建成百上千个 Erlang 进程时，我们肯定在付出一定代价。我们来看看要付出多少代价。
 
+
+我们将执行一系列下蛋，创建出大量进程，并计算其要多长时间。下面是这个程序；请注意，这里我们使用了 `spawn(Fun)`，而且被生出的函数不必从该模组中导出：
+
+
+[`processes.erl`](http://media.pragprog.com/titles/jaerlang2/code/processes.erl)
+
+
+```erlang
+{{#include ../../projects/ch12-code/processes.erl}}
+```
+
+
+下面是我（作者）在目前使用的一台 2.90GHz 英特尔酷睿 i7 双核处理器，8GB 内存，运行 Ubuntu 的电脑上，获取到的结果：
+
+```erlang
+1> processes:max(20000).
+Maximum allowed processes: 262144
+Process spawn time = 3.0 (3.4) microseconds
+ok
+2> processes:max(30000).
+Maximum allowed processes: 262144
+
+=ERROR REPORT==== 14-May-2013::09:32:56 ===
+Too many processes
+
+** exception error: a system limit has been reached
+...
+```
+
+
+> **译注**：译者在一台 Interl Core i5-8260，8GB 内存，Windows 11 Enterprise 计算机上的结果如下。
+
+```erlang
+1> processes:max(20000).
+Maximum allowed processes: 1048576
+Process spawn time = 0.75 (1.55) microseconds
+ok
+2> processes:max(3000000).
+Maximum allowed processes: 1048576
+
+=ERROR REPORT==== 16-Sep-2025::10:52:31.083000 ===
+Too many processes
+
+Error in process <0.27263048.5> with exit value:
+{system_limit,[{erlang,spawn_link,
+                       [erlang,apply,[#Fun<shell.1.25725971>,[]]],
+                       [{error_info,#{module => erl_erts_errors}}]},
+               {erlang,spawn_link,1,[{file,"erlang.erl"},{line,10461}]},
+               {shell,get_command,6,[{file,"shell.erl"},{line,459}]},
+               {shell,server_loop,8,[{file,"shell.erl"},{line,338}]}]}
+...
+```
+
+生成 20,000 个进程平均需要 3.0us/进程的 CPU 时间和 3.4us 的延时（挂钟）时间。
+
+
+请注意，我（作者）使用了 `erlang:system_info(process_limit)` 这个 BIF， 找到允许的最大进程数。其中一些进程是保留的，所以咱们的程序实际上无法用到这个数量。当我们超过这个系统限制时，系统就会拒绝启动更多进程，并生成一份错误报告（第 2 条命令）。
+
+
+系统限制被设置为 262 144 个进程；要超过此限制，咱们必须以 `+P` 开关启动 Erlang 仿真器，如下所示：
+
+
+```erlang
+$ erl +P 3000000
+Erlang/OTP 28 [erts-16.0.2] [source] [64-bit] [smp:8:8] [ds:8:8:10] [async-threads:1] [jit:ns]
+
+Hi, I'm in your .erlang file
+Eshell V16.0.2 (press Ctrl+G to abort, type help(). for help)
+1> processes:max(500000).
+Maximum allowed processes: 4194304
+Process spawn time = 0.532 (2.61) microseconds
+ok
+2> processes:max(1000000).
+Maximum allowed processes: 4194304
+Process spawn time = 0.609 (2.925) microseconds
+ok
+3> processes:max(2000000).
+Maximum allowed processes: 4194304
+Command is taking a long time, type Ctrl+G, then enter 'i' to interrupt
+Process spawn time = 0.898 (4.103) microseconds
+ok
+4> processes:max(3000000).
+Maximum allowed processes: 4194304
+Command is taking a long time, type Ctrl+G, then enter 'i' to interrupt
+Process spawn time = 1.2033333333333334 (4.601) microseconds
+ok
+```
+
+在前面的示例中，实际选取的值，是大于所提供参数的下一个最大的 2 的幂。实际值可以通过调用 `erlang:system_info(process_limit)` 获取到。我们可以看到，随着我们增加进程数量，进程的生成时间也在增加。当我们继续增加进程数量时，我们将达到我们耗尽物理内存的某个点，系统将开始把物理内存交换到磁盘，而运行速度将大幅减慢。
+
+
+当咱们正编写某个用到大量进程的程序时，那么最好找出在系统开始将内存交换到磁盘前，物理内存可容纳多少个进程，从而确保咱们的程序将运行在物理内存中。
+
+
+正如咱们所看到的，创建大量进程相当快。若咱们是名 C 或 Java 程序员，咱们可能会犹豫是否要使用大量进程，而且咱们还必须考虑管理他们。在 Erlang 中，创建进程简化了编程，而不是令其复杂化。
+
+
+## 带超时的接收
+
+
+有时，某个接收语句可能会一直等待一条，永不会到来的消息。这可能有数种原因。例如，我们的程序种可能有逻辑错误，或者要向我们发送消息的进程，可能在其发送消息前崩溃了。为避免这个问题，我们可将一个超市，添加到接收语句。这会设置一个该进程将等待的接收消息最长时间。该语法如下：
+
+
+```erlang
+receive
+    Pattern1 [when Guard1] ->
+        Expressions1;
+    Pattern2 [when Guard2] ->
+        Expressions2;
+    ...
+after Time ->
+          Expressions
+end
+```
+
+
+当在进入接收表达式后的 `Time` 毫秒内，没有匹配的消息到达时，那么该进程将停止等待消息，并计算 `Expressions`。
+
+
+### 只有超时的接收
+
+
+咱们可以编写个只包含超时的 `receive` 语句。利用这点，我们可以定义一个暂停当前进程 `T` 毫秒的函数 `sleep(T)`。
+
+
+[`lib_misc.erl`](http://media.pragprog.com/titles/jaerlang2/code/lib_misc.erl)
+
+
+```erlang
+{{#include ../../projects/ch12-code/lib_misc.erl:96:99}}
+```
+
+
+### 带超时值零的接收
+
+
+`0` 的超时值，会导致超时的主体立即发生，但在此之前，系统会尝试匹配进程邮箱中任何的模式。我们可以利用这点，定义一个可彻底清空进程邮箱中全部消息的函数 `flush_buffer()`。
+
+
+[`lib_misc.erl`](http://media.pragprog.com/titles/jaerlang2/code/lib_misc.erl)
+
+
+```erlang
+{{#include ../../projects/ch12-code/lib_misc.erl:103:107}}
+```
+
+
+在没有其中的超时子句下，`flush_buffer` 就会永远暂停，而不会在进程邮箱为空时返回。我们还可以使用零的超时，实现某种形式的 “优先接收” ，如下所示：
+
+
+[`lib_misc.erl`](http://media.pragprog.com/titles/jaerlang2/code/lib_misc.erl)
+
+
+```erlang
+{{#include ../../projects/ch12-code/lib_misc.erl:110:117}}
+```
+
+
+当进程邮箱中 *没有* 与 `{alarm, X}` 匹配的消息时，则 `priority_receive` 将接收邮箱中的第一条信息。当邮箱中没有任何信息时，他们将在最内层的接收中暂停，并返回收到的第一条信息。如果有与 {alarm, X} 匹配的信息，则会立即返回该信息。请记住，只有在对邮箱中的所有条目进行模式匹配后，才会检查 after 部分。
