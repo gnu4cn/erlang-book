@@ -25,3 +25,4 @@
 + [并发与分布式程序](part-iii.md)
     - [真实世界的并发](part-iii/Ch11-real-world_concurrency.md)
     - [并发编程](part-iii/Ch12-concurrent_programming.md)
+    - [并发程序中的错误](part-iii/Ch13-errors_in_concurrent_programs.md)
