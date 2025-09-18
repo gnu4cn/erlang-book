@@ -20,7 +20,7 @@
 在以下情形下，应使用记录：
 
 
-- 当咱们可使用固定数量的预定原子，表示咱们的数据时； 
+- 当咱们可使用固定数量的预定原子，表示咱们的数据时；
 - 当记录中的元素数量及元素名字不会随时间改变时；
 - 当存储是个问题，通常是当咱们有个大型元组数组，并且每个元组有着相同结构时。
 
@@ -417,7 +417,7 @@ lib_misc.erl:71:28: variable 'H' is unbound
 ```
 
 > 解决方法参考：[[Erlang] count_characters更正](https://blog.csdn.net/qq_44865780/article/details/105947621)
-> 
+>
 > 修订后的代码：
 
 
@@ -550,7 +550,7 @@ false
 **The JSON Bridge**
 
 
-熟悉 JSON 的人会注意到映射和 JSON 项之间的相似性。有两个 BIFs 可在映射和 JSON 术语之间转换。
+熟悉 JSON 的人会注意到映射和 JSON 项之间的相似性。有两个 BIFs 可在映射和 JSON 项间转换。
 
 
 - `maps:to_json(Map) -> Bin`
@@ -579,7 +579,7 @@ false
 
 
 ```erlang
--type json_key() = 
+-type json_key() =
     atom() | binary() | io_list()
 ```
 
@@ -587,7 +587,7 @@ false
 
 
 ```erlang
--type json_value() = 
+-type json_value() =
     integer() | binary() | float() | atom() | [json_value()] | json_map()
 ```
 
