@@ -166,11 +166,10 @@ Erlang 使用任意大小的整数，执行整数运算。在 Erlang 中，整�
 ```
 
 > *知识点*：
-
-
-    - arbitrary-sized integers
-    - a certain word size
-    - Erlang 最高支持到 36 进制
+>
+>- arbitrary-sized integers
+>- a certain word size
+>- Erlang 最高支持到 36 进制
 
 
 ## 变量
@@ -723,11 +722,10 @@ joe
 
 
 > *知识点*：
-
-
-    - unpacks the CAR and CDR
-    - properly formed list
-    - improper list
+>
+>- unpacks the CAR and CDR
+>- properly formed list
+>- improper list
 
 
 通过写下 `[E1,E2,...,En|T]`，我们就可将多个元素，添加到 `T` 的开头。
@@ -872,9 +870,9 @@ ok
 
 
 > *知识点*：
-
-    - a formatted I/O statement
-    - a formatted write statement
+>
+>- a formatted I/O statement
+>- a formatted write statement
 
 
 ## 又来模式匹配

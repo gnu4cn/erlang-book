@@ -223,9 +223,9 @@ loop(Dir) ->
 要注意的另一点是，`loop` 是没有返回值的函数。在顺序编程语言中，我们必须非常小心地避免无限循环；我们只有一个控制线程，若这个线程陷入循环，我们就麻烦了。而在 Erlang 中，就不存在这类问题。服务器只是个在无限循环中，为请求提供服务的程序，他与我们要执行的任何其他任务，一起并行运行。
 
 > *知识点*：
-
-    - stack space
-    - tail-call optimization
+>
+>- stack space
+>- tail-call optimization
 
 
 现在，让我们仔细看看那个接收语句；为提醒大家，他看起来是这样的：
@@ -405,9 +405,8 @@ end
 
 
 > *知识点*：
-
-
-    - the *essence* of the problem, 问题的本质
+>
+>- the *essence* of the problem, 问题的本质
 
 
 

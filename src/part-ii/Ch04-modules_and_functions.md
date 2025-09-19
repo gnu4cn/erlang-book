@@ -19,12 +19,12 @@
 
 
 > *知识点*：
-
-    - higher-order functions, `funs`
-    - list comprehensions
-    - guards
-    - records
-    - `case` expressions
+>
+>- higher-order functions, `funs`
+>- list comprehensions
+>- guards
+>- records
+>- `case` expressions
 
 
 ## 模组乃我们存储代码之处
@@ -76,10 +76,10 @@ area({square, Side})	         -> Side * Side.
 
 
 > *知识点*：
-
-    - module declaration
-    - export declaration
-    - the arity of the function, [Wikipedia: Arity](https://en.wikipedia.org/wiki/Arity)
+>
+>- module declaration
+>- export declaration
+>- the arity of the function, [Wikipedia: Arity](https://en.wikipedia.org/wiki/Arity)
 
 
 模组中导出的函数，只能在模组内调用。导出的函数等同于面向对象编程语言（OOPL）中的公共方法；未导出的函数则相当于 OOPL 中的私有方法。
@@ -202,17 +202,17 @@ test_worked
 
 
 > *知识点*：
-
-    - clause
-    - the head of a function
-    - the body of a function
-    - the calling arguments
-    - the system modules
-    - a sticky directory
-    - test-driven development
-    - quick-and-dirty testing
-    - the common test framework
-    - the unit test framework
+>
+>- clause
+>- the head of a function
+>- the body of a function
+>- the calling arguments
+>- the system modules
+>- a sticky directory
+>- test-driven development
+>- quick-and-dirty testing
+>- the common test framework
+>- the unit test framework
 
 
 ### 扩展这个程序
@@ -356,13 +356,13 @@ area({square, Side})			 ->	Side * Side.
 
 
 > *知识点*：
-
-    - sentence
-    - clause
-    - subordinate clause
-    - short-range symbol
-    - medium-range symbol
-    - long-range symbol
+>
+>- sentence
+>- clause
+>- subordinate clause
+>- short-range symbol
+>- medium-range symbol
+>- long-range symbol
 
 
 每当我们看到表达式后有一组模式时，我们就会看到作为分隔符的分号。下面就是个示例：
@@ -558,17 +558,16 @@ Erlang 是门函数式编程语言。除开其他方面，这意味着函数可�
 
 
 > *知识点*：
-
-
-    - functional programming language
-    - higher-order function
-    - functions be used as arguments to functions
-    - functions returned by functions
-    - the data type which represents a function, `fun`
-    - control abstraction
-    - reentrant parsing code
-    - parser combinator
-    - lazy evaluators
+>
+>- functional programming language
+>- higher-order function
+>- functions be used as arguments to functions
+>- functions returned by functions
+>- the data type which represents a function, `fun`
+>- control abstraction
+>- reentrant parsing code
+>- parser combinator
+>- lazy evaluators
 
 
 `funs` 是一些 “匿名” 函数。之所以这么叫，是因为他们没有名字。在其他编程语言中，咱们可能看到他们被称为 *lambda 抽象*。我们来开始试验；首先，我们将定义一个 `fun`，并将其赋值给一个变量。
@@ -912,9 +911,9 @@ total(L) ->
 
 
 > *知识点*：
-
-    - list comprehension
-    - fully qualified name
+>
+>- list comprehension
+>- fully qualified name
 
 
 ## 列表综合
@@ -1055,10 +1054,10 @@ map(F, L) -> [F(X) || X <- L].
 
 
 > *知识点*：
-
-    - a generator
-    - a bitstring generator
-    - a filter
+>
+>- a generator
+>- a bitstring generator
+>- a filter
 
 
 ### 快速排序
@@ -1118,8 +1117,8 @@ qsort( [6,2,9,14] ) ++ [23] ++ qsort( [27,400,78,45,61,82] )
 ```
 
 > *知识点*：
-
-    - the infix append operator
+>
+>- the infix append operator
 
 
 ### 勾股数
@@ -1285,21 +1284,21 @@ max(X, Y) -> Y.
 
 
 > *知识点*：
-
-    - guards
-    - the `when` keyword
-    - guard sequence
-    - guard
-    - guard expression
-    - the atom `true`
-    - constant
-    - terms and bound variables
-    - the guard predicates
-    - term comparison
-    - arithmetic expression
-    - boolean expression
-    - short-cut boolean expression
-    - the precedence rules
+>
+>- guards
+>- the `when` keyword
+>- guard sequence
+>- guard
+>- guard expression
+>- the atom `true`
+>- constant
+>- terms and bound variables
+>- the guard predicates
+>- term comparison
+>- arithmetic expression
+>- boolean expression
+>- short-cut boolean expression
+>- the precedence rules
 
 
 ### 条件示例

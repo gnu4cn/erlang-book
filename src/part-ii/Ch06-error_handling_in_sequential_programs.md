@@ -74,7 +74,7 @@ cost(milk) -> 7.
 
     这用于表示 “崩溃的错误”。也就是说，发生了一些调用者无法处理的令人讨厌的错误。这与内部产生的错误类似。
 
-    Erlang 有两种捕获异常的方式。一种是将到函数的调用包含在一个 `try...catch` 表达式中。另一种是将调用包含在一个 `catch` 表达式中。
+Erlang 有两种捕获异常的方式。一种是将到函数的调用包含在一个 `try...catch` 表达式中。另一种是将调用包含在一个 `catch` 表达式中。
 
 
 
@@ -487,9 +487,9 @@ demo3() ->
 
 
 > *知识点*：
-
-- a last-call optimization
-- let it crash
+>
+>- a last-call optimization
+>- let it crash
 
 
 ## 快速喧闹地失败，抑或礼貌地失败
