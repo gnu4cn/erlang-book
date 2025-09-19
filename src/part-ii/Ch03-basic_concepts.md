@@ -522,15 +522,15 @@ P = {10, 45}
 
 
 > **译注**：上面的行也可以写为：
-
-```erlang
-4> Person = {person, {name, joe}, {height, 1.82},
-   {footsize, 42}, {eyecolor, brown}}.
-{person,{name,joe},
-        {height,1.82},
-        {footsize,42},
-        {eyecolor,brown}}
-```
+>
+>```erlang
+>4> Person = {person, {name, joe}, {height, 1.82},
+>   {footsize, 42}, {eyecolor, brown}}.
+>{person,{name,joe},
+>        {height,1.82},
+>        {footsize,42},
+>        {eyecolor,brown}}
+>```
 
 
 请注意我们如何使用原子标识字段，以及（在 `name` 和 `eyecolor` 的情况下）为字段赋值。
@@ -568,12 +568,12 @@ Erlang 使用垃圾回收器，回收所有未使用的内存，因此我们不�
 ```
 
 > **译注**：原文为：
-
-```erlang
-5> {true, Q, 23, Costs}.
-** 1: variable 'Q' is unbound **
-```
-
+>
+>```erlang
+>5> {true, Q, 23, Costs}.
+>** 1: variable 'Q' is unbound **
+>```
+>
 > 可见新版本的 Erlang/OTP 中，报错信息有改变和优化，精确到了行号与在行内的位置。
 
 

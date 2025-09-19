@@ -174,28 +174,28 @@ test_worked
 
 
 > **译注**：若我们修改一下 `geometry1.erl` 中的代码如下：
-
-```erlang
--module(geometry1).
--export([test/0, area/1]).
-
-
-test() ->
-    12 = area({rectangle, 3, 4}),
-    144 = area({square, 12}),
-    test_worked.
-
-area({rectangle, Width, Height}) -> Width * Height * 2;
-area({square, Side})			 ->	Side * Side.
-```
-
+>
+>```erlang
+>-module(geometry1).
+>-export([test/0, area/1]).
+>
+>
+>test() ->
+>    12 = area({rectangle, 3, 4}),
+>    144 = area({square, 12}),
+>    test_worked.
+>
+>area({rectangle, Width, Height}) -> Width * Height * 2;
+>area({square, Side})			 ->	Side * Side.
+>```
+>
 > 测试就不会通过，报出如下错误：
-
-```erlang
-4> geometry1:test().
-** exception error: no match of right hand side value 24
-     in function  geometry1:test/0 (geometry1.erl:6)
-```
+>
+>```erlang
+>4> geometry1:test().
+>** exception error: no match of right hand side value 24
+>     in function  geometry1:test/0 (geometry1.erl:6)
+>```
 
 
 在无需任何额外工具下，我们就能轻松添加测试，并进行测试驱动的开发。我们需要的只是模式匹配与 `=`。虽然这对于快速测试来说已经足够，但对生产代码来说，最好使用功能齐全的测试框架，比如通用测试框架或单元测试框架；详情请阅读 [Erlang 文档](http://www.erlang.org/doc) 中的测试部分。
@@ -247,12 +247,12 @@ area({square, Side})			 ->	Side * Side.
 
 
 > **译注**：在没有没有与调用参数匹配的模式时，报错如下所示：
-
-
-```erlang
-1> geometry:area({diamond, 12, 15}).
-** exception error: no function clause matching geometry:area({diamond,12,15}) (geometry.erl:4)
-```
+>
+>
+>```erlang
+>1> geometry:area({diamond, 12, 15}).
+>** exception error: no function clause matching geometry:area({diamond,12,15}) (geometry.erl:4)
+>```
 
 
 许多编程语言，比如 C，的每个函数，都只有一个入口点。若我们用 C 编写这个程序，代码可能如下：
@@ -1009,15 +1009,14 @@ total(L) ->
 
 
 > **译注**：在传入给此版本的 `total/1` 函数为空列表时，其仍能计算出结果为 `0`。
-
-
-    ```erlang
-    8> shop3:total(Buy).
-    123
-    9> shop3:total([]).
-    0
-    ```
-
+>
+>```erlang
+>8> shop3:total(Buy).
+>123
+>9> shop3:total([]).
+>0
+>```
+>
 > 请思考这是为什么......
 
 
@@ -1201,15 +1200,15 @@ perms(L)  -> [[H|T] || H <- L, T <- perms(L -- [H])].
 
 
 > **译注**：以下命令的输出比较奇怪。
-
-    ```erlang
-    3> lib_misc:perms("tweet").
-    ["tweet","twete","tweet","twete","twtee","twtee","tewet",
-     "tewte","teewt","teetw","tetwe","tetew","tewet","tewte",
-     "teewt","teetw","tetwe","tetew","ttwee","ttwee","ttewe",
-     "tteew","ttewe","tteew","wteet","wtete","wteet","wtete",
-     [...]|...]
-    ```
+>
+>```erlang
+>3> lib_misc:perms("tweet").
+>["tweet","twete","tweet","twete","twtee","twtee","tewet",
+> "tewte","teewt","teetw","tetwe","tetew","tewet","tewte",
+> "teewt","teetw","tetwe","tetew","ttwee","ttwee","ttewe",
+> "tteew","ttewe","tteew","wteet","wtete","wteet","wtete",
+> [...]|...]
+>```
 
 ## BIFs
 
