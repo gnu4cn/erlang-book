@@ -32,17 +32,17 @@ Erlang 属于 *函数式编程语言* 家族。函数式编程禁止带有副作
 
 
 > *知识点*：
-
-    - concurrency
-    - distribution
-    - fault tolerance
-    - functional programming
-    - locks and mutexes
-    - message passing
-    - design patterns
-    - distributed systems
-    - modeling concurrency
-    - concurrency-oriented programming
+>
+>- concurrency
+>- distribution
+>- fault tolerance
+>- functional programming
+>- locks and mutexes
+>- message passing
+>- design patterns
+>- distributed systems
+>- modeling concurrency
+>- concurrency-oriented programming
 
 
 ## 这本书适合哪些人阅读？

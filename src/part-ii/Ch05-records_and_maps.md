@@ -414,7 +414,7 @@ count_characters([], X) ->
 >%     |                            ^
 >
 >```
-
+>
 > 解决方法参考：[[Erlang] count_characters更正](https://blog.csdn.net/qq_44865780/article/details/105947621)
 >
 > 修订后的代码：
