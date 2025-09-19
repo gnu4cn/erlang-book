@@ -67,12 +67,11 @@ Erlang 的运行时系统，会运用一种代码自动加载机制。为了这�
 
 - `-spec code:add_patha(Dir) -> true | {error, bad_directory}`
 
-将一个新目录 `Dir`，添加到加载路径的开头。
+    将一个新目录 `Dir`，添加到加载路径的开头。
 
 - `-spec code:add_pathz(Dir) -> true | {error, bad_directory}`
 
-
-将一个新目录 `Dir`，添加到加载路径的末尾。
+    将一个新目录 `Dir`，添加到加载路径的末尾。
 
 
 通常情况下，咱们使用那个函数并不重要。唯一需要注意的是，使用 `add_patha` 和 `add_pathz` 会产生不同结果。当咱们怀疑加载了某个不正确模组时，咱们可调用 `code:all_loaded()`（这会返回所有已加载模组的列表）或 `code:clash()`，帮助咱们调查出了什么问题。

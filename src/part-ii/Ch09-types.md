@@ -43,24 +43,24 @@ Erlang 有我们可以用于定义新的数据类型，及将类型注解添加�
 - `-spec plan_route(point(), point()) -> route().`
 
 
-表示当函数 `plan_route/2` 以两个参数调用，且两个都是 `point()` 类型时，那么他将返回一个类型为 `route()` 的对象。
+    表示当函数 `plan_route/2` 以两个参数调用，且两个都是 `point()` 类型时，那么他将返回一个类型为 `route()` 的对象。
 
 
 - `-type direction() :: north | south | east | west.`
 
 
-引入一个名为 `direction()` 的新类型，其值为原子 `north`、`south`、`east` 或 `west` 之一。
+    引入一个名为 `direction()` 的新类型，其值为原子 `north`、`south`、`east` 或 `west` 之一。
 
 
 - `-type point() :: {integer(), integer()}.`
 
 
-表示 `point()` 这个类型，是两个整数的元组（`integer()` 是个预定义的类型）。
+    表示 `point()` 这个类型，是两个整数的元组（`integer()` 是个预定义的类型）。
 
 - `-type route() :: [{go, direction(), integer()}].`
 
 
-将类型 `route()` 定义为一个 3 元素元组的列表，其中每个元组包含原子 `go` 、一个 `direction` 类型的对象和一个整数。`[X]` 这种记法，表示一个类型 `X` 的列表。
+    将类型 `route()` 定义为一个 3 元素元组的列表，其中每个元组包含原子 `go` 、一个 `direction` 类型的对象和一个整数。`[X]` 这种记法，表示一个类型 `X` 的列表。
 
 
 
