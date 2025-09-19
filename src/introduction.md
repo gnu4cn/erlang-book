@@ -30,16 +30,19 @@ Erlang 属于 *函数式编程语言* 家族。函数式编程禁止带有副作
 
 这是有关并发的、有关分布式、有关容错、有关函数式编程的一本书。这是关于不使用锁和互斥，而只使用纯消息传递的分布式并发系统编程的一本书。这是有关在多核 CPU 上，自动加速咱们程序的一本书。这是有关编写允许人们交互的分布式应用程序的一本书。这是有关编写容错与分布式系统设计模式的一本书。这是有关并发建模，以及将这些模型映射到计算机程序，我（作者）将这一过程称为 *面向并发的编程，concurrency-oriented programming*。
 
-- concurrency
-- distribution
-- fault tolerance
-- functional programming
-- locks and mutexes
-- message passing
-- design patterns
-- distributed systems
-- modeling concurrency
-- concurrency-oriented programming
+
+> *知识点*：
+
+    - concurrency
+    - distribution
+    - fault tolerance
+    - functional programming
+    - locks and mutexes
+    - message passing
+    - design patterns
+    - distributed systems
+    - modeling concurrency
+    - concurrency-oriented programming
 
 
 ## 这本书适合哪些人阅读？

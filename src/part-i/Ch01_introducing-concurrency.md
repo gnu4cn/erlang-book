@@ -11,9 +11,9 @@
 
 > *知识点*：
 
-- concurrent, 并发
-- simultaneous, 同步
-- parallel, 并行
+    - concurrent, 并发
+    - simultaneous, 同步
+    - parallel, 并行
 
 
 若我们只有一部单核的计算机，那么我们就永远无法在他上面运行某个并行的程序。这是因为我们只有一个 CPU，而他一次只能做一件事。不过，我们可以在一部单核计算机上，运行并发程序。计算机会在不同任务之间进行分时，从而维持不同任务并行运行的假象，the computer time-shares between the different tasks, maintaining the illusion that the different tasks run in parallel。
@@ -46,10 +46,10 @@ init(Name) -> ...
 
 > *知识点*：
 
-- the module declaration, 模组声明
-- export declaration，导出声明
-- public
-- private
+    - the module declaration, 模组声明
+    - export declaration，导出声明
+    - public
+    - private
 
 
 `-export([init/1]).` 这种语法，表示有一个参数（这是 `/1` 的意思；不是除以一 的意思）的函数 `init`，可从该模组外部调用。在我们打算导出多个函数时，可使用这种语法：
@@ -105,8 +105,8 @@ spawn(person, init, ["Joe"])
 
 > *知识点*：
 
-- lightweight process, 轻量级进程
-- process identifier，进程标识符
+    - lightweight process, 轻量级进程
+    - process identifier，进程标识符
 
 
 > 以对象类比
@@ -231,10 +231,10 @@ Erlang 是为构建具备容错能力的电讯系统设计的，但同样的技�
 
 > *知识点*：
 
-- concurrent program, 并发程序
-- concurrent programming language, 并发编程语言
-- parallel computer, 并行计算机
-- CPU，core，处理器，核心
+    - concurrent program, 并发程序
+    - concurrent programming language, 并发编程语言
+    - parallel computer, 并行计算机
+    - CPU，core，处理器，核心
 
 
 ## 顺序与并发编程语言
@@ -253,9 +253,9 @@ Erlang 中的并发性，是由 Erlang 虚拟机提供的，而不是由操作�
 
 > *知识点*：
 
-- sequential programming language
-- concurrent programming language
-- the concurrency primitives of the host operating system
+    - sequential programming language
+    - concurrent programming language
+    - the concurrency primitives of the host operating system
 
 
 ## 总结

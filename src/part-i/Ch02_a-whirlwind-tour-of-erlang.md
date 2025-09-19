@@ -224,8 +224,8 @@ loop(Dir) ->
 
 > *知识点*：
 
-- stack space
-- tail-call optimization
+    - stack space
+    - tail-call optimization
 
 
 现在，让我们仔细看看那个接收语句；为提醒大家，他看起来是这样的：
@@ -407,7 +407,7 @@ end
 > *知识点*：
 
 
-- the *essence* of the problem, 问题的本质
+    - the *essence* of the problem, 问题的本质
 
 
 

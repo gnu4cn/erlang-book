@@ -111,15 +111,14 @@
 
 > **译注**：以下 shell 命令，反应了上述特性。
 
-
-```erlang
-5> X3 = #todo{status=urgent, desc="Fix errata in book"}.
-* 1:27: field desc undefined in record todo
-6> X1.
-#todo{status = urgent,who = joe,text = "Fix errata in book"}
-7> X2.
-#todo{status = done,who = joe,text = "Fix errata in book"}
-```
+    ```erlang
+    5> X3 = #todo{status=urgent, desc="Fix errata in book"}.
+    * 1:27: field desc undefined in record todo
+    6> X1.
+    #todo{status = urgent,who = joe,text = "Fix errata in book"}
+    7> X2.
+    #todo{status = done,who = joe,text = "Fix errata in book"}
+    ```
 
 
 ### 提取某个记录的字段
@@ -249,12 +248,12 @@ ok
 
 > **译注**：在 Erlang/OTP 28 下，只有 `=>` 才能用于映射构造。
 
-```erlang
-1> F1 = #{ a => 1, b := 2 }.
-* 1:19: only association operators '=>' are allowed in map construction
-2> F1 = #{ a := 1, b := 2 }.
-* 1:11: only association operators '=>' are allowed in map construction
-```
+    ```erlang
+    1> F1 = #{ a => 1, b := 2 }.
+    * 1:19: only association operators '=>' are allowed in map construction
+    2> F1 = #{ a := 1, b := 2 }.
+    * 1:11: only association operators '=>' are allowed in map construction
+    ```
 
 
 或者，设想我们打算创建一个不带原子键的映射。
@@ -331,21 +330,21 @@ NewMap = OldMap # {K1 Op V1,...,Kn Op Vn}
 >
 > 设想我们要在 JavaScript 下完成下面的事情：
 
-```javascript
-var x = {status:'old', task:'feed cats'};
-var y = x;
-y.status = 'done';
-```
+    ```javascript
+    var x = {status:'old', task:'feed cats'};
+    var y = x;
+    y.status = 'done';
+    ```
 
 
 > `y` 的值为对象 `{status:'done', task:'feed cats'}`。这里没有惊喜。但令人惊讶的是，`x` 已变成了 `{status:'done'，task:'feed cats'}`。这会让 Erlang 程序员大吃一惊。我们设法改变了变量 `x` 的一个字段的值，不是通过引用 `x`，而是通过给变量 `y` 的一个字段赋值。经由一个别名指针，更改 `X` 会导致许多可能很难调试的细微错误。
 >
 > 逻辑上等价的 Erlang 代码如下：
 
-```erlang
-D1 = {status=>old, task=>'feed cats'},
-D2 = D1#{status := done},
-```
+    ```erlang
+    D1 = {status=>old, task=>'feed cats'},
+    D2 = D1#{status := done},
+    ```
 
 > 在 Erlang 的代码中，变量 `D1` 和 `D2` 从未改变他们的初始值。`D2` 会像他是个 `D1` 的深拷贝那样行事。事实上，深拷贝并未发生；Erlang 系统只拷贝了内部结构中，维持拷贝已被创建假象的部分，因此创建某个对象的看似深度拷贝的操作，是一次非常轻量级的操作。
 
@@ -409,31 +408,31 @@ count_characters([], X) ->
 > 1. 其中行 `count_characters([H|T], #{ H := N }=X) ->` 处在编译时会报出错误，导致这段代码无法被编译。
 
 
-```erlang
-lib_misc.erl:71:28: variable 'H' is unbound
-%   71| count_characters([H|T], #{ H := N }=X) ->
-%     |                            ^
+    ```erlang
+    lib_misc.erl:71:28: variable 'H' is unbound
+    %   71| count_characters([H|T], #{ H := N }=X) ->
+    %     |                            ^
 
-```
+    ```
 
 > 解决方法参考：[[Erlang] count_characters更正](https://blog.csdn.net/qq_44865780/article/details/105947621)
 >
 > 修订后的代码：
 
 
-```erlang
-count_characters(Str) ->
-    count_characters(Str, #{}).
+    ```erlang
+    count_characters(Str) ->
+        count_characters(Str, #{}).
 
-count_characters([H|T], X) ->
-    case map:is_key(H, X) of
-        false -> count_characters(T, X#{ H => 1 });
-        true  -> #{ H := N } = X,
-                 count_characters(T, X#{ H := N+1 })
-    end;
-count_characters([], X) ->
-    X.
-```
+    count_characters([H|T], X) ->
+        case map:is_key(H, X) of
+            false -> count_characters(T, X#{ H => 1 });
+            true  -> #{ H := N } = X,
+                     count_characters(T, X#{ H := N+1 })
+        end;
+    count_characters([], X) ->
+        X.
+    ```
 
 
 > 2. 其中 `h` 的 ASCII 代码为 104 而非 101。
@@ -501,14 +500,12 @@ count_characters([], X) ->
 
     `M3` 等同于 `M1`，但移除了有着与 `M2` 中元素同样键的元素。
 
-
     其行为就好像他被定义如下：
 
-
-```erlang
-maps:difference(M1, M2) ->
-    maps:without(maps:keys(M2), M1).
-```
+    ```erlang
+    maps:difference(M1, M2) ->
+        maps:without(maps:keys(M2), M1).
+    ```
 
 
 ### 映射的排序
@@ -526,16 +523,16 @@ maps:difference(M1, M2) ->
 
 > **译注**：在 Erlang shell 中验证如下。
 
-```erlang
-5> A = #{age => 23, person => "jim"}.
-#{age => 23,person => "jim"}
-6> B = #{email => "sue@somplace.com", name => "sue"}.
-#{name => "sue",email => "sue@somplace.com"}
-7> A < B.
-true
-8> A > B.
-false
-```
+    ```erlang
+    5> A = #{age => 23, person => "jim"}.
+    #{age => 23,person => "jim"}
+    6> B = #{email => "sue@somplace.com", name => "sue"}.
+    #{name => "sue",email => "sue@somplace.com"}
+    7> A < B.
+    true
+    8> A > B.
+    false
+    ```
 
 
 

@@ -20,11 +20,11 @@
 
 > *知识点*：
 
-- higher-order functions, `funs`
-- list comprehensions
-- guards
-- records
-- `case` expressions
+    - higher-order functions, `funs`
+    - list comprehensions
+    - guards
+    - records
+    - `case` expressions
 
 
 ## 模组乃我们存储代码之处
@@ -77,9 +77,9 @@ area({square, Side})	         -> Side * Side.
 
 > *知识点*：
 
-- module declaration
-- export declaration
-- the arity of the function, [Wikipedia: Arity](https://en.wikipedia.org/wiki/Arity)
+    - module declaration
+    - export declaration
+    - the arity of the function, [Wikipedia: Arity](https://en.wikipedia.org/wiki/Arity)
 
 
 模组中导出的函数，只能在模组内调用。导出的函数等同于面向对象编程语言（OOPL）中的公共方法；未导出的函数则相当于 OOPL 中的私有方法。
@@ -203,16 +203,16 @@ area({square, Side})			 ->	Side * Side.
 
 > *知识点*：
 
-- clause
-- the head of a function
-- the body of a function
-- the calling arguments
-- the system modules
-- a sticky directory
-- test-driven development
-- quick-and-dirty testing
-- the common test framework
-- the unit test framework
+    - clause
+    - the head of a function
+    - the body of a function
+    - the calling arguments
+    - the system modules
+    - a sticky directory
+    - test-driven development
+    - quick-and-dirty testing
+    - the common test framework
+    - the unit test framework
 
 
 ### 扩展这个程序
@@ -321,7 +321,7 @@ class Square extends Shape {
 }
 ```
 
-> 注 <sup>1<sup>：[http://java.sun.com/developer/Books/shiftintojava/page1.html](https://web.archive.org/web/*/http://java.sun.com/developer/Books/shiftintojava/page1.html)
+> 注 <sup>1</sup>：[http://java.sun.com/developer/Books/shiftintojava/page1.html](https://web.archive.org/web/*/http://java.sun.com/developer/Books/shiftintojava/page1.html)
 
 若咱们将 Erlang 的代码与 Java 代码进行比较，就会发现在 Java 程序中，`area` 的代码位于三个位置。而在 Erlang 程序中，`area` 的所有代码都在同一个地方。
 
@@ -357,12 +357,12 @@ area({square, Side})			 ->	Side * Side.
 
 > *知识点*：
 
-- sentence
-- clause
-- subordinate clause
-- short-range symbol
-- medium-range symbol
-- long-range symbol
+    - sentence
+    - clause
+    - subordinate clause
+    - short-range symbol
+    - medium-range symbol
+    - long-range symbol
 
 
 每当我们看到表达式后有一组模式时，我们就会看到作为分隔符的分号。下面就是个示例：
@@ -560,15 +560,15 @@ Erlang 是门函数式编程语言。除开其他方面，这意味着函数可�
 > *知识点*：
 
 
-- functional programming language
-- higher-order function
-- functions be used as arguments to functions
-- functions returned by functions
-- the data type which represents a function, `fun`
-- control abstraction
-- reentrant parsing code
-- parser combinator
-- lazy evaluators
+    - functional programming language
+    - higher-order function
+    - functions be used as arguments to functions
+    - functions returned by functions
+    - the data type which represents a function, `fun`
+    - control abstraction
+    - reentrant parsing code
+    - parser combinator
+    - lazy evaluators
 
 
 `funs` 是一些 “匿名” 函数。之所以这么叫，是因为他们没有名字。在其他编程语言中，咱们可能看到他们被称为 *lambda 抽象*。我们来开始试验；首先，我们将定义一个 `fun`，并将其赋值给一个变量。
@@ -913,8 +913,8 @@ total(L) ->
 
 > *知识点*：
 
-- list comprehension
-- fully qualified name
+    - list comprehension
+    - fully qualified name
 
 
 ## 列表综合
@@ -1011,12 +1011,12 @@ total(L) ->
 > **译注**：在传入给此版本的 `total/1` 函数为空列表时，其仍能计算出结果为 `0`。
 
 
-```erlang
-8> shop3:total(Buy).
-123
-9> shop3:total([]).
-0
-```
+    ```erlang
+    8> shop3:total(Buy).
+    123
+    9> shop3:total([]).
+    0
+    ```
 
 > 请思考这是为什么......
 
@@ -1057,9 +1057,9 @@ map(F, L) -> [F(X) || X <- L].
 
 > *知识点*：
 
-- a generator
-- a bitstring generator
-- a filter
+    - a generator
+    - a bitstring generator
+    - a filter
 
 
 ### 快速排序
@@ -1120,7 +1120,7 @@ qsort( [6,2,9,14] ) ++ [23] ++ qsort( [27,400,78,45,61,82] )
 
 > *知识点*：
 
-- the infix append operator
+    - the infix append operator
 
 
 ### 勾股数
@@ -1202,15 +1202,14 @@ perms(L)  -> [[H|T] || H <- L, T <- perms(L -- [H])].
 
 > **译注**：以下命令的输出比较奇怪。
 
-
-```erlang
-3> lib_misc:perms("tweet").
-["tweet","twete","tweet","twete","twtee","twtee","tewet",
- "tewte","teewt","teetw","tetwe","tetew","tewet","tewte",
- "teewt","teetw","tetwe","tetew","ttwee","ttwee","ttewe",
- "tteew","ttewe","tteew","wteet","wtete","wteet","wtete",
- [...]|...]
-```
+    ```erlang
+    3> lib_misc:perms("tweet").
+    ["tweet","twete","tweet","twete","twtee","twtee","tewet",
+     "tewte","teewt","teetw","tetwe","tetew","tewet","tewte",
+     "teewt","teetw","tetwe","tetew","ttwee","ttwee","ttewe",
+     "tteew","ttewe","tteew","wteet","wtete","wteet","wtete",
+     [...]|...]
+    ```
 
 ## BIFs
 
@@ -1288,21 +1287,20 @@ max(X, Y) -> Y.
 
 > *知识点*：
 
-
-- guards
-- the `when` keyword
-- guard sequence
-- guard
-- guard expression
-- the atom `true`
-- constant
-- terms and bound variables
-- the guard predicates
-- term comparison
-- arithmetic expression
-- boolean expression
-- short-cut boolean expression
-- the precedence rules
+    - guards
+    - the `when` keyword
+    - guard sequence
+    - guard
+    - guard expression
+    - the atom `true`
+    - constant
+    - terms and bound variables
+    - the guard predicates
+    - term comparison
+    - arithmetic expression
+    - boolean expression
+    - short-cut boolean expression
+    - the precedence rules
 
 
 ### 条件示例
@@ -1409,7 +1407,7 @@ g(X) when (X == 0) orelse (1/X > 2) ->
 在实践中，很少有程序会用到复杂条件，对于大多数程序来说，简单 (`,`) 条件就足够了。
 
 
-### `true` 这个条件的使用
+### `true` 条件的使用
 
 咱们可能想知道，为何我们需要 `true` 这个条件？原因是 `true` 这个原子，可用作 `if` 表达式最后的 “概括” 条件，就像下面这样：
 
