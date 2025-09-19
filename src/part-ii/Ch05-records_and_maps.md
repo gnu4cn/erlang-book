@@ -110,14 +110,15 @@
 
 
 > **译注**：以下 shell 命令，反应了上述特性。
-    ```erlang
-    5> X3 = #todo{status=urgent, desc="Fix errata in book"}.
-    * 1:27: field desc undefined in record todo
-    6> X1.
-    #todo{status = urgent,who = joe,text = "Fix errata in book"}
-    7> X2.
-    #todo{status = done,who = joe,text = "Fix errata in book"}
-    ```
+
+>```erlang
+>5> X3 = #todo{status=urgent, desc="Fix errata in book"}.
+>* 1:27: field desc undefined in record todo
+>6> X1.
+>#todo{status = urgent,who = joe,text = "Fix errata in book"}
+>7> X2.
+>#todo{status = done,who = joe,text = "Fix errata in book"}
+>```
 
 
 ### 提取某个记录的字段
