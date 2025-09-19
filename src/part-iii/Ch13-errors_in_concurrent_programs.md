@@ -258,6 +258,11 @@ Erlang 构建容错软件的哲学，可概括为两个容易记住的短语：�
     这个原语将建立一个监视器。其中 `Item` 是某个进程的 `Pid` 或注册名字。
 
 
+- `-spec demonitor(Ref) -> true`
+
+    这个原语会移除有着引用 `Ref` 的某个监视器。
+
+
 - `-spec exit(Why) -> none()`
 
     这个原语会引发当前进程以原因 `Why` 终止。当执行这个语句的子句，不在某个 `catch` 语句范围内时，那么当前进程将以参数 `Why`，刚播一个退出信号到所有当前链接的进程。他还将广播一个 `DOWN` 消息，到所有监视他的进程。
@@ -274,4 +279,181 @@ Erlang 构建容错软件的哲学，可概括为两个容易记住的短语：�
 ## 编程容错
 
 
+在这一小节中，咱们将学习几种可用于构造容错代码的简单技术。这并非构造容错系统的全部，但却是个故事的开局。
 
+
+### 在某个进程死掉时执行一个动作
+
+
+函数 `on_exit(Pid,Fun)` 会监视进程 `Pid`，并在该进程以 `Why` 原因退出时，执行 `Fun(Why)`。
+
+
+
+[`lib_misc.erl`](http://media.pragprog.com/titles/jaerlang2/code/lib_misc.erl)
+
+
+```erlang
+{{#include ../../projects/ch13-code/lib_misc.erl:120:126}}
+```
+
+
+`monitor(process, Pid)` （第 3 行）创建了个到 `Pid` 创建的监视器。当该进程死亡时，一条 `DOWN` 消息会被收到，并调用 `Fun(Why)`（第 5 行）。
+
+
+要测试这个函数，我们将定义一个等待一条消息 `X`，然后执行 `list_to_atom(X)` 的函数 `F`。
+
+
+```erlang
+1> F = fun() ->
+   receive
+   X -> list_to_atom(X)
+   end
+   end.
+#Fun<erl_eval.43.113135111>
+```
+
+
+我们将生成下面这个进程：
+
+
+```erlang
+2> Pid = spawn(F).
+<0.86.0>
+```
+
+同时我们将建立一个监控他的 `on_exit` 处理器。
+
+
+```erlang
+3> lib_misc:on_exit(Pid, fun(Why) ->
+   io:format(" ~p died with: ~p~n", [Pid, Why])
+   end).
+<0.88.0>
+```
+
+当我们将一个原子发送给 `Pid` 时，该进程就会死掉（因为他试图执行在某个非列表上执行 `list_to_atom`），同时 `on_exit` 这个处理程序将被调用。
+
+
+```erlang
+4> Pid ! hello.
+ <0.86.0> died with: {badarg,
+                         [{erlang,list_to_atom,
+                              [hello],
+                              [{error_info,#{module => erl_erts_errors}}]}]}
+=ERROR REPORT==== 19-Sep-2025::10:56:44.975000 ===
+Error in process <0.86.0> with exit value:
+{badarg,[{erlang,list_to_atom,
+                 [hello],
+                 [{error_info,#{module => erl_erts_errors}}]}]}
+
+hello
+5>
+```
+
+
+当然，进程死掉时调用的函数，可以执行他偏好的任何计算：他可忽略这个错误、记录这个错误，或重启应用。取舍在程序员那里。
+
+
+> **生成进程和链接进程为什么必须是原子操作**
+>
+> 从前 Erlang 有两个原语：`spawn` 和 `link`，而 `spawn_link(Mod, Func, Args)` 曾被定义为下面这样：
+
+```erlang
+spawn_link(Mod, Func, Args) -> 
+    Pid = spawn(Mod, Func, Args),
+    link(Pid)
+    end.
+```
+
+> 然后一个不起眼的错误就出现了。在其中那个链接语句被调用前，生成的进程就已死掉，因此那个进程就死掉了，但没有错误信号产生。这个 bug 花了很长时间才发现。为解决这个问题，`spawn_link` 作为一个原子操作被加入。在涉及并发时，即使是看起来简单的程序，也会很棘手。
+
+### 构造会全部一起死掉的进程集
+
+
+设想我们打算创建几个用于解决某个问题的工作进程。他们会执行函数 `F1`、`F2` 等。当有进程死掉时，我们就要他们全部死掉。我们可通过调用 `start([F1,F2, ...])` 做到这点。
+
+
+```erlang
+start(Fs) ->
+    spawn(fun() -> 
+        [spawn_link(F) || F <- Fs],
+        receive
+            after infinity -> true
+        end
+    end).
+```
+
+`start(Fs)` 会生成一个进程，该进程又会生成并链接那些工作进程，并等待无限长时间。当任何一个工作进程死掉时，他们都会死掉。
+
+
+当我们想要知道这些进程是否都已死掉时，我们可将一个 `on_exit` 处理器，添加到这个启动进程。
+
+
+```erlang
+Pid = start([F1, F2, ...]),
+on_exit(Pid, fun(Why) -> 
+                ... the code here runs if any worker
+                ... process dies
+             end)
+```
+
+
+### 构造一个永生的进程
+
+
+我们将构造一个保持存活的进程，以结束这一章。这个想法是要构造一个始终存活的注册进程 -- 当他因任何原因死亡时，他都将立即重启。
+
+
+我们可使用 `on_exit`，编程这一想法。
+
+
+[`lib_misc.erl`](http://media.pragprog.com/titles/jaerlang2/code/lib_misc.erl)
+
+
+```erlang
+{{#include ../../projects/ch13-code/lib_misc.erl:130:132}}
+```
+
+
+这会构造一个名为 `Name`，执行 `spawn(Fun)` 的注册进程。当该进程因任何原因死掉时，他都会被重启。
+
+
+在 `on_exit` 和 `keep_alive` 中，有个相当微妙的错误。当我们仔细观察下面两行代码时：
+
+
+```erlang
+Pid = register(...),
+on_exit(Pid, fun(X) -> ..),
+```
+
+我们会看到，存在该进程在这两条语句 *之间* 空隙中死掉的可能性。当该进程在 `on_exit` 执行前就已死亡，那么链接将不会被创建，`on_exit` 这个进程将不会如咱们预期的那样工作。当两个程序同时对同一个 `Name` 值，执行 `keep_alive` 时，这种情况就会发生。这被称为 *竞赛条件* -- 两部分代码（这一部分）以及 `on_exit` 中执行链接操作的代码小节在相互竞赛。当这里出了问题时，咱们程序就会以非预期方式运行。
+
+> *知识点*：
+
+- racing condition
+
+我（作者）不会在这里解决这个问题 -- 我会让你自己思考如何做到这一点。当咱们把 `spawn`、`spawn_monitor`、`register` 等 Erlang 原语结合在一起时，咱们就必须仔细考虑竞赛条件的可能，并以竞赛条件不会发生的方式，编写咱们的代码。
+
+
+现在，咱们已经了解了的错误处理的全部。顺序代码中无法捕获的错误，会从这些错误发生的进程中流出，沿着链接流到其他可被编程处理这些错误的进程。我们所描述的所有机制（链接进程等），都会跨越机器边界透明运行。
+
+
+跨越机器边界，将我们带到分布式编程。Erlang 进程可 *在网络中的其他物理机上*，产生新的进程，从而让编写分布式程序十分容易。分布式编程，是下一章的主题。
+
+
+## 练习
+
+
+1. 请编写一个以类似 `spawn(Mod,Func,Args)` 方式行事的函数 `my_spawn(Mod, Func, Args)`，但有一个不同。当所生成的进程死掉时，一条消息说明该进程死亡原因，及该进程死亡前存活时间的消息会被打印出来；
+
+
+2. 请使用本章早先给出的 `on_exit` 函数，解答上一练习；
+
+
+3. 请编写一个以类似 `spawn(Mod,Func,Args)` 方式行事的函数 `my_spawn(Mod, Func, Args, Time)`，但有一点不同。当生成的进程存活时间超过 `Time` 秒时，则其会被杀死；
+
+4. 请编写一个会创建出，一个每五秒写出 `"I'm still running"` 的注册进程的函数。并编写一个监控该进程，并在其死亡时重新启动的函数。启动这个全局进程和监控进程。杀死那个全局进程，并检查他是否已由监控进程重启；
+
+5. 请编写一个启动并监控多个工作进程的函数。当任何一个工作进程非正常死亡时，就要重启他；
+
+6. 编写一个启动并监控多个工作进程的函数。当任何一个工作进程非正常死亡时，杀死所有工作进程并重新启动他们。
