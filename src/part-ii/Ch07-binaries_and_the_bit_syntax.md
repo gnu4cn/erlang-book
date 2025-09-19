@@ -313,44 +313,43 @@ Ei = Value |
 - **找出 MPEG 数据中的同步帧**
 
 
-    设想我们打算编写一个处理 MPEG 音频数据的程序。我们可能打算以 Erlang 编写个流媒体服务器，或者提取描述 MPEG 音频流内容的数据标签。要完成此目的，我们需要识别出某个 MPEG 流中的数据帧，并与之同步。
+设想我们打算编写一个处理 MPEG 音频数据的程序。我们可能打算以 Erlang 编写个流媒体服务器，或者提取描述 MPEG 音频流内容的数据标签。要完成此目的，我们需要识别出某个 MPEG 流中的数据帧，并与之同步。
 
-    MPEG 音频数据由若干的帧组成。每帧都有自己的帧头部，其后是音频信息 -- 没有文件头部，且原则上咱们可将某个 MPEG 文件，剪切成一些片段，并播放这些片段中的任何一个。任何读取 MPEG 数据流的任何软件，都必须找到那些头部帧，然后才能同步 MPEG 数据。
+MPEG 音频数据由若干的帧组成。每帧都有自己的帧头部，其后是音频信息 -- 没有文件头部，且原则上咱们可将某个 MPEG 文件，剪切成一些片段，并播放这些片段中的任何一个。任何读取 MPEG 数据流的任何软件，都必须找到那些头部帧，然后才能同步 MPEG 数据。
 
-    MPEG 头部会以 11 位的 *帧同步* 开始，其由 11 个连续的二进制位 `1` 组成，后跟描述（该头部）后面数据的信息：
+MPEG 头部会以 11 位的 *帧同步* 开始，其由 11 个连续的二进制位 `1` 组成，后跟描述（该头部）后面数据的信息：
 
-    ```text
-    AAAAAAAA AAABBCCD EEEEFFGH IIJJKLMM
-    ```
+```text
+AAAAAAAA AAABBCCD EEEEFFGH IIJJKLMM
+```
 
 
-    | 项目 | 作用 |
-    | :-- | :-- |
-    | `AAAAAAAA AAA` | 同步字（11 位，全部为 `1`）。 |
-    | `BB` | 这 2 个位是该 MPEG 音频的版本 ID。 |
-    | `CC` | 这 2 个位为这个层的描述。 |
-    | `D`  | 这 1 个为，是个保护位。 |
+| 项目 | 作用 |
+| :-- | :-- |
+| `AAAAAAAA AAA` | 同步字（11 位，全部为 `1`）。 |
+| `BB` | 这 2 个位是该 MPEG 音频的版本 ID。 |
+| `CC` | 这 2 个位为这个层的描述。 |
+| `D`  | 这 1 个为，是个保护位。 |
 
-    等等......
 
 > *知识点*：
-
-- the data frames in an MPEG stream
-- the header frames
-- frame sync
-
-
-    这些比特位的具体细节，在此无需赘述。基本上，只要知道 `A` 到 `M` 的值，我们就能计算出某个 MPEG 帧的总长度。
+>
+>- the data frames in an MPEG stream
+>- the header frames
+>- frame sync
 
 
-    为了找到同步点，我们首先假定我们已正确定位在某个 MPEG 头部的起点。随后我们就要尝试计算出该帧的长度。然后会出现以下情况之一：
-
-    - 我们的假设是正确的，那么当我们向前跳过该帧的长度时，我们将发现另一个 MPEG 头部；
-    - 我们的假设不正确；要么我们未处于某个标记头部的 11 个连续 `1` 的序列，要么是这个字的格式不正确，以致我们无法计算该帧的长度；
-    - 我们的假设不正确，但我们处在几个恰好看起来像某个头部的开始处。在这种情况下，我们可以计算出帧的长度，但当我们跳过这个长度时，我们无法找新头部。
+这些比特位的具体细节，在此无需赘述。基本上，只要知道 `A` 到 `M` 的值，我们就能计算出某个 MPEG 帧的总长度。
 
 
-    要确保万无一失，我们就要查找三个连续头部。这个同步例程如下：
+为了找到同步点，我们首先假定我们已正确定位在某个 MPEG 头部的起点。随后我们就要尝试计算出该帧的长度。然后会出现以下情况之一：
+
+- 我们的假设是正确的，那么当我们向前跳过该帧的长度时，我们将发现另一个 MPEG 头部；
+- 我们的假设不正确；要么我们未处于某个标记头部的 11 个连续 `1` 的序列，要么是这个字的格式不正确，以致我们无法计算该帧的长度；
+- 我们的假设不正确，但我们处在几个恰好看起来像某个头部的开始处。在这种情况下，我们可以计算出帧的长度，但当我们跳过这个长度时，我们无法找新头部。
+
+
+要确保万无一失，我们就要查找三个连续头部。这个同步例程如下：
 
 
 [`mp3_sync.erl`](http://media.pragprog.com/titles/jaerlang2/code/mp3_sync.erl)
@@ -371,8 +370,9 @@ find_sync(Bin, N) ->
     end.
 
 ```
-    `find_sync` 会尝试找到三个连续的 MPEG 头部帧。当 `Bin` 中的第 `N` 个字节，是某个头部帧的开始时，那么 `is_header(N, Bin)` 将返回 `{ok, Length, Info}`。而当 `is_header` 返回 `error` 时，则说明 `N` 未能指向某个正确帧的开始。
-    我们可在 shell 中完成一个快速测试，确保这会工作。
+
+`find_sync` 会尝试找到三个连续的 MPEG 头部帧。当 `Bin` 中的第 `N` 个字节，是某个头部帧的开始时，那么 `is_header(N, Bin)` 将返回 `{ok, Length, Info}`。而当 `is_header` 返回 `error` 时，则说明 `N` 未能指向某个正确帧的开始。
+我们可在 shell 中完成一个快速测试，确保这会工作。
 
 
 ```erlang
@@ -405,8 +405,8 @@ unpack_header(X) ->
 	    _:_ -> error
     end.
 ```
-    这段代码稍微复杂一些。首先，我们提取 32 位数据来分析（通过 `get_word` 完成）；然后我们使用 `decode_header` 解包这个头部。现在，`decode_header` 被编写为当其参数不属于某个头部的开头时，就要崩溃（通过调用 `error/0`）。为捕获任何的错误，我们将到 `decode_header` 的调用，封装在一个 `try...catch` 语句中（请在 [6.1 节 “处理顺序代码中的错误”](Ch06-error_handling_in_sequential_programs.md#顺序代码中的错误处理) 中阅读有关此问题的更多内容）。这也将捕获任何可能由 `framelength/4` 中的错误代码引起的错误。`decode_header` 是全部乐趣开始之处。
 
+这段代码稍微复杂一些。首先，我们提取 32 位数据来分析（通过 `get_word` 完成）；然后我们使用 `decode_header` 解包这个头部。现在，`decode_header` 被编写为当其参数不属于某个头部的开头时，就要崩溃（通过调用 `error/0`）。为捕获任何的错误，我们将到 `decode_header` 的调用，封装在一个 `try...catch` 语句中（请在 [6.1 节 “处理顺序代码中的错误”](Ch06-error_handling_in_sequential_programs.md#顺序代码中的错误处理) 中阅读有关此问题的更多内容）。这也将捕获任何可能由 `framelength/4` 中的错误代码引起的错误。`decode_header` 是全部乐趣开始之处。
 
 
 [`mp3_sync.erl`](http://media.pragprog.com/titles/jaerlang2/code/mp3_sync.erl)
@@ -439,17 +439,20 @@ decode_header(<<2#11111111111:11,B:2,C:2,_D:1,E:4,F:2,G:1,Bits:9>>) ->
     end;
 decode_header(_) -> exit(badHeader).
 ```
-    神奇之处藏在这段代码第一行中，那个令人震惊的表达式里。
+
+神奇之处藏在这段代码第一行中，那个令人震惊的表达式里。
 
 
 ```erlang
 decode_header(<<2#11111111111:11,B:2,C:2,_D:1,E:4,F:2,G:1,Bits:9>>) ->
 ```
-    其中 `2#11111111111` 是个底数为 2 的整数，因此该模式会匹配 11 个连续的比特数 `1`，将 2 位匹配到 `B` 中，2 位匹配到 `C` 中，以此类推。请注意，这段代码完全遵循了早先给出的 MPEG 头部的位级规范。要写出更漂亮、更直接的代码会很难。这段代码优美而高效。Erlang 的编译器会将位语法的模式，转换为以最佳方式提取字段的高度优化代码。
+
+其中 `2#11111111111` 是个底数为 2 的整数，因此该模式会匹配 11 个连续的比特数 `1`，将 2 位匹配到 `B` 中，2 位匹配到 `C` 中，以此类推。请注意，这段代码完全遵循了早先给出的 MPEG 头部的位级规范。要写出更漂亮、更直接的代码会很难。这段代码优美而高效。Erlang 的编译器会将位语法的模式，转换为以最佳方式提取字段的高度优化代码。
+
 
 - **解包 COFF 数据**
 
-    数年前，我（决定）决定编写个构造可在 Windows 上运行的独立 Erlang 程序的程序 -- 我打算在任何可运行 Erlang 的机器上，构建出 Windows 的可执行文件。完成这点涉及理解及操作微软的通用对象文件格式，COFF，格式化的文件。了解 COFF 的细节相当困难，但 C++ 程序的各种应用程序接口都有记录。C++ 程序使用了 `DWORD`、`LONG`、`WORD` 及 `BYTE` 等的类型声明；这些类型声明对于那些编写过 Windows 内部程序的程序员，将不陌生。
+数年前，我（决定）决定编写个构造可在 Windows 上运行的独立 Erlang 程序的程序 -- 我打算在任何可运行 Erlang 的机器上，构建出 Windows 的可执行文件。完成这点涉及理解及操作微软的通用对象文件格式，COFF，格式化的文件。了解 COFF 的细节相当困难，但 C++ 程序的各种应用程序接口都有记录。C++ 程序使用了 `DWORD`、`LONG`、`WORD` 及 `BYTE` 等的类型声明；这些类型声明对于那些编写过 Windows 内部程序的程序员，将不陌生。
 
 
 ```c
@@ -462,7 +465,8 @@ typedef struct _IMAGE_RESOURCE_DIRECTORY {
     WORD NumberOfIdEntries;
 } IMAGE_RESOURCE_DIRECTORY, *PIMAGE_RESOURCE_DIRECTORY;
 ```
-    要编写出我的 Erlang 程序，我（作者）首先定义了在 Erlang 源码文件中，必须包含的四个宏。
+
+要编写出我的 Erlang 程序，我（作者）首先定义了在 Erlang 源码文件中，必须包含的四个宏。
 
 
 ```erlang
@@ -471,7 +475,8 @@ typedef struct _IMAGE_RESOURCE_DIRECTORY {
 -define(WORD, 16/unsigned-little-integer).
 -define(BYTE, 8/unsigned-little-integer).
 ```
-    *注意*：宏会在 [8.17 节 “宏”](../part-ii/Ch08-the_rest_of_sequential_erlang.md#宏) 中解释。为扩展这些宏，我们使用了 `?DWORD`、`?LONG` 等语法。例如，宏 `?DWORD` 将扩展为字面文本 `32/unsigned-little-integer`。
+
+*注意*：宏会在 [8.17 节 “宏”](../part-ii/Ch08-the_rest_of_sequential_erlang.md#宏) 中解释。为扩展这些宏，我们使用了 `?DWORD`、`?LONG` 等语法。例如，宏 `?DWORD` 将扩展为字面文本 `32/unsigned-little-integer`。
     这些宏特意使用了与其 C 语言对应宏相同的名称。有了这些宏，我（作者）就可以轻松写出一些将图像资源数据，解包为二进制数据的代码。
 
 
@@ -485,29 +490,36 @@ unpack_image_resource_directory(Dir) ->
       NumberOfIdEntries : ?WORD, _/binary>> = Dir,
     ..
 ```
-    当咱们比较 C 和 Erlang 的代码时，就会发现他们非常相似。因此，通过留意这些宏的名字及 Erlang 代码的布局，我们就能缩小 C 代码和 Erlang 代码间的语义差距，这会使我们的程序更易理解，更不易出错。
-    下一步是解包 `Characteristics` 中的数据，等等。
-    `Characteristics` 是个由标识集合组成的 32 位字。使用比特语法解包这些标识非常简单；我们只要这样写下代码即可：
+
+当咱们比较 C 和 Erlang 的代码时，就会发现他们非常相似。因此，通过留意这些宏的名字及 Erlang 代码的布局，我们就能缩小 C 代码和 Erlang 代码间的语义差距，这会使我们的程序更易理解，更不易出错。
+
+下一步是解包 `Characteristics` 中的数据，等等。
+
+`Characteristics` 是个由标识集合组成的 32 位字。使用比特语法解包这些标识非常简单；我们只要这样写下代码即可：
 
 
 ```erlang
 <<ImageFileRelocsStripped:1, ImageFileExecutableImage:1, ...>> =
 <<Characteristics:32>>
 ```
-    代码 `<<Characteristics:32>>` 将整数的 `Characteristics`，转换为了个 32 位的二进制值。然后，下面的代码将所需的那些位，解包到变量 `ImageFileRelocsStripped`、`ImageFileExecutableImage` 等中：
+
+代码 `<<Characteristics:32>>` 将整数的 `Characteristics`，转换为了个 32 位的二进制值。然后，下面的代码将所需的那些位，解包到变量 `ImageFileRelocsStripped`、`ImageFileExecutableImage` 等中：
 
 
 ```erlang
 <<ImageFileRelocsStripped:1, ImageFileExecutableImage:1, ...>> = ...
 ```
-    同样，我（作者）保留了与 Windows API 中同样的名字，以便将规范与 Erlang 程序间的语义差距，降至最低。
-    使用这些宏，使解包 COFF 格式数据变得......嗯，我（作者）真的不能用 *简单* 这个词，但代码尚可理解的。
+
+同样，我（作者）保留了与 Windows API 中同样的名字，以便将规范与 Erlang 程序间的语义差距，降至最低。
+
+使用这些宏，使解包 COFF 格式数据变得......嗯，我（作者）真的不能用 *简单* 这个词，但代码尚可理解的。
 
 
 
 - **解包 IPv4 数据报头部**
 
-    这个示例说明了于单个模式匹配运算中，解析某个 Internet 协议版本 4，IPv4，的数据报：
+
+这个示例说明了于单个模式匹配运算中，解析某个 Internet 协议版本 4，IPv4，的数据报：
 
 
 ```erlang
@@ -525,8 +537,10 @@ case Dgram of
         OptsLen = 4*(HLen - ?IP_MIN_HDR_LEN),
         <<Opts:OptsLen/binary,Data/binary>> = RestDgram,
 ```
-    这段代码以单个的模式匹配表达式，匹配某个 IP 数据报。其中的模式比较复杂，并说明了那些不在字节边界上的数据（例如，3 位和 13 位长的 `Flags` 和 `FragOff` 两个字段）。模式匹配后的这个 IP 数据报，就会在第二次模式匹配运算时，其报头和数据部分就会被提取到。
-    现在我们已经介绍了对二进制值的位字段操作。请回想一下，二进制值必须是 8 位的倍数长。下一节会介绍用于存储比特序列的比特字串。
+
+这段代码以单个的模式匹配表达式，匹配某个 IP 数据报。其中的模式比较复杂，并说明了那些不在字节边界上的数据（例如，3 位和 13 位长的 `Flags` 和 `FragOff` 两个字段）。模式匹配后的这个 IP 数据报，就会在第二次模式匹配运算时，其报头和数据部分就会被提取到。
+
+现在我们已经介绍了对二进制值的位字段操作。请回想一下，二进制值必须是 8 位的倍数长。下一节会介绍用于存储比特序列的比特字串。
 
 
 ## 位串：处理位级数据
