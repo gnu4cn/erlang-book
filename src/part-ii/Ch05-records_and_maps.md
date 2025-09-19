@@ -110,7 +110,6 @@
 
 
 > **译注**：以下 shell 命令，反应了上述特性。
-
     ```erlang
     5> X3 = #todo{status=urgent, desc="Fix errata in book"}.
     * 1:27: field desc undefined in record todo
