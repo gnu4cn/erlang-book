@@ -27,11 +27,11 @@ Erlang 的并发基于 *进程*。这是一些小型、独立，可运行 Erlang
 若咱们以前没有以进程编程过，咱们可能曾听说进程编程相当困难的谣言。咱们可能曾听说过内存违例、竞赛条件、共享内存损坏等恐怖故事。在 Erlang 中，以进程编程非常简单。
 
 > *知识点*：
-
-- pure message passing language
-- memory violations
-- race conditions
-- shared-memory corruption
+>
+>- pure message passing language
+>- memory violations
+>- race conditions
+>- shared-memory corruption
 
 
 ## 并发原语
@@ -68,18 +68,20 @@ Erlang 的并发基于 *进程*。这是一些小型、独立，可运行 Erlang
 
     接收已发送给某个进程的一条信息。其有着如下语法：
 
+    ```erlang
+    receive
+        Pattern1 [when Guard1] ->
+            Expression1;
+        Pattern2 [when Guard2] ->
+            Expression2;
+        ...
+    end
+    ```
 
-```erlang
-receive
-    Pattern1 [when Guard1] ->
-        Expression1;
-    Pattern2 [when Guard2] ->
-        Expression2;
-    ...
-end
-```
     当某条消息到达进程时，系统会尝试将其与 `Pattern1` （在可能的条件 `Guard1` 下）匹配；当匹配成功时，系统会执行 `Expression1`。
+
     当第一个模式不匹配时，系统会尝试 `Pattern2`，以此类推。当没有模式匹配时，该条消息会被保存用于稍后处理，同时进程会等待下一消息。这在 [12.5 小节 “选择性接收”](#选择性接收) 中会详细描述。
+
     接收语句中用到的模式和条件，与我们在定义函数时使用的模式和条件，有着完全相同的语法形式和含义。
 
 
@@ -87,11 +89,11 @@ end
 
 
 > *知识点*：
-
-- threading
-- locking
-- semaphore
-- artificial control
+>
+>- threading
+>- locking
+>- semaphore
+>- artificial control
 
 
 
@@ -349,27 +351,27 @@ Too many processes
 
 
 > **译注**：译者在一台 Interl Core i5-8260，8GB 内存，Windows 11 Enterprise 计算机上的结果如下。
-
-```erlang
-1> processes:max(20000).
-Maximum allowed processes: 1048576
-Process spawn time = 0.75 (1.55) microseconds
-ok
-2> processes:max(3000000).
-Maximum allowed processes: 1048576
-
-=ERROR REPORT==== 16-Sep-2025::10:52:31.083000 ===
-Too many processes
-
-Error in process <0.27263048.5> with exit value:
-{system_limit,[{erlang,spawn_link,
-                       [erlang,apply,[#Fun<shell.1.25725971>,[]]],
-                       [{error_info,#{module => erl_erts_errors}}]},
-               {erlang,spawn_link,1,[{file,"erlang.erl"},{line,10461}]},
-               {shell,get_command,6,[{file,"shell.erl"},{line,459}]},
-               {shell,server_loop,8,[{file,"shell.erl"},{line,338}]}]}
-...
-```
+>
+>```erlang
+>1> processes:max(20000).
+>Maximum allowed processes: 1048576
+>Process spawn time = 0.75 (1.55) microseconds
+>ok
+>2> processes:max(3000000).
+>Maximum allowed processes: 1048576
+>
+>=ERROR REPORT==== 16-Sep-2025::10:52:31.083000 ===
+>Too many processes
+>
+>Error in process <0.27263048.5> with exit value:
+>{system_limit,[{erlang,spawn_link,
+>                       [erlang,apply,[#Fun<shell.1.25725971>,[]]],
+>                       [{error_info,#{module => erl_erts_errors}}]},
+>               {erlang,spawn_link,1,[{file,"erlang.erl"},{line,10461}]},
+>               {shell,get_command,6,[{file,"shell.erl"},{line,459}]},
+>               {shell,server_loop,8,[{file,"shell.erl"},{line,338}]}]}
+>...
+>```
 
 生成 20,000 个进程平均需要 3.0us/进程的 CPU 时间和 3.4us 的延时（挂钟）时间。
 
@@ -445,9 +447,8 @@ end
 
 [`lib_misc.erl`](http://media.pragprog.com/titles/jaerlang2/code/lib_misc.erl)
 
-
 ```erlang
-{{#include ../../projects/ch12-code/lib_misc.erl:96:99}}
+{{#include ../../projects/ch12-code/lib_misc.erl:98:101}}
 ```
 
 
@@ -461,7 +462,7 @@ end
 
 
 ```erlang
-{{#include ../../projects/ch12-code/lib_misc.erl:103:107}}
+{{#include ../../projects/ch12-code/lib_misc.erl:104:108}}
 ```
 
 
@@ -472,7 +473,7 @@ end
 
 
 ```erlang
-{{#include ../../projects/ch12-code/lib_misc.erl:110:117}}
+{{#include ../../projects/ch12-code/lib_misc.erl:110:}}
 ```
 
 
@@ -692,11 +693,11 @@ end
 > **并发程序模板**
 >
 > 当我（作者）要编写某个并发程序时，我几乎总是以下面这样的代码开始：
-
-```erlang
-{{#include ../../projects/ch12-code/ctemplate.erl}}
-```
-
+>
+>```erlang
+>{{#include ../../projects/ch12-code/ctemplate.erl}}
+>```
+>
 > 其中的接收循环，只是个接收并打印我发送给他任何信息的任意空循环。随着我不断开发程序，我将开始发送消息到进程。由于我以接收循环中没有与这些信息匹配的模式开始，因此我将从该接收语句底部的代码处，得到打印输出。当这种情况发生时，我就会将某个匹配模式添加到接收循环，并重新运行程序。这种技巧在很大程度上决定了我编写程序的顺序：我会首先编写一个小的程序，然后慢慢扩大他，在编写时测试。
 
 

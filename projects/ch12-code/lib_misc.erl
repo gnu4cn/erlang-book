@@ -1,8 +1,8 @@
 -module(lib_misc).
 -export([
-         for/3, 
-         qsort/1, 
-         pythag/1, 
+         for/3,
+         qsort/1,
+         pythag/1,
          perms/1,
          max/2,
          filter/2,
@@ -85,7 +85,7 @@ count_characters([], X) ->
 
 sqrt(X) when X < 0 ->
     error({squareRootNegativeArgument, X});
-sqrt(X) -> 
+sqrt(X) ->
     math:sqrt(X).
 
 
@@ -95,19 +95,19 @@ sum([], N)	    -> N;
 sum([H|T], N)	-> sum(T, H+N).
 
 
-sleep(T) -> 
+sleep(T) ->
     receive
     after T -> true
     end.
 
 
-flush_buffer() -> 
+flush_buffer() ->
     receive
         _Any -> flush_buffer()
     after 0 -> true
     end.
 
-priority_receive() -> 
+priority_receive() ->
     receive
         {alarm, X} -> {alarm, X}
     after 0 ->

@@ -118,5 +118,5 @@ Erlang 没有锁，也没有钥匙。
 
 
 > *知识点*：
-
-- concurrency-oriented programming
+>
+>- concurrency-oriented programming

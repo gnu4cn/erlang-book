@@ -709,13 +709,11 @@ or a program and which other programs it calls) are system-dependent.
 
 
 > **译注**：在 Windows 上，`-man` 选项不被支持。
-
-
-```console
-$ erl -man erl
--man not supported on Windows
-```
-
+>
+>```console
+>$ erl -man erl
+>-man not supported on Windows
+>```
 
 我们还能如下获取到单个模组的帮助信息：
 
