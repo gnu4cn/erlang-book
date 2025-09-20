@@ -191,13 +191,12 @@ ok
 > 我们通常会想要能在操作系统命令行中，执行某个任意 Erlang 函数。对于快速脚本编写，`-eval` 这个参数非常方便。
 >
 > 下面是个示例：
-
-
-```console
-
-erl -eval 'io:format("Memory: ~p~n", [erlang:memory(total)]).' -noshell -s init stop
-Hi, I'm in your .erlang file
-```
+>
+>```console
+>
+>erl -eval 'io:format("Memory: ~p~n", [erlang:memory(total)]).' -noshell -s init stop
+>Hi, I'm in your .erlang file
+>```
 
 
 ### 在命令行提示符下编译和运行
@@ -228,7 +227,7 @@ $
 
 
 
-命令 `erl -noshell ...` 这条命令，可以放在 shell 脚本中，所以通常我们会构造的运行我们程序的脚本，会设置好路径（以 `-pa Directory`）再启动程序。
+`erl -noshell ...` 这条命令，可以放在 shell 脚本中，所以通常我们会构造的运行我们程序的脚本，会设置好路径（以 `-pa Directory`）再启动程序。
 
 
 在我们的示例中，我们使用了两个 `-s ...` 命令。在命令行中，我们可以有任意数量的函数。每个 `-s ...` 命令都会一个 `apply` 语句被计算，而再其运行完毕后，下一命令就会被计算。
@@ -588,10 +587,11 @@ Erlang 有时会很难停止。以下是一些可能原因：
 > 当咱们忘记函数中分句之间的分号，或者用句点代替分号时，咱们就会有麻烦 -- 真正的麻烦。
 >
 > 当咱们正在 `bar` 模组的第 1234 行处，定义函数 `foo/2`，并用一个句点代替分号，编译器会这样说：
-
-```erlang
-bar.erl:1234 function foo/2 already defined.
-```
+>
+>```erlang
+>bar.erl:1234 function foo/2 already defined.
+>```
+>
 > 请不要这样做。要确保咱们的函数子句，始终是以分号隔开。
 
 
@@ -662,14 +662,12 @@ ok
 
 - *缺少 erlang 文件*：当 `MODS` 中声明的模组之一缺失时，咱们将得到一条错误消息。为说明这一点，假设 `MODS` 包含了个名为 `glurk` 的模组，但代码目录中没有名为 `glurk.erl` 的文件。在这种情况下，`make` 将以如下消息失败：
 
+    ```console
+    $ make
+    make: *** No rule to make target 'glurk.beam', needed by 'compile'.  Stop.
+    ```
 
-```console
-$ make
-make: *** No rule to make target 'glurk.beam', needed by 'compile'.  Stop.
-```
-
-
-或者是，没有缺失的模组，但 makefile 中的模组名拼写错了。
+    或者是，没有缺失的模组，但 makefile 中的模组名拼写错了。
 
 
 ### Erlang 崩溃了，咱们想要读取崩溃转储
