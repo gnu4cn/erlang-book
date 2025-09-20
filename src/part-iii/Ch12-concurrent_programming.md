@@ -695,7 +695,27 @@ end
 > 当我（作者）要编写某个并发程序时，我几乎总是以下面这样的代码开始：
 >
 >```erlang
->{{#include ../../projects/ch12-code/ctemplate.erl}}
+>-module(ctemplate).
+>-compile(export_all).
+>
+>
+>start() ->
+>    spawn(?MODULE, loop, []).
+>
+>
+>rcp(Pid, Request) ->
+>    Pid ! {self(), Request},
+>    receive
+>        {Pid, Response} -> Response
+>    end.
+>
+>
+>loop(X) ->
+>    receive
+>        Any ->
+>            io:format("Received: ~p~n", [Any]),
+>            loop(X)
+>    end.
 >```
 >
 > 其中的接收循环，只是个接收并打印我发送给他任何信息的任意空循环。随着我不断开发程序，我将开始发送消息到进程。由于我以接收循环中没有与这些信息匹配的模式开始，因此我将从该接收语句底部的代码处，得到打印输出。当这种情况发生时，我就会将某个匹配模式添加到接收循环，并重新运行程序。这种技巧在很大程度上决定了我编写程序的顺序：我会首先编写一个小的程序，然后慢慢扩大他，在编写时测试。
