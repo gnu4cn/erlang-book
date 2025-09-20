@@ -100,7 +100,7 @@ Mod:Func(A1, A2, ..., An, {Mod, P1, P2, ..., Pn})
 | `X bsr N` | 算术的 `X` 向右移 `N` 位运算 | 整数 | 3 |
 
 <a name="table-3"></a>
-**表格 3** -- **算术表达式**
+***表 3*** - *算术表达式*
 
 与每种运算符相关的，是个 *优先级*。复算术表达式的运算顺序，取决于运算符的优先级：优先级 1 的所有运算符，会被先求值，然后是优先级为 2 的所有运算符，依此类推。
 
@@ -159,49 +159,49 @@ sum([H|T], N)	-> sum(T, H+N).
 
     在某个函数已从某个模组导入后，那么在 *无需* 指定模组名字下，调用该函数即可达成。下面是个示例：
 
+    ```erlang
+    -module(abc).
+    -export([f/1]).
+    -import(lists, [map/2]).
 
-```erlang
--module(abc).
--export([f/1]).
--import(lists, [map/2]).
+    f(L) ->
+        L1 = map(fun(X) -> 2*X end, L),
+        lists:sum(L1).
+    ```
 
-f(L) ->
-    L1 = map(fun(X) -> 2*X end, L),
-    lists:sum(L1).
-```
     到 `map/2` 的调用不需要限定的模组名，而要调用 `sum/1`，我们需要在该函数调用中，包含模组的名字。
 
 - `-export([Name1/Arity1, Name2/Arity2,...]).`
 
     导出当前模组中的 `Name1/Arity1`、`Name2/Arity2` 等函数。只有导出的函数，才能从模组外部调用。下面是个示例：
 
+    ```erlang
+    -module(abc).
+    -export([f/1, a/2, b/1]).
+    -import(lists, [map/2]).
 
-```erlang
--module(abc).
--export([f/1, a/2, b/1]).
--import(lists, [map/2]).
-
-f(L) ->
-    L1 = map(fun(X) -> 2*X end, L),
-    lists:sum(L1).
+    f(L) ->
+        L1 = map(fun(X) -> 2*X end, L),
+        lists:sum(L1).
 
 
-a(X, Y) -> c(X) + a(Y).
-a(X) -> 2 * X.
-b(X) -> X * X.
-c(X) -> 3 * X.
-```
+    a(X, Y) -> c(X) + a(Y).
+    a(X) -> 2 * X.
+    b(X) -> X * X.
+    c(X) -> 3 * X.
+    ```
+
     这个导出声明意味着只有 `a/2` 和 `b/1` 可从 `abc` 这个模组外部调用。因此，比如从 shell（属于模组外部）调用 `abc:a(5)`，就将导致错误，因为 `a/1` 未从模组导出。
 
+    ```erlang
+    1> abc:a(1,2).
+    7
+    2> abc:b(12).
+    144
+    3> abc:a(5).
+    ** exception error: undefined function abc:a/1
+    ```
 
-```erlang
-1> abc:a(1,2).
-7
-2> abc:b(12).
-144
-3> abc:a(5).
-** exception error: undefined function abc:a/1
-```
     这里的错误消息可能引起混淆。因相关函数未定义，这个到 `abc:a(5)` 的调用失败。其实际上在这个模组被定义了，只是他未被导出。
 
 - `-compile(Options).`
@@ -216,9 +216,7 @@ c(X) -> 3 * X.
     指定模组版本。`Version` 是个任意的字面值项。`Version` 的值没有特定的语法或含义，但可用于分析程序，或文档目的。
 
 
-
 ### 用户定义的属性
-
 
 用户定义属性的语法如下：
 
@@ -266,26 +264,25 @@ fac(N) -> N * fac(N-1).
 在前面的示例中，`attrs:module_info()` 返回了个与某个已编译模组相关的所有元数据的属性列表。`attrs:module_info(X)`，其中 `X` 是 `exports`、`imports`、`attributes` 或 `compile` 之一，会返回了与该模组相关的各个属性。
 
 > **译注**：分别对 `module_info/1` 运行上述原子参数的输出如下。
-
-
-```erlang
-2> attrs:module_info(attributes).
-[{vsn,"0.0.1"},
- {author,[{joe,armstrong}]},
- {purpose,"example of attributes"}]
-3> attrs:module_info(compile).
-[{version,"9.0.1"},
- {options,[]},
- {source,"c:/Users/ZBT7RX/erlang-book/projects/ch08-code/attrs.erl"}]
-4> attrs:module_info(exports).
-[{fac,1},{module_info,1},{module_info,0}]
-5> attrs:module_info(imports).
-** exception error: bad argument
-     in function  erlang:get_module_info/2
-        called as erlang:get_module_info(attrs,imports)
-     in call from attrs:module_info/1
-```
-
+>
+>```erlang
+>2> attrs:module_info(attributes).
+>[{vsn,"0.0.1"},
+> {author,[{joe,armstrong}]},
+> {purpose,"example of attributes"}]
+>3> attrs:module_info(compile).
+>[{version,"9.0.1"},
+> {options,[]},
+> {source,"c:/Users/ZBT7RX/erlang-book/projects/ch08-code/attrs.erl"}]
+>4> attrs:module_info(exports).
+>[{fac,1},{module_info,1},{module_info,0}]
+>5> attrs:module_info(imports).
+>** exception error: bad argument
+>     in function  erlang:get_module_info/2
+>        called as erlang:get_module_info(attrs,imports)
+>     in call from attrs:module_info/1
+>```
+>
 > 可以看出，在 Erlang/OTP 28 下 `moduel_info/1` 函数已不支持原子参数 `imports`。
 >
 > 参考：[`module_info/0` and `module_info/1` functions](https://www.erlang.org/docs/28/system/modules.html#module_info-0-and-module_info-1-functions)
@@ -672,57 +669,57 @@ $ erlc -P some_module.erl
 
 
 > **译注**：`abc.erl` 源文件内容如下。
-
-```erlang
--module(abc).
--export([f/1, a/2, b/1]).
--import(lists, [map/2]).
-
-f(L) ->
-    L1 = map(fun(X) -> 2*X end, L),
-    lists:sum(L1).
-
-
-a(X, Y) -> c(X) + a(Y).
-a(X) -> 2 * X.
-b(X) -> X * X.
-c(X) -> 3 * X.
-```
-
+>
+>```erlang
+>-module(abc).
+>-export([f/1, a/2, b/1]).
+>-import(lists, [map/2]).
+>
+>f(L) ->
+>    L1 = map(fun(X) -> 2*X end, L),
+>    lists:sum(L1).
+>
+>
+>a(X, Y) -> c(X) + a(Y).
+>a(X) -> 2 * X.
+>b(X) -> X * X.
+>c(X) -> 3 * X.
+>```
+>
 > 运行 `erlc -P abc.erl` 后得到的 `abc.P` 文件内容如下。
-
-```erlang
--file("abc.erl", 1).
-
--module(abc).
-
--export([f/1,a/2,b/1]).
-
--import(lists, [map/2]).
-
-f(L) ->
-    L1 =
-        map(fun(X) ->
-                   2 * X
-            end,
-            L),
-    lists:sum(L1).
-
-a(X, Y) ->
-    c(X) + a(Y).
-
-a(X) ->
-    2 * X.
-
-b(X) ->
-    X * X.
-
-c(X) ->
-    3 * X.
-
-
-
-```
+>
+>```erlang
+>-file("abc.erl", 1).
+>
+>-module(abc).
+>
+>-export([f/1,a/2,b/1]).
+>
+>-import(lists, [map/2]).
+>
+>f(L) ->
+>    L1 =
+>        map(fun(X) ->
+>                   2 * X
+>            end,
+>            L),
+>    lists:sum(L1).
+>
+>a(X, Y) ->
+>    c(X) + a(Y).
+>
+>a(X) ->
+>    2 * X.
+>
+>b(X) ->
+>    X * X.
+>
+>c(X) ->
+>    3 * X.
+>
+>
+>
+>```
 
 
 ## 转义序列
@@ -774,7 +771,7 @@ ok
 
 
 <a name="table-4"></a>
-**表 4** -- **转义序列**
+***表 4*** -- *转义序列*
 
 
 ## 表达式与表达式序列
@@ -828,8 +825,8 @@ double(L) -> lists:map(fun x1:square/1, L).
 请注意，包含模组名称的函数引用，为动态代码升级提供了切换点。详情请参阅 [8.10 节，动态代码加载](#动态代码加载)。
 
 > *知识点*：
-
-- switch-over pointer for dynamic code upgrade
+>
+>- switch-over pointer for dynamic code upgrade
 
 
 ## 包含文件
@@ -1161,7 +1158,7 @@ Erlang 种的数字，可以是整数或浮点数。
 
 <a name='table-5'></a>
 
-**表 5** -- **运算符优先级**
+***表 5*** -- *运算符优先级*
 
 
 优先级较高的表达式（在表格中较高处），会先被求值，然后优先级较低的表达式再被求值。因此，例如要求值 `3+4*5+6`，我们会先求值其中的子表达式 `4*5`，因为在表中 （`*`）高于 (`+`) 。现在我们要求值 `3+20+6`。由于 (`+`) 是个左关联运算符，我们将其解释为 `(3+20)+6`，因此我们要先计算 `3+20`，得到 `23`；最后我们计算 `23+6`。
@@ -1320,8 +1317,7 @@ number < atom < reference < fun < port < pid < tuple(and record) < map < list < 
 | `X =/= Y` | `X` 不同于 `Y`。 |
 
 <a name="table-6"></a>
-
-**表 6** -- **项的比较**
+***表 6*** -- *项的比较*
 
 
 
@@ -1372,15 +1368,14 @@ some_func(X) ->
 当我们编译这段代码时，编译器将发出变量 `Q` 未使用的警告消息。
 
 > **译注**：告警消息如下。
-
-
-```erlang
-underscore_var.erl:5:9: Warning: variable 'Q' is unused
-%    5|     {P, Q} = some_other_func(X),
-%     |         ^
-
-{ok,underscore_var}
-```
+>
+>```erlang
+>underscore_var.erl:5:9: Warning: variable 'Q' is unused
+>%    5|     {P, Q} = some_other_func(X),
+>%     |         ^
+>
+>{ok,underscore_var}
+>```
 
 
 而当我们重写该函数如下：
