@@ -13,9 +13,9 @@
 
 
 > *知识点*：
-
-- defensive programming
-- corrective code
+>
+>- defensive programming
+>- corrective code
 
 
 ## 错误处理的哲学
@@ -357,14 +357,14 @@ hello
 > **生成进程和链接进程为什么必须是原子操作**
 >
 > 从前 Erlang 有两个原语：`spawn` 和 `link`，而 `spawn_link(Mod, Func, Args)` 曾被定义为下面这样：
-
-```erlang
-spawn_link(Mod, Func, Args) -> 
-    Pid = spawn(Mod, Func, Args),
-    link(Pid)
-    end.
-```
-
+>
+>```erlang
+>spawn_link(Mod, Func, Args) ->
+>    Pid = spawn(Mod, Func, Args),
+>    link(Pid)
+>    end.
+>```
+>
 > 然后一个不起眼的错误就出现了。在其中那个链接语句被调用前，生成的进程就已死掉，因此那个进程就死掉了，但没有错误信号产生。这个 bug 花了很长时间才发现。为解决这个问题，`spawn_link` 作为一个原子操作被加入。在涉及并发时，即使是看起来简单的程序，也会很棘手。
 
 ### 构造会全部一起死掉的进程集
@@ -375,7 +375,7 @@ spawn_link(Mod, Func, Args) ->
 
 ```erlang
 start(Fs) ->
-    spawn(fun() -> 
+    spawn(fun() ->
         [spawn_link(F) || F <- Fs],
         receive
             after infinity -> true
@@ -391,7 +391,7 @@ start(Fs) ->
 
 ```erlang
 Pid = start([F1, F2, ...]),
-on_exit(Pid, fun(Why) -> 
+on_exit(Pid, fun(Why) ->
                 ... the code here runs if any worker
                 ... process dies
              end)
@@ -429,8 +429,8 @@ on_exit(Pid, fun(X) -> ..),
 我们会看到，存在该进程在这两条语句 *之间* 空隙中死掉的可能性。当该进程在 `on_exit` 执行前就已死亡，那么链接将不会被创建，`on_exit` 这个进程将不会如咱们预期的那样工作。当两个程序同时对同一个 `Name` 值，执行 `keep_alive` 时，这种情况就会发生。这被称为 *竞赛条件* -- 两部分代码（这一部分）以及 `on_exit` 中执行链接操作的代码小节在相互竞赛。当这里出了问题时，咱们程序就会以非预期方式运行。
 
 > *知识点*：
-
-- racing condition
+>
+>- racing condition
 
 我（作者）不会在这里解决这个问题 -- 我会让你自己思考如何做到这一点。当咱们把 `spawn`、`spawn_monitor`、`register` 等 Erlang 原语结合在一起时，咱们就必须仔细考虑竞赛条件的可能，并以竞赛条件不会发生的方式，编写咱们的代码。
 
