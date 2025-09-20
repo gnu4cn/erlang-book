@@ -64,7 +64,7 @@ Erlang 有我们可以用于定义新的数据类型，及将类型注解添加�
 
 
 
-仅从这些类型注解，我们就可以设想运行 `plan_route` 就会看到这样的结果：
+仅从这些类型注解，我们就可以设想运行 `plan_route` 会看到这样的结果：
 
 ```erlang
 > walks:plan_route({1,10}, {25, 57}).
@@ -425,43 +425,41 @@ done (passed successfully)
 ```
 
 
-> **译注** 其中 `parsetools` 对应 YECC -- Erlang 的解析器生成器，是 `parsetools` 应用的一部分；`syntax_tools` 选项对应 `erlang_syntax`； `crypto` 对应 `crypto`；`compiler` 对应 `compile`。若没有后面 4 个选项，输出如下所示。
-
-
-
-```console
-$ dialyzer --build_plt --apps erts kernel stdlib
-  Creating PLT /home/hector/.cache/erlang/.dialyzer_plt ...
-Unknown functions:
-  compile:file/2 (c.erl:509:10)
-  compile:forms/2 (escript.erl:803:12)
-  compile:noenv_forms/2 (erl_abstract_code.erl:34:9)
-  compile:noenv_forms/2 (qlc_pt.erl:455:14)
-  compile:output_generated/1 (c.erl:568:10)
-  crypto:crypto_one_time/5 (beam_lib.erl:1411:11)
-  crypto:hash_info/1 (inet_dns_tsig.erl:184:31)
-  crypto:mac_finalN/2 (inet_dns_tsig.erl:317:5)
-  crypto:mac_init/3 (inet_dns_tsig.erl:276:16)
-  crypto:mac_update/2 (inet_dns_tsig.erl:303:16)
-  crypto:strong_rand_bytes/1 (net_kernel.erl:2632:37)
-  erl_syntax:map_field_assoc_name/1 (shell_docs_test.erl:386:24)
-  erl_syntax:map_field_assoc_value/1 (shell_docs_test.erl:387:25)
-  erl_syntax:map_field_exact/2 (shell_docs_test.erl:388:17)
-  erl_syntax:revert/1 (shell_docs_test.erl:382:5)
-  erl_syntax:type/1 (shell_docs_test.erl:384:14)
-  erl_syntax_lib:map/2 (shell_docs_test.erl:383:5)
-Unknown types:
-  compile:option/0 (c.erl:149:19)
-  compile:option/0 (erl_expand_records.erl:56:26)
-  compile:option/0 (erl_lint.erl:100:47)
-  compile:option/0 (qlc.erl:746:32)
-  compile:option/0 (qlc_pt.erl:78:32)
-  crypto:mac_state/0 (inet_dns_tsig.erl:71:48)
-  yecc:option/0 (c.erl:1411:23)
-  yecc:yecc_ret/0 (c.erl:1411:57)
- done in 0m14.62s
-done (warnings were emitted)
-```
+> **译注**: 其中 `parsetools` 对应 YECC -- Erlang 的解析器生成器，是 `parsetools` 应用的一部分；`syntax_tools` 选项对应 `erlang_syntax`； `crypto` 对应 `crypto`；`compiler` 对应 `compile`。若没有后面 4 个选项，输出如下所示。
+>
+>```console
+>$ dialyzer --build_plt --apps erts kernel stdlib
+>  Creating PLT /home/hector/.cache/erlang/.dialyzer_plt ...
+>Unknown functions:
+>  compile:file/2 (c.erl:509:10)
+>  compile:forms/2 (escript.erl:803:12)
+>  compile:noenv_forms/2 (erl_abstract_code.erl:34:9)
+>  compile:noenv_forms/2 (qlc_pt.erl:455:14)
+>  compile:output_generated/1 (c.erl:568:10)
+>  crypto:crypto_one_time/5 (beam_lib.erl:1411:11)
+>  crypto:hash_info/1 (inet_dns_tsig.erl:184:31)
+>  crypto:mac_finalN/2 (inet_dns_tsig.erl:317:5)
+>  crypto:mac_init/3 (inet_dns_tsig.erl:276:16)
+>  crypto:mac_update/2 (inet_dns_tsig.erl:303:16)
+>  crypto:strong_rand_bytes/1 (net_kernel.erl:2632:37)
+>  erl_syntax:map_field_assoc_name/1 (shell_docs_test.erl:386:24)
+>  erl_syntax:map_field_assoc_value/1 (shell_docs_test.erl:387:25)
+>  erl_syntax:map_field_exact/2 (shell_docs_test.erl:388:17)
+>  erl_syntax:revert/1 (shell_docs_test.erl:382:5)
+>  erl_syntax:type/1 (shell_docs_test.erl:384:14)
+>  erl_syntax_lib:map/2 (shell_docs_test.erl:383:5)
+>Unknown types:
+>  compile:option/0 (c.erl:149:19)
+>  compile:option/0 (erl_expand_records.erl:56:26)
+>  compile:option/0 (erl_lint.erl:100:47)
+>  compile:option/0 (qlc.erl:746:32)
+>  compile:option/0 (qlc_pt.erl:78:32)
+>  crypto:mac_state/0 (inet_dns_tsig.erl:71:48)
+>  yecc:option/0 (c.erl:1411:23)
+>  yecc:yecc_ret/0 (c.erl:1411:57)
+> done in 0m14.62s
+>done (warnings were emitted)
+>```
 
 
 现在我们已构建好 PLT，那么就可以运行 `dialyzer` 了。之所以会出现未知函数的告警，是因为提及的那些函数，不在我们选择分析的三个应用中。
@@ -858,7 +856,7 @@ $ typer types2.erl
 
 
 ```erlang
-bug1(X, Y) -> 
+bug1(X, Y) ->
     case myand1(X, Y) of
         true -> X + Y
     end.
