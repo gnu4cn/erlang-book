@@ -180,4 +180,39 @@ true
 
 
 ```erlang
+$ erl -sname bilbo
+...
+(bilbo@test)1> rpc:call(gandalf@test, kvs, store, [weather, fine]).
+true
+(bilbo@test)2> rpc:call(gandalf@test, kvs, lookup, [weather]).
+{ok,fine}
 ```
+
+现在可能看起来还不像回事，但我们实际上已经进行了咱们从未有过的第一次分布式计算！服务器运行在我们启动的第一个节点上，同时客户端运行在第二个节点上。
+
+
+那个设置 `weather` 值的调用，是在 `bilbo` 节点上构造出的；我们可以换回 `gandalf` 节点，并检查天气的值。
+
+
+```erlang
+(gandalf@test)6> kvs:lookup(weather).
+{ok,fine}
+```
+
+
+`rpc:call(Node,Mod,Func,[Arg1,Arg2,...,ArgN])` 会在 `Node` 上，执行一次 *远程过程调用*。被调用的函数为 `Mod:Func(Arg1,Arg2,...,ArgN)`。
+
+
+正如我们所看到的，这个程序会如同非分布式 Erlang 情形下一样工作；现在唯一区别，是客户端运行在一个节点上，同时服务器运行在另一节点上。
+
+
+下一步是要在不同的机器上，运行客户端与服务器。
+
+
+### 阶段 3：同一局域网内不同机器上的客户端和服务器
+
+
+我们将用到两个节点。第一个节点名为 `gandalf`，位于 `doris.myerl.example.com` 上，而第二个节点名为 `bilbo`，位于 `george.myerl.example.com` 上。在我们这样做前，我们要先在两台不同的机器上，使用 `ssh` 或 VNC 等工具启动两个终端。我们将这两个窗口，分别称为 `doris` 和 `george`。在完成后，我们就可以轻松地这两台机器上输入命令。
+
+
+
