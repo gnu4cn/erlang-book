@@ -4,7 +4,7 @@ language = "zh"
 multilingual = false
 src = "src"
 title = "Erlang 编程"
-description = "Programming Erlang, 2nd Edition, Joe Armstrong"
+description = "Yet another Chinese Erlang book, Programming Erlang, 2nd Edition, Joe Armstrong"
 
 
 [preprocessor.last-changed]
