@@ -237,7 +237,7 @@ true
 
 2. 要选取将用于分布式 Erlang 的某个端口，或某个端口范围，并确保这些端口是放开的。当这些端口是 `Min` 和 `Max`（当咱们只想打算一个端口时，则使用 `Min = Max`）时，则要以下面的命令，启动 Erlang：
     
-    ```erlang
+    ```console
     $erl -name ... -setcookie ... -kernel inet_dist_listen_min Min \
                                           inet_dist_listen_max Max
     ```
