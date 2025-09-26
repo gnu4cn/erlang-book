@@ -218,9 +218,117 @@ true
 步骤 1 是在 `doris` 上启动一个 Erlang 节点。
 
 
-```erlang
+
+
+```console
+[hector@doris socket_dist]$ erl -name gandalf@doris.xfoss.net -setcookie abc
+Erlang/OTP 26 [erts-14.2.5] [source] [64-bit] [smp:2:2] [ds:2:2:10] [async-threads:1] [jit:ns]
+
+Eshell V14.2.5 (press Ctrl+G to abort, type help(). for help)
+(gandalf@doris.xfoss.net)1> kvs:start().
+true
+(gandalf@doris.xfoss.net)2>
 ```
 
+> *译注*：在 `Erlang/OTP 26` 下，需要以上面的命令启动 LAN 节点。若以命令 `erl -name gandalf -setcookie abc` 启动，会报出如下错误。在 `Erlang/OTP 25` 下则没有问题，如后面所示。
+>
+> ```console
+> [hector@doris socket_dist]$ erl -name gandalf -setcookie abc                                                                17:22:06 [45/45]
+> 2025-09-26 17:22:06.251459
+>     args: []
+>     label: {error_logger,info_msg}
+>     format: "Can't set long node name!\nPlease check your configuration\n"
+> 2025-09-26 17:22:06.251497 crash_report
+>     initial_call: {net_kernel,init,['Argument__1']}
+>     pid: <0.65.0>
+>     registered_name: []
+>     error_info: {exit,{error,badarg},[{gen_server,init_it,6,[{file,"gen_server.erl"},{line,961}]},{proc_lib,init_p_do_apply,3,[{file,"proc_l
+> ib.erl"},{line,241}]}]}
+>     ancestors: [net_sup,kernel_sup,<0.47.0>]
+>     message_queue_len: 0
+>     messages: []
+> ```
+>
+
+第二步是在 `george` 上启动一个 Erlang 节点，并发送一些命令到 `gandalf`。
+
+
+```console
+$ erl -name bilbo -setcookie abc
+
+Erlang/OTP 25 [erts-13.1.5] [source] [64-bit] [smp:2:2] [ds:2:2:10] [async-threads:1] [jit:ns]
+
+Eshell V13.1.5  (abort with ^G)
+(bilbo@george.xfoss.net)1> rpc:call('gandalf@doris.xfoss.net', kvs, store, [weather, cold]).
+true
+(bilbo@george.xfoss.net)2> rpc:call('gandalf@doris.xfoss.net', kvs, lookup, [weather]).
+{ok,cold}
+(bilbo@george.xfoss.net)3>
+```
+
+> **译注**：这里需要将 Erlang 节点名字用单引号括起来，否则将报出以下错误。
+>
+> ```console
+> $ erl -name jack@george.xfoss.net -setcookie abc
+> Erlang/OTP 25 [erts-13.1.5] [source] [64-bit] [smp:2:2] [ds:2:2:10] [async-threads:1] [jit:ns]
+>
+> Eshell V13.1.5  (abort with ^G)
+> (jack@george.xfoss.net)1> rpc:call(gandalf@doris.xfoss.com, kvs, lookup, [weather]).
+> * 1:23: syntax error before: '.'
+> ```
+
+> **译注**：这里使用虚拟机 `doris.xfoss.net`、`george.xfoss.net` 及 `win10.xfoss.net`。其中 `george.xfoss.net` 是 Debian12 系统，`doris.xfoss.net` 是 AlmaLinux9 系统，`win10.xfoss.net` 是 M$ Win10 系统。宿主机的 `/etc/hosts` 文件如下。
+>
+> ```config
+> 192.168.122.133	win10.xfoss.net win10
+> 192.168.122.199	debian george.xfoss.net
+> 192.168.122.158	almalinux doris.xfoss.net
+> ```
+>
+> 保证在各个主机中，都能经由 `libvirt` 管理的 `dnsmasq` 查询到其他主机的 IP 地址（及反向查询）。
+>
+> 其中 Debian12 和 AlmaLinux9 主机需要关闭防火墙（防火墙打开时，会出现 `{badrpc,nodedown}` 报错）。Deian12 关闭防火墙命令：`sudo ufw disable`。AlmaLinux9 关闭防火墙命令：`sudo systemctl stop firewalld`；AlmaLinux9 还需关闭 SELinux。
+
+
+情况与同一台机器上的两个不同节点完全相同。
+
+与在同一台计算机上运行两个节点的情形相比，为这种部署运作，事情要稍微复杂一些。我们必须采取四个步骤。
+
+1. 要以 `-name` 命令参数启动 Erlang。当我们有着位于同一台机器上的两个节点时，我们使用了 “短的” 名称（正如 `-sname` 命令开关所表示的），但当两个位于不同网络上时，我们就要用 `-name`。
+
+    当两台不同机器位于同一子网时，我们也可以对他们使用 `-sname`。当没有可用的 DNS 服务时，使用 `-sname` 也是唯一可行方法。
+
+2. 要确保两个节点有着相同 *cookie*。这就是为何两个节点，都是以命令行参数 `-setcookie abc` 启动的原因。我们将在本章稍后的 [14.5 节 *Cookie 保护系统*](#cookie-保护系统) 中，详细介绍 cookies。*请注意*：当我们在 *同一* 机器上运行两个节点时，两个节点都可以访问同一个 cookie 文件 `$HOME/.erlang.cookie`，这就是为什么我们不必在 Erlang 命令行上，加上 cookie 的原因；
+
+
+3. 要确保相关节点的完全合格主机名，为可经由 DNS 解析的。在我（作者）的示例中，域名 `myerl.example.com` 完全属于我家庭网络本地，且是由在 `/etc/hosts` 中添加条目，在本地解析；
+
+
+4. 要确保两个系统有着同一个代码版本，及相同 Erlang 版本。当咱们没有这样做时，咱们可能会得到严重及神秘的错误。避免出现问题的最简单方法，就是要在各处有着相同版本的 Erlang。不同版本的 Erlang 可以一起运行，但无法保证这会生效，所以最好先检查一下。在我们的示例中，同一版本的 `kvs` 代码必须要在两个系统上可用。做到这一点有好几种方式。
+
+    - 在我（作者）家的设置下，我有两台物理上分开，没有共享文件系统的计算机；在这里，我将 `kvs.erl` 物理拷贝到两台机器，并在启动程序前编译了 `kvs.erl`；
+
+    - 在我的工作电脑上，我们使用的是有共享 NFS 磁盘的工作站。在这里，我只是在两台不同工作站上的共享目录下，启动 Erlang；
+
+    - 配置代码服务器完成这个示例。我（作者）不会在这里介绍如何实现这个目的。请查看 [`erl_prim_loader` 模组的手册页](https://www.erlang.org/doc/apps/erts/erl_prim_loader.html)；
+
+    - 使用 shell 命令 `nl(Mod)`。这会在所有连接的节点上，加载模组 `Mod`。
+
+    *注意*：要让这种方式工作，咱们必须确保所有节点都是连接的。当节点首次尝试访问对方时，他们就成为了已连接状态。这会在咱们首次执行任何涉及远程节点的表达式时发生。而这样做的最简单方法，就是执行 `net_adm:ping(Node)`（更多详情请参见 [`net_adm` 手册页面](https://www.erlang.org/doc/apps/kernel/net_adm.html)）。
+
+>    **译注**：下面是在 Win10 上执行 `net_adm:ping` 命令的示例输出：
+>
+>    ```console
+>    PS C:\Users\Hector PENG> erl -name john@win10.xfoss.net -setcookie abc
+>    Erlang/OTP 28 [erts-16.1] [source] [64-bit] [smp:2:2] [ds:2:2:10] [async-threads:1] [jit:ns]
+>
+>    Eshell V16.1 (press Ctrl+G to abort, type help(). for help)
+>    (john@win10.xfoss.net)1> net_adm:ping('bilbo@george.xfoss.net').
+>    pong
+>    (john@win10.xfoss.net)2>
+>    ```
+
+成功！我们在同一局域网的两台服务器上运行了。下一步是将这些，迁移到经由互联网连接的两台计算机上。
 
 ### 阶段 4：互联网中不同主机上的客户端与服务器
 
@@ -236,7 +344,7 @@ true
 1. 确保端口 `4369` 同时对 TCP 和 UDP 流量开放。这个端口会被名为 `epmd`（Erlang Port Mapper Daemon 的缩写）的程序用到；
 
 2. 要选取将用于分布式 Erlang 的某个端口，或某个端口范围，并确保这些端口是放开的。当这些端口是 `Min` 和 `Max`（当咱们只想打算一个端口时，则使用 `Min = Max`）时，则要以下面的命令，启动 Erlang：
-    
+
     ```console
     $erl -name ... -setcookie ... -kernel inet_dist_listen_min Min \
                                           inet_dist_listen_max Max
