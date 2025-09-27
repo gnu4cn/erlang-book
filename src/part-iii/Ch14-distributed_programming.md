@@ -390,4 +390,101 @@ true
 > ```
 
 
+## 分布式编程的库与内建函数
+
+
+当我们编写分布式程序时，我们很少会从头开始。在标准库中，有数个可用于编写分布式程序的模组。这些模组编写时使用了一些分布式 BIFs，不过他们向程序员隐藏了许多复杂性。
+
+标准 Erlang 发布中的两个模组，就涵盖了大部分需求。
+
+- `rpc` 提供了数个远程过程调用的服务；
+
+- `global` 有着一些用于分布式系统中名字与锁注册，以及用于完全连接网络维护的函数。
+
+
+`rpc` 模组中最有用的一个函数如下：
+
+
+- `call(Node, Mod, Function, Args) -> Result | {badrpc, Reason}`
+
+    这会在 `Node` 上执行 `apply(Mod,Function,Args)`，并返回结果 `Result`，或当该调用失败时，返回 `{badrpc,Reason}`。
+
+
+用于编写分布式程序的那些原语如下（有关这些 BIF 的更全面描述，请参阅 [`erlang` 模组的手册页](https://www.erlang.org/doc/apps/erts/erlang.html)）：
+
+
+- `-spec spawn(Node, Fun) -> Pid`
+
+    其会以与 `spawn(Fun)` 完全相同方式工作，但新的进程会在 `Node` 上生成。
+
+- `-spec spawn(Node, Mod, Func, ArgList) -> Pid`
+
+    其会以与 `spawn(Mod, Func, ArgList)` 完全相同方式工作，但新的进程会在 `Node` 上生成。 `spawn(Mod, Func, Args)` 会创出一个执行 `apply(Mod, Func, Args)` 的新进程。他会返回这个新进程的 `PID`。
+
+    *注意*：这种形式的进程生成，相比 `spawn(Node, Fun)` 要更加健壮。当那些分布式节点未运行某个特定模组的同一版本时，`spawn(Node, Fun)` 可能会失效。
+
+- `-spec spawn_link(Node, Fun) -> Pid`
+
+    这会以与 `spawn_link(Fun)` 完全相同方式运作，但新的进程会在 `Node` 上生成。
+
+- `-spec spawn_link(Node, Mod, Func, ArgList) -> Pid`
+
+    这会以与 `spawn(Node,Mod,Func,ArgList)` 类似方式运作，但新的进程会被链接到当前进程。
+
+- `-spec disconnect_node(Node) -> bool() | ignored`
+
+    这会强行断开某个节点。
+
+- `-spec monitor_node(Node, Flag) -> true`
+
+    当 `Flag` 为 `true` 时，监控就会打开；当 `Flag` 为 `false` 时，则监控会被关闭。当监控已被打开时，那么执行这个 BIF 的节点，就会在 `Node` 加入或离开连接的 Erlang 节点集时，将被发送 `{nodeup, Node}` 及 `{nodedown, Node}` 消息。
+
+- `-spec node() -> Node`
+
+    这会返回本地节点的名字。当该节点不属于分布式时，则返回 `nonode@nohost`。
+
+    ```erlang
+    > erl -name john@win10.xfoss.net -setcookie abc
+    Erlang/OTP 28 [erts-16.1] [source] [64-bit] [smp:2:2] [ds:2:2:10] [async-threads:1] [jit:ns]
+
+    Eshell V16.1 (press Ctrl+G to abort, type help(). for help)
+    (john@win10.xfoss.net)1> node().
+    'john@win10.xfoss.net'
+    ```
+
+- `-spec node(Arg) -> Node`
+
+    这会返回 `Arg` 所在的节点。`Arg` 可以是个 PID、引用或端口。当本地节点不属于分布式时，则返回 `nonode@nohost`。
+
+- `-spec nodes() -> [Node]`
+
+    这会返回网络中与我们所连接的所有其他节点列表。
+
+    ```erlang
+    (john@win10.xfoss.net)4> nodes().
+    ['bilbo@george.xfoss.net','gandalf@doris.xfoss.net']
+    ```
+
+- `-spec is_alive() -> bool()`
+
+    当本地节点存活，并可作为某个分布式系统一部分时，则返回 `true`。否则，返回 `false`。
+
+    ```erlang
+    (bilbo@george.xfoss.net)10> is_alive().
+    true
+    ```
+
+此外，`send` 可用于将消息发送到一组分布式 Erlang 节点中的某个本地注册进程。下面的语法：
+
+
+```erlang
+{RegName, Node} ! Msg
+```
+
+
+会将消息 `Msg` 发送到节点 `Node` 上的注册进程 `RegName`。
+
+
+### 远端进程生成的示例
+
 
