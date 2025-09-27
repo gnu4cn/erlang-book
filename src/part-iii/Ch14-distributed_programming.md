@@ -287,7 +287,7 @@ true
 >
 > 保证在各个主机中，都能经由 `libvirt` 管理的 `dnsmasq` 查询到其他主机的 IP 地址（及反向查询）。
 >
-> 其中 Debian12 和 AlmaLinux9 主机需要关闭防火墙（防火墙打开时，会出现 `{badrpc,nodedown}` 报错）。Deian12 关闭防火墙命令：`sudo ufw disable`。AlmaLinux9 关闭防火墙命令：`sudo systemctl stop firewalld`；AlmaLinux9 还需关闭 SELinux。
+> 其中 Debian12 和 AlmaLinux9 主机需要关闭防火墙。当防火墙打开时，会出现 `{badrpc,nodedown}` 报错，这可能是由于运行 Erlang 程序时，出了 `epmd` 会使用 `4369`，程序还会随机使用某个端口有关。Deian12 关闭防火墙命令：`sudo ufw disable`。AlmaLinux9 关闭防火墙命令：`sudo systemctl stop firewalld`；AlmaLinux9 还需关闭 SELinux。
 
 
 情况与同一台机器上的两个不同节点完全相同。
@@ -306,13 +306,13 @@ true
 
 4. 要确保两个系统有着同一个代码版本，及相同 Erlang 版本。当咱们没有这样做时，咱们可能会得到严重及神秘的错误。避免出现问题的最简单方法，就是要在各处有着相同版本的 Erlang。不同版本的 Erlang 可以一起运行，但无法保证这会生效，所以最好先检查一下。在我们的示例中，同一版本的 `kvs` 代码必须要在两个系统上可用。做到这一点有好几种方式。
 
-    - 在我（作者）家的设置下，我有两台物理上分开，没有共享文件系统的计算机；在这里，我将 `kvs.erl` 物理拷贝到两台机器，并在启动程序前编译了 `kvs.erl`；
+- 在我（作者）家的设置下，我有两台物理上分开，没有共享文件系统的计算机；在这里，我将 `kvs.erl` 物理拷贝到两台机器，并在启动程序前编译了 `kvs.erl`；
 
-    - 在我的工作电脑上，我们使用的是有共享 NFS 磁盘的工作站。在这里，我只是在两台不同工作站上的共享目录下，启动 Erlang；
+- 在我的工作电脑上，我们使用的是有共享 NFS 磁盘的工作站。在这里，我只是在两台不同工作站上的共享目录下，启动 Erlang；
 
-    - 配置代码服务器完成这个示例。我（作者）不会在这里介绍如何实现这个目的。请查看 [`erl_prim_loader` 模组的手册页](https://www.erlang.org/doc/apps/erts/erl_prim_loader.html)；
+- 配置代码服务器完成这个示例。我（作者）不会在这里介绍如何实现这个目的。请查看 [`erl_prim_loader` 模组的手册页](https://www.erlang.org/doc/apps/erts/erl_prim_loader.html)；
 
-    - 使用 shell 命令 `nl(Mod)`。这会在所有连接的节点上，加载模组 `Mod`。
+- 使用 shell 命令 `nl(Mod)`。这会在所有连接的节点上，加载模组 `Mod`。
 
     *注意*：要让这种方式工作，咱们必须确保所有节点都是连接的。当节点首次尝试访问对方时，他们就成为了已连接状态。这会在咱们首次执行任何涉及远程节点的表达式时发生。而这样做的最简单方法，就是执行 `net_adm:ping(Node)`（更多详情请参见 [`net_adm` 手册页面](https://www.erlang.org/doc/apps/kernel/net_adm.html)）。
 
@@ -351,3 +351,43 @@ true
     ```
 
 现在我们已经了解了，如何在 Erlang 节点集上运行程序，以及如何在同一局域网，或经由互联网运行程序。接下来，我们将了解涉及节点的一些原语。
+
+
+> **译注**：译者使用了位于日本 Akamai 的 `xfoss.com` 主机，和一个位于加拿大 OVH 的临时主机 `vps-c2564795.vps.ovh.ca` 进行了上述示例的实验。
+>
+> 在 `xfoss.com` 主机上，放行 `4396` 及 `40001:40024` 端口，并如下启动这个 `kvs` 程序。
+>
+> ```console
+> $ erl -name gandalf@xfoss.com -setcookie abc -kernel inet_dist_listen_min 40001 inet_dist_listen_max 40024
+> Erlang/OTP 24 [erts-12.2.1] [source] [64-bit] [smp:1:1] [ds:1:1:10] [async-threads:1] [jit]
+>
+> Eshell V12.2.1  (abort with ^G)
+> (gandalf@xfoss.com)1> pwd().
+> /home/unisko/erlang-book/projects/ch14-code/socket_dist
+> ok
+> (gandalf@xfoss.com)2> kvs:start().
+> true
+> ```
+>
+> 同样在 `vps-c2564795.vps.ovh.ca` 主机上放行 `4396` 与 `40001:40024` 端口，并如下启动一个 Erlang 节点，然后对 `xfoss.com` 上的 Erlang 节点进行远程过程调用。
+>
+> ```console
+> $ erl -name bilbo@vps-c2564795.vps.ovh.ca -setcookie abc -kernel inet_dist_listen_min 40001 inet_dist_listen_max 40024
+> Erlang/OTP 27 [erts-15.2.7] [source] [64-bit] [smp:4:4] [ds:4:4:10] [async-threads:1] [jit:ns]
+>
+> Eshell V15.2.7 (press Ctrl+G to abort, type help(). for help)
+> (bilbo@vps-c2564795.vps.ovh.ca)1> rpc:call('gandalf@xfoss.com', kvs, store, [weather, cold]).
+> true
+> (bilbo@vps-c2564795.vps.ovh.ca)2> rpc:call('gandalf@xfoss.com', kvs, store, [{location, joe}, `Stockhelm`]).
+> * 1:61: syntax error before: '`'
+> (bilbo@vps-c2564795.vps.ovh.ca)2> rpc:call('gandalf@xfoss.com', kvs, store, [{location, joe}, 'Stockhelm']).
+> true
+> (bilbo@vps-c2564795.vps.ovh.ca)3> rpc:call('gandalf@xfoss.com', kvs, lookup, [{location, joe}]).
+> {ok,'Stockhelm'}
+> (bilbo@vps-c2564795.vps.ovh.ca)4> pwd().
+> /home/debian
+> ok
+> ```
+
+
+
