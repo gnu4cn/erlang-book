@@ -1,7 +1,6 @@
 -module(dist_demo).
 -export([rpc/4, start/1]).
 
-
 start(Node) ->
     spawn(Node, fun() -> loop() end).
 

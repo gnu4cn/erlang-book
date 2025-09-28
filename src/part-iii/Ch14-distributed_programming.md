@@ -504,4 +504,25 @@ true
 
 
 ```console
+$ erl -name gandalf@doris.xfoss.net -setcookie abc
+Erlang/OTP 26 [erts-14.2.5] [source] [64-bit] [smp:2:2] [ds:2:2:10] [async-threads:1] [jit:ns]
+
+Eshell V14.2.5 (press Ctrl+G to abort, type help(). for help)
+(gandalf@doris.xfoss.net)1>
+```
+
+而在主机 `george` 上，我们启动一个名为 `bilbo` 的节点，记住要使用同一个 cookie。
+
+
+```console
+$ erl -name bilbo -setcookie abc
+Erlang/OTP 25 [erts-13.1.5] [source] [64-bit] [smp:2:2] [ds:2:2:10] [async-threads:1] [jit:ns]
+
+Eshell V13.1.5  (abort with ^G)
+(bilbo@george.xfoss.net)1>
+```
+
+现在（在 `bilbo` 上），我们就可以在远端节点（`gandalf`）上，生成一个进程。
+
+```console
 ```
