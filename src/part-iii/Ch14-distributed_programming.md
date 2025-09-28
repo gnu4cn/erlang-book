@@ -220,7 +220,7 @@ true
 
 
 
-```console
+```erlang
 [hector@doris socket_dist]$ erl -name gandalf@doris.xfoss.net -setcookie abc
 Erlang/OTP 26 [erts-14.2.5] [source] [64-bit] [smp:2:2] [ds:2:2:10] [async-threads:1] [jit:ns]
 
@@ -232,7 +232,7 @@ true
 
 > *译注*：在 `Erlang/OTP 26` 下，需要以上面的命令启动 LAN 节点。若以命令 `erl -name gandalf -setcookie abc` 启动，会报出如下错误。在 `Erlang/OTP 25` 下则没有问题，如后面所示。
 >
-> ```console
+> ```erlang
 > [hector@doris socket_dist]$ erl -name gandalf -setcookie abc                                                                17:22:06 [45/45]
 > 2025-09-26 17:22:06.251459
 >     args: []
@@ -253,7 +253,7 @@ true
 第二步是在 `george` 上启动一个 Erlang 节点，并发送一些命令到 `gandalf`。
 
 
-```console
+```erlang
 $ erl -name bilbo -setcookie abc
 
 Erlang/OTP 25 [erts-13.1.5] [source] [64-bit] [smp:2:2] [ds:2:2:10] [async-threads:1] [jit:ns]
@@ -268,7 +268,7 @@ true
 
 > **译注**：这里需要将 Erlang 节点名字用单引号括起来，否则将报出以下错误。
 >
-> ```console
+> ```erlang
 > $ erl -name jack@george.xfoss.net -setcookie abc
 > Erlang/OTP 25 [erts-13.1.5] [source] [64-bit] [smp:2:2] [ds:2:2:10] [async-threads:1] [jit:ns]
 >
@@ -318,7 +318,7 @@ true
 
 >    **译注**：下面是在 Win10 上执行 `net_adm:ping` 命令的示例输出：
 >
->    ```console
+>    ```erlang
 >    PS C:\Users\Hector PENG> erl -name john@win10.xfoss.net -setcookie abc
 >    Erlang/OTP 28 [erts-16.1] [source] [64-bit] [smp:2:2] [ds:2:2:10] [async-threads:1] [jit:ns]
 >
@@ -347,7 +347,7 @@ true
 
 2. 要选取将用于分布式 Erlang 的某个端口，或某个端口范围，并确保这些端口是放开的。当这些端口是 `Min` 和 `Max`（当咱们只想打算一个端口时，则使用 `Min = Max`）时，则要以下面的命令，启动 Erlang：
 
-    ```console
+    ```erlang
     $erl -name ... -setcookie ... -kernel inet_dist_listen_min Min \
                                           inet_dist_listen_max Max
     ```
@@ -359,7 +359,7 @@ true
 >
 > 在 `xfoss.com` 主机上，放行 `4396` 及 `40001:40024` 端口，并如下启动这个 `kvs` 程序。
 >
-> ```console
+> ```erlang
 > $ erl -name gandalf@xfoss.com -setcookie abc -kernel inet_dist_listen_min 40001 inet_dist_listen_max 40024
 > Erlang/OTP 24 [erts-12.2.1] [source] [64-bit] [smp:1:1] [ds:1:1:10] [async-threads:1] [jit]
 >
@@ -373,7 +373,7 @@ true
 >
 > 同样在 `vps-c2564795.vps.ovh.ca` 主机上放行 `4396` 与 `40001:40024` 端口，并如下启动一个 Erlang 节点，然后对 `xfoss.com` 上的 Erlang 节点进行远程过程调用。
 >
-> ```console
+> ```erlang
 > $ erl -name bilbo@vps-c2564795.vps.ovh.ca -setcookie abc -kernel inet_dist_listen_min 40001 inet_dist_listen_max 40024
 > Erlang/OTP 27 [erts-15.2.7] [source] [64-bit] [smp:4:4] [ds:4:4:10] [async-threads:1] [jit:ns]
 >
@@ -504,7 +504,7 @@ true
 
 在主机 `doris` 上，我们启动一个名为 `gandalf` 的节点（译注：这里使用了另一个主机 `jack`，因为在原先的 AlmaLinux9 主机上出现了因为 Erlang/OTP 版本不一致造成的报错，见后文）。
 
-```console
+```erlang
 $ erl -name gandalf -setcookie abc
 Erlang/OTP 25 [erts-13.1.5] [source] [64-bit] [smp:2:2] [ds:2:2:10] [async-threads:1] [jit:ns]
 
@@ -515,7 +515,7 @@ Eshell V13.1.5  (abort with ^G)
 而在主机 `george` 上，我们启动一个名为 `bilbo` 的节点，记住要使用同一个 cookie。
 
 
-```console
+```erlang
 $ erl -name bilbo -setcookie abc
 Erlang/OTP 25 [erts-13.1.5] [source] [64-bit] [smp:2:2] [ds:2:2:10] [async-threads:1] [jit:ns]
 
@@ -526,7 +526,7 @@ Eshell V13.1.5  (abort with ^G)
 现在（在 `bilbo` 上），我们就可以在远端节点（`gandalf`）上，生成一个进程。
 
 
-```console
+```erlang
 (bilbo@george.xfoss.net)1> Pid = dist_demo:start('gandalf@jack.xfoss.net').
 <10415.92.0>
 ```
@@ -534,15 +534,27 @@ Eshell V13.1.5  (abort with ^G)
 
 > **译注**：此时要确保两个节点上运行了同样版本的 Erlang/OTP，否则会出现如下报错。
 >
-> ```console
+> ```erlang
 > {{badfun,#Fun<erl_eval.43.3316493>},[{erlang,apply,2,[]}]}
 > ```
 >
 > 这是因为 `bilbo` 节点在 `gandalf` 节点上生成的进程，使用的是本地编译得到的 `dist_demo.beam` 文件中的代码，故当远端 `gandalf` 节点上的 Erlang/OTP 版本不一致时，就会报出上面的错误。
 >
-> 所有 Erlang 节点，都需要在 `dist_demo.beam` 所在目录下启动。从 `win10.xfoss.net` 上启动 `george.xfoss.net` 上的 Erlang 进程示例如下。
+> 所有 Erlang 节点，都需要在 `dist_demo.beam` 所在目录下启动。否则会报出以下错误。
 >
-> ```console
+> ```erlang
+> (bilbo@george.xfoss.net)1> Pid = dist_demo:start('gandalf@jack.xfoss.net').
+> <10415.103.0>
+> =ERROR REPORT==== 28-Sep-2025::03:16:51.128088 ===
+> Error in process <10415.103.0> on node 'gandalf@jack.xfoss.net' with exit value:
+> {undef,[{#Fun<dist_demo.0.45804246>,[],[]}]}
+>
+> ```
+>
+>
+> 从 `win10.xfoss.net` 上启动 `george.xfoss.net` 上的 Erlang 进程示例如下。
+>
+> ```erlang
 > (hector@win10.xfoss.net)5> Pid = dist_demo:start('bilbo@george.xfoss.net').
 > <9007.100.0>
 > (hector@win10.xfoss.net)6> dist_demo:rpc(Pid, math, sqrt, [16]).
@@ -555,7 +567,7 @@ Eshell V13.1.5  (abort with ^G)
 `Pid` 现在是 *远端节点上* 那个进程的进程标识符，而我们可调用 `dist_demo:rpc/4`，在远程节点上执行一次远程过程调用。
 
 
-```console
+```erlang
 (bilbo@george.xfoss.net)2> dist_demo:rpc(Pid, erlang, node, []).
 'gandalf@jack.xfoss.net'
 ```
@@ -566,11 +578,55 @@ Eshell V13.1.5  (abort with ^G)
 
 > **译注**：下面是另一个示例。
 >
-> ```console
+> ```erlang
 > (bilbo@george.xfoss.net)3> dist_demo:rpc(Pid, io, format, ["hello~n"]).
 > hello
 > ok
 > ```
 
 
-###
+### 重温文件服务器
+
+
+在之前的 [“文件服务器进程”](../part-i/Ch02_a-whirlwind-tour-of-erlang.md#文件服务器进程) 中，我们曾构建过一个简单文件服务器，承诺稍后将再回到这个程序。现在就是那个稍后了。本章的上一小节，介绍了如何建立一个简单的远程过程调用服务器，我们现在可将其用于，在两个 Erlang 节点间传输文件。
+
+
+下面的内容，继续了上一小节的示例：
+
+
+```erlang
+$ erl -name bilbo -setcookie abc
+Erlang/OTP 25 [erts-13.1.5] [source] [64-bit] [smp:2:2] [ds:2:2:10] [async-threads:1] [jit:ns]
+
+Eshell V13.1.5  (abort with ^G)
+(bilbo@george.xfoss.net)1> Pid = dist_demo:start('gandalf@jack.xfoss.net').
+<10415.92.0>
+(bilbo@george.xfoss.net)2> dist_demo:rpc(Pid, file, get_cwd, []).
+{ok,"/home/hector/erlang-book/projects/ch14-code"}
+(bilbo@george.xfoss.net)3> dist_demo:rpc(Pid, file, list_dir, ["."]).
+{ok,["socket_dist","dist_demo.erl","dist_demo.beam"]}
+(bilbo@george.xfoss.net)4> dist_demo:rpc(Pid, file, read_file, ["dist_demo.erl"]).
+{ok,<<"-module(dist_demo).\n-export([rpc/4, start/1]).\n\nstart(Node) ->\n    spawn(Node, fun() -> loop() end).\n\nrpc(Pi"...>>}
+```
+
+
+在 `gandalf` 节点上，我（作者）于我保存本书代码示例的 `projects/ch14-code` 下，启动了一个分布式 Erlang 节点。在 `bilbo` 上，我构造了最后会调用 `gandalf` 上标准库的请求。我正使用 `file` 模组中的三个函数，访问 `gandalf` 上的文件系统。
+
+- `file:get_cwd()` 会返回文件服务器的当前工作目录；
+- `file:list_dir(Dir)` 会返回 `Dir` 中的文件列表；
+- `file:read_file(File)` 会读取文件 `File`。
+
+
+当咱们稍加思考时，咱们将意识到，我们刚才所做的相当了不起。在未编写任何代码下，我们就已经构造了个文件服务器；我们只是重用了 `file` 模组中的库代码，并经由一个简单的远程过程调用接口，使其可用。
+
+
+> **实现一个文件传输程序**
+>
+> 几年前，我（作者）不得不在两台有着不同操作系统的联网机器间传输一些文件。我首先想到的是使用 FTP，但我需要在一台机器上安装 FTP 服务器，在另一台机器上安装 FTP 客户端。我找不到我服务器机器下的某种 FTP 服务器程序，而且在服务器机器上我还没有安装 FTP 服务器程序的 root 权限。但在两台机器上我都运行了分布式的 Erlang。
+>
+> 然后我使用了我在这里描述的同样技巧。事实证明，编写我自己的文件服务器，要比搜索和安装 FTP 服务器更快。
+>
+> 如果你感兴趣，我当时就写了 [一篇博客](https://armstrongonsoftware.blogspot.com/2006/09/why-i-often-implement-things-from.html)。
+
+
+## Cookie 保护机制
