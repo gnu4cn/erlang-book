@@ -2,7 +2,7 @@
 -export([rpc/4, start/1]).
 
 start(Node) ->
-    spawn(Node, fun() -> loop() end).
+    spawn(Node, loop()).
 
 rpc(Pid, M, F, A) ->
     Pid ! {rpc, self(), M, F, A},
