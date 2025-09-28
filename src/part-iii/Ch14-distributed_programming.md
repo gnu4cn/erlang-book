@@ -327,6 +327,8 @@ true
 >    pong
 >    (john@win10.xfoss.net)2>
 >    ```
+>
+> 译者观察到，当在 Win10 系统上启动了节点后，需要先从 Win10 节点 `net_adm:ping` 到 Deian12 节点，然后才能从 Debian12 节点 `net_adm:ping` 到这个 Win10 节点。
 
 成功！我们在同一局域网的两台服务器上运行了。下一步是将这些，迁移到经由互联网连接的两台计算机上。
 
@@ -500,15 +502,14 @@ true
 
 当两个节点位于两个物理上分离，有着不同文件系统的节点上时，那么这个程序就必须复制到全部节点，并在启动两个节点前加以编译（或者，也可将 `.beam` 文件复制到全部节点）。在这个示例中，我（作者）将假定我们已经这样做了。
 
-在主机 `doris` 上，我们启动一个名为 `gandalf` 的节点。
-
+在主机 `doris` 上，我们启动一个名为 `gandalf` 的节点（译注：这里使用了另一个主机 `jack`，因为在原先的 AlmaLinux9 主机上出现了因为 Erlang/OTP 版本不一致造成的报错，见后文）。
 
 ```console
-$ erl -name gandalf@doris.xfoss.net -setcookie abc
-Erlang/OTP 26 [erts-14.2.5] [source] [64-bit] [smp:2:2] [ds:2:2:10] [async-threads:1] [jit:ns]
+$ erl -name gandalf -setcookie abc
+Erlang/OTP 25 [erts-13.1.5] [source] [64-bit] [smp:2:2] [ds:2:2:10] [async-threads:1] [jit:ns]
 
-Eshell V14.2.5 (press Ctrl+G to abort, type help(). for help)
-(gandalf@doris.xfoss.net)1>
+Eshell V13.1.5  (abort with ^G)
+(gandalf@jack.xfoss.net)1>
 ```
 
 而在主机 `george` 上，我们启动一个名为 `bilbo` 的节点，记住要使用同一个 cookie。
@@ -524,5 +525,52 @@ Eshell V13.1.5  (abort with ^G)
 
 现在（在 `bilbo` 上），我们就可以在远端节点（`gandalf`）上，生成一个进程。
 
+
 ```console
+(bilbo@george.xfoss.net)1> Pid = dist_demo:start('gandalf@jack.xfoss.net').
+<10415.92.0>
 ```
+
+
+> **译注**：此时要确保两个节点上运行了同样版本的 Erlang/OTP，否则会出现如下报错。
+>
+> ```console
+> {{badfun,#Fun<erl_eval.43.3316493>},[{erlang,apply,2,[]}]}
+> ```
+>
+> 这是因为 `bilbo` 节点在 `gandalf` 节点上生成的进程，使用的是本地编译得到的 `dist_demo.beam` 文件中的代码，故当远端 `gandalf` 节点上的 Erlang/OTP 版本不一致时，就会报出上面的错误。
+>
+> 所有 Erlang 节点，都需要在 `dist_demo.beam` 所在目录下启动。从 `win10.xfoss.net` 上启动 `george.xfoss.net` 上的 Erlang 进程示例如下。
+>
+> ```console
+> (hector@win10.xfoss.net)5> Pid = dist_demo:start('bilbo@george.xfoss.net').
+> <9007.100.0>
+> (hector@win10.xfoss.net)6> dist_demo:rpc(Pid, math, sqrt, [16]).
+> 4.0
+> ```
+
+
+
+
+`Pid` 现在是 *远端节点上* 那个进程的进程标识符，而我们可调用 `dist_demo:rpc/4`，在远程节点上执行一次远程过程调用。
+
+
+```console
+(bilbo@george.xfoss.net)2> dist_demo:rpc(Pid, erlang, node, []).
+'gandalf@jack.xfoss.net'
+```
+
+
+这会 *在远端节点上*，执行 `erlang:node()` 并返回值。
+
+
+> **译注**：下面是另一个示例。
+>
+> ```console
+> (bilbo@george.xfoss.net)3> dist_demo:rpc(Pid, io, format, ["hello~n"]).
+> hello
+> ok
+> ```
+
+
+###
