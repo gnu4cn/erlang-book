@@ -806,10 +806,43 @@ true
 
 
 ```erlang
+1> {ok, Pid} = lib_chan:connect("localhost",1234,nameServer,"ABXy45","").
+{ok,<0.84.0>}
+2> lib_chan:cast(Pid, {store, joe, "writing a book"}).
+{send,{store,joe,"writing a book"}}
+3> lib_chan:rpc(Pid, {lookup, joe}).
+{ok,"writing a book"}
+4> lib_chan:rpc(Pid, {lookup, jim}).
+undefined
 ```
 
-> **译注**：要运行上述命令，需要以下两个 `.erl` 文件。
+> **译注**：要运行上述命令，需要以下三个 `.erl` 文件。
 >
 > - [`socket_dist/lib_chan_mm.erl`](http://media.pragprog.com/titles/jaerlang2/code/socket_dist/lib_chan_mm.erl)
 >
 > - [`socket_dist/lib_chan_auth.erl`](http://media.pragprog.com/titles/jaerlang2/code/socket_dist/lib_chan_auth.erl)
+>
+> - [`socket_dist/lib_md5.erl`](http://media.pragprog.com/titles/jaerlang2/code/socket_dist/lib_md5.erl)
+
+
+在一台机器上测试了这个程序会工作后，我们就要按照我们早先描述的步骤，在两台物理分开的机器上，执行类似测试。
+
+
+请注意在这种情况下，决定配置文件内容的人，是远端计算机的所有者。这个配置文件指定了在这台机器上哪些应用是允许的，以及哪些端口被用于与这些应用通信。
+
+我们现在处于可编写分布式程序之处。一个全新世界就此开启。当编写顺序程序有趣时，那么编写分布式程序，就是有趣的平方或立方。我（作者）真心建议咱们，完成接下来的 YAFS 练习；这种基本代码结构，是许多应用的核心。
+
+
+现在，我们已经介绍了顺序、并发及分布式编程。在本书的下个部分，我们将学习如何连接外语代码，并学习一些主要的 Erlang 库，以及如何调试代码。然后，我们将了解如何使用 OTP 结构原理及库，构建出一些复杂的 Erlang 系统。
+
+
+## 练习
+
+
+1. 请启动同一主机上启动的两个节点。查找 `rpc` 模组的手册页。在这两个节点上，执行一些远程过程调用；
+
+2. 请重复前一练习，只是在同一个局域网中的两个节点下；
+
+3. 请重复前一练习，只是在不同网络上的两个节点下；
+
+4. 请使用 `lib_chan` 中的那些库，编写 YAFS（Yet Another File Server）。这样做咱们会学到很多东西。请为咱们的文件服务器，添加 “门铃和口哨”。
