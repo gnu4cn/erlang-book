@@ -799,8 +799,6 @@ true
 >
 > - [`socket_dist/lib_chan_cs.erl`](http://media.pragprog.com/titles/jaerlang2/code/socket_dist/lib_chan_cs.erl)
 >
-> - [`socket_dist/lib_chan_cs.erl`](http://media.pragprog.com/titles/jaerlang2/code/socket_dist/lib_chan_cs.erl)
->
 > 这表明这个 `lib_chan` 可能是作者本人实现的一个库，而不是 Erlang/OTP 自带的库。
 
 
@@ -809,3 +807,9 @@ true
 
 ```erlang
 ```
+
+> **译注**：要运行上述命令，需要以下两个 `.erl` 文件。
+>
+> - [`socket_dist/lib_chan_mm.erl`](http://media.pragprog.com/titles/jaerlang2/code/socket_dist/lib_chan_mm.erl)
+>
+> - [`socket_dist/lib_chan_auth.erl`](http://media.pragprog.com/titles/jaerlang2/code/socket_dist/lib_chan_auth.erl)
