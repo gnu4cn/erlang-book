@@ -759,6 +759,7 @@ connect(Host, 1234, nameServer, "ABXy45", nil)
 
 其中 `mod_name_server` 如下：
 
+[`socket_dist/mod_name_server.erl`](http://media.pragprog.com/titles/jaerlang2/code/socket_dist/mod_name_server.erl)
 
 ```erlang
 {{#include ../../projects/ch14-code/socket_dist/mod_name_server.erl}}
@@ -778,6 +779,32 @@ connect(Host, 1234, nameServer, "ABXy45", nil)
 要测试这段代码，我们将首先要确保，在一台机器上一切都正常运行。
 
 现在我们可以启动这个名字服务器（以及这个 `kvs` 模组）。
+
+
+```erlang
+1> kvs:start().
+true
+2> lib_chan:start_server().
+lib_chan starting:"/home/hector/.erlang_config/lib_chan.conf"
+ConfigData=[{port,1234},
+            {service,nameServer,password,"ABXy45",mfa,mod_name_server,
+                     start_me_up,notUsed}]
+true
+```
+
+
+> **译注**：要如上在本地执行 `lib_chan:start_server/1` 启动这个名字服务器，还需要如下三个文件。
+>
+> - [`socket_dist/lib_chan.erl`](http://media.pragprog.com/titles/jaerlang2/code/socket_dist/lib_chan.erl)
+>
+> - [`socket_dist/lib_chan_cs.erl`](http://media.pragprog.com/titles/jaerlang2/code/socket_dist/lib_chan_cs.erl)
+>
+> - [`socket_dist/lib_chan_cs.erl`](http://media.pragprog.com/titles/jaerlang2/code/socket_dist/lib_chan_cs.erl)
+>
+> 这表明这个 `lib_chan` 可能是作者本人实现的一个库，而不是 Erlang/OTP 自带的库。
+
+
+现在，我们可以启动第二个 Erlang 会话，并从任一客户端进行测试。
 
 
 ```erlang
