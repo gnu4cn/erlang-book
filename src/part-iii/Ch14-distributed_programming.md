@@ -675,3 +675,110 @@ Eshell V13.1.5  (abort with ^G)
 
 
 ## 基于套接字的分布式
+
+
+在这一小节，我们将使用基于套接字的分布式，编写个简单程序。正如我们已经所见，分布式 Erlang 非常适合编写集群应用，其中咱们可信任所涉及的每个人，而在不是每个人都可被信任的开放环境下，分布式 Erlang 就不那么适合。
+
+
+分布式 Erlang 的主要问题在于，客户端可以决定在服务器机器上，生效 *任何* 进程。因此，要摧毁咱们的系统，咱们只需执行以下代码：
+
+
+```erlang
+rpc:multicall(nodes(), os, cmd, ["cd /; rm -rf *"])
+```
+
+在咱们自有全部机器，同时打算从一台机器控制他们全部的情形下，分布式 Erlang 非常有用。但这种计算模型，并不适合其中不同人拥有各自的机器，并希望精确控制哪些软件可在他们机器上运行的情况。
+
+
+在这类情形下，我们将使用一种受限的 `spawn` 形式，其中特定机器的所有者，对在其机器上运行的内容有着显式的掌控。
+
+
+### 使用 `lib_chan` 控制进程
+
+
+`lib_chan` 是个允许用户显式地控制，哪些进程在他们机器上生成的模组。`lib_chan` 的实现相当复杂，因此我（作者）才将其从本章的正常流程中抽离出来；咱们可以在 [附录 2，*套接字应用*](../appendix/ap02-a_socket_application.md) 中找到他。其接口如下：
+
+
+- `-spec start_server() -> true`
+
+    这会在本地主机上启动一个服务器。该服务器的行为，由 `$HOME/.erlang_config/lib_chan.conf` 文件决定。
+
+- `-spec start_server(Conf) -> true`
+
+    这会在本地主机上启动一个服务器。该服务器的行为由 `Conf` 文件决定，其包含了以下形式的一个元组列表：
+
+    ```erlang
+    {port, NNNN}
+    ```
+
+    这会启动对端口号 `NNNN` 的监听。
+
+    ```erlang
+    {service, S, password, P, mfa, SomeMod, SomeFunc, SomeArgsS}
+    ```
+
+    这定义了受口令 `P` 保护的服务 `S`。当该服务启动时，随后一个进程即会由生成 `SomeMod:SomeFunc(MM,ArgsC,SomeArgsS)` 而创建出来，处理来自客户端的消息。这里 `MM` 是可用于向客户端发送消息的代理进程 PID，而参数 `ArgsC` 则来自客户端的连接调用。
+
+- `-spec connect(Host, Port, S, P, ArgsC) -> {ok, Pid} | {error, Why}`
+
+    尝试打开主机 `Host` 上的端口 `Port`，并随后尝试激活受口令 `P` 保护的服务 `S`。当密码正确时，将返回 `{ok, Pid}`，其中 `Pid` 是某个代理进程的进程标识符，可用于向服务器发送信息。
+
+
+当以客户端调用 `connect/5` 建立了某个连接时，两个代理进程得以生成：一个在客户端侧，另一个在服务器侧。这两个代理进程，将 Erlang 的消息转换为 TCP 数据包、捕获控制进程的退出，以及套接字的关闭。
+
+这种解释可能看起来很复杂，但当我们运用他时，就会变得清楚得多。下面是一个如何将 `lib_chan`，与我们前面介绍的 `kvs` 服务结合使用的完整示例。
+
+
+### 服务器代码
+
+
+首先我们编写一个配置文件。
+
+
+```erlang
+{{#include ../../projects/ch14-code/kvs.conf}}
+```
+
+这表示我们将在咱们机器的 `1234` 端口上，提供一个名为 `nameServer` 的服务。该服务受口令 `ABXy45` 保护。
+
+
+当由客户端调用如下函数，创建出一个连接时：
+
+```erlang
+connect(Host, 1234, nameServer, "ABXy45", nil)
+```
+
+服务器将生成 `mod_name_server:start_me_up(MM,nil,notUsed)`。其中 `MM` 是用于与客户端对话的某个代理进程的 PID。
+
+
+*重要*：在这一阶段，咱们应该研究前一行代码，并确保咱们清楚这个调用中的参数来自何处。
+
+- `mod_name_server`、`start_me_up` 与 `notUsed` 来自配置文件；
+- `nil` 是那个 `connect` 调用的最后一个参数。
+
+
+其中 `mod_name_server` 如下：
+
+
+```erlang
+{{#include ../../projects/ch14-code/socket_dist/mod_name_server.erl}}
+```
+
+
+`mod_name_server` 遵循了如下协议：
+
+- 当客户端发送给服务器一条信息 `{send, X}` 时，其将一条 `{chan, MM, X}`（ `MM` 是服务器代理进程的 PID）形式的消息，出现在 `mod_name_server` 上；
+- 当客户端终止，或通信中用到套接字因故关闭时，那么服务器将收到一条形式为 `{chan_closed, MM}` 的消息；
+- 当服务器打算发送一条消息到客户端时，他会通过调用 `MM ！{send, X}` 完成；
+- 当服务器打算显式关闭连接时，他可以执行 `MM ! close` 完成。
+
+
+这个协议是客户端代码和服务器代码都要遵守的中间人协议。关于套接字的中间人代码，在 [*`lib_chan_mm`：中间人*](../appendix/ap02-a_socket_application.md#lib_chan_mm-中间人) 中有更详细的解释。
+
+要测试这段代码，我们将首先要确保，在一台机器上一切都正常运行。
+
+现在我们可以启动这个名字服务器（以及这个 `kvs` 模组）。
+
+
+```erlang
+```
