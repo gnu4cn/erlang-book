@@ -125,7 +125,7 @@ receive
 [`ports/example1.c`](http://media.pragprog.com/titles/jaerlang2/code/ports/example1.c)
 
 ```c
-{{#include ../../projects/ch15-code/ports/example1.c}}
+{{#include ../../projects/ch15-code/example1.c}}
 ```
 
 我们的最终目标，是在 Erlang 中调用这些例程。我们希望能以如下方式调用他们：
@@ -197,7 +197,7 @@ C 程序有三个文件。
 
 
 ```c
-{{#include ../../projects/ch15-code/ports/example1_driver.c}}
+{{#include ../../projects/ch15-code/example1_driver.c}}
 ```
 
 
@@ -210,7 +210,7 @@ C 程序有三个文件。
 
 
 ```c
-{{#include ../../projects/ch15-code/ports/erl_comm.c}}
+{{#include ../../projects/ch15-code/erl_comm.c}}
 ```
 
 这段代码专门用于处理有着 2 字节长头部的数据，因此他要与给到端口驱动程序的 `{packet, 2}` 选项匹配。
