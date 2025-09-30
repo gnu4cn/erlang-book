@@ -41,3 +41,83 @@ Erlang 通过名为 *端口* 的对象，与外部程序通信。当我们将一
 
 ![Erlang 端口](../images/erlang_ports.png)
 
+
+要创建一个端口，我们就要调用 `open_port`，其是如下指定的：
+
+
+```erlang
+-spec open_port(PortName, [Opt]) -> Port
+```
+
+其中 `PortName` 为如下选项之一：
+
+- `{spawn, Command}`
+
+    会启动一个外部程序。`Command` 是某个外部程序的名字。除非找到一个名称为 `Command` 的链接驱动，否则 `Command` 会运行于 Erlang 工作区之外。
+
+
+- `{fd, In, Out}`
+
+    允许 Erlang 进程访问当前由 Erlang 打开的任何文件描述符。其中文件描述符 `In` 可用于标准输入，而文件描述符 `Out` 则可用于标准输出。
+
+
+`Opt` 为以下选项之一：
+
+- `{packet, N}`
+
+    数据包前面有 `N`（1、2 或 4）字节的长度计数。
+
+- `stream`
+
+    发送以不带数据包长度发出。应用务必要知道，如何处理这些数据包。
+
+- `{line, Max}`
+
+    按行投送信息。当行超过 `Max` 字节数时，则其会被分拆为 `Max` 字节。
+
+- `{cd, Dir}`
+
+    只对 `{spawn, Command}` 这个选项有效。外部程序会在 `Dir` 下启动。
+
+
+- `{env, Env}`
+
+    只对 `{spawn, Command}` 这个选项有效。外部程序的环境，由列表 `Env` 中的环境变量扩展。`Env` 是个 `{VarName, Value}` 对的列表，其中 `VarName` 和 `Value` 均为字符串。
+
+
+这并非 `open_port` 的参数完整列表。咱们可以在 `erlang` 模组的手册页中，找到这些参数的详细信息。
+
+以下消息可被发送给某个端口；请注意，在所有这些消息中，`PidC` 都是所连接进程的 PID。
+
+
+- `Port ! {PidC, {command, Data}}`
+
+    向该端口发送 `Data` （一个 I/O 清单）。
+
+
+- `Port ! {PidC, {connect, Pid1}}`
+
+    将连接进程的 PID，从 `PidC` 改为 `Pid1`。
+
+- `Port ! {PidC, close}`
+
+    关闭该端口。
+
+
+通过写下如下代码，连接进程就可以接收来自外部程序的消息：
+
+
+```erlang
+receive
+    {Port, {data, Data}} ->
+        ... Data comes from the external process ...
+```
+
+
+在后面的小节中，我们将把 Erlang 与一个简单 C 程序对接。这个 C 程序有意较短，以专注于我们如何完成对接的细节。
+
+
+## 使用端口对接外部 C 程序
+
+
+
