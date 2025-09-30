@@ -15,14 +15,14 @@ int main() {
         fn = buff[0];
 
         if (fn == 1) {
-            arg[1] = buff[1];
-            arg[2] = buff[2];
+            arg1 = buff[1];
+            arg2 = buff[2];
 
             /* debug -- you can print to stderr to debug
                fprintf(stderr, "calling sum %i %i\n", arg1, arg2); */
             result = sum(arg1, arg2);
         } else if (fn == 2) {
-            arg[1] = buff[1];
+            arg1 = buff[1];
             result = twice(arg1);
         } else {
             /* just exit on unknown function */

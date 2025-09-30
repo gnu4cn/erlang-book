@@ -219,4 +219,79 @@ C 程序有三个文件。
 ### Erlang 程序
 
 
+端口的 Erlang 侧，是由以下程序驱动的：
 
+
+[`ports/example1.erl`](http://media.pragprog.com/titles/jaerlang2/code/ports/example1.erl)
+
+```erlang
+{{#include ../../projects/ch15-code/example1.erl}}
+```
+
+这段代码遵循了一种相当标准的模式。在 `start/0` 中，我们创建了一个名为 `example1` 的注册进程（服务器）。`call_port/1` 实现了对服务器的远程过程调用。`twice/1` 和 `sum/2` 属于必须导出，且会发起对服务器远程过程调用的接口例程。在 `loop/1` 中，我们编码了到外部程序的请求，并处理来自这个外部程序的返回值。
+
+
+这就完成了这些程序。现在我们只需一个 makefile 构建出这些程序。
+
+
+### 编译并连接这个端口程序
+
+这个 makefile 会编译及连接本章中讲到的这个端口驱动与链接驱动程序，以及所有有关 Erlang 代码。这个 makefile 只在 Mac OS X Mountain Lion 上测试过，其他操作系统将需要修改。他还包含了个小的测试程序，其会在每次重建代码时运行。
+
+
+[`ports/Makefile.mac`](http://media.pragprog.com/titles/jaerlang2/code/ports/Makefile.mac)
+
+
+```Makefile
+{{#include ../../projects/ch15-code/Makefile}}
+```
+
+> **译注**：相比原文的 `Makefile.mac`，这里为适应在 Linux 系统上的编译，做了如下改动。
+>
+> - 移除了 `-arch`、`-bundle` 及 `-flat_namespace` 参数。这些参数是专用于 MacOS 的选项参数；
+>
+> - 将 `-undefined suppress` 命令行开关，修改为 `-Wl,undefined,suppress`，因为原来的写法已不受新版 GCC 支持；
+>
+> - 增加 `-shared` 命令行开关，否则会报如下错误。
+>
+> ```console
+> gcc -I /usr/lib/erlang/usr/include/ \
+>             -o example1_drv.so -fPIC -Wl,-undefined,suppress \
+>             example1.c example1_lid.c
+> /usr/bin/ld: /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/Scrt1.o: in function `_start':
+> (.text+0x1b): undefined reference to `main'
+> /usr/bin/ld: /tmp/ccs0nqFy.o: in function `example_drv_start':
+> example1_lid.c:(.text+0x16): undefined reference to `driver_alloc'
+> /usr/bin/ld: /tmp/ccs0nqFy.o: in function `example_drv_stop':
+> example1_lid.c:(.text+0x43): undefined reference to `driver_free'
+> /usr/bin/ld: /tmp/ccs0nqFy.o: in function `example_drv_output':
+> example1_lid.c:(.text+0xe5): undefined reference to `driver_output'
+> collect2: 错误：ld 返回 1
+> make: *** [Makefile:13：example1_drv.so] 错误 1
+> ```
+>
+> 参考：[How to compile an Erlang driver?](https://stackoverflow.com/a/19305649/12288760)
+
+
+### 运行程序
+
+现在我们可运行这个程序。
+
+
+```erlang
+1> example1:start().
+true
+2> example1:sum(45, 32).
+77
+3> example1:twice(20).
+40
+```
+
+
+这就完成了我们的第一个示例端口程序。这个程序实现的端口协议，是 Erlang 与外界通信的主要方式。
+
+在进入下一主题前，请注意以下几点：
+
+- 这个示例程序没有试图统一 Erlang 和 C 对整数为何的概念。我们只假定了 Erlang 和 C 中的整数是单个字节，而忽略了精度及符号的所有问题。在某个实际应用中，我们就必须仔细考虑相关参数的确切类型与精度。事实上，这可能相当困难，因为 Erlang 乐于管理任意大小的整数，而 C 等语言则对整数精度等，有固定概念；
+
+- 在没有首先启动负责接口的驱动前，我们无法直接运行那些 Erlang 函数（也就是说，在咱们可运行该程序之前，某个程序必须要执行 `example1:start()`）。我们会希望能在系统启动时，自动执行这个操作。这完全可行，但需要一些有关系统如何启动和停止的知识。我们将在 [23.7 节 “应用程序”](./Ch23-making_a_system_with_otp.md#应用程序) 中讨论这个问题。
