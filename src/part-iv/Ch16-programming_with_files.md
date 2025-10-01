@@ -16,7 +16,7 @@
 
 文件操作的函数，被组织在四个模组中。
 
-- `file`：这个模组有着打开、关闭、读取与写入文件；以及列出目录等的一些例程。[表 7，*文件操作摘要（`file` 模组中的）](#table-7) 给出了 `file` 中一些常用函数的简短摘要。详情请查阅 [`file` 模组的手册页面](https://www.erlang.org/doc/apps/kernel/file.html)；
+- `file`：这个模组有着打开、关闭、读取与写入文件；以及列出目录等的一些例程。[表 7，*文件操作摘要（`file` 模组中的）*](#table-7) 给出了 `file` 中一些常用函数的简短摘要。详情请查阅 [`file` 模组的手册页面](https://www.erlang.org/doc/apps/kernel/file.html)；
 
 - `filename`：这个模组有着一些以平台独立方式，操作文件名的例程，因此咱们可在数种不同操作系统上，运行同一代码；
 
@@ -102,6 +102,54 @@
 
 <a name="table-7"></name>
 **表 7** -- **文件操作摘要（`file` 模组中的）**
+
+
+### 一次读取文件中的一个项
+
+当咱们打算逐个读取文件中的项时，我们要首先以 `file:open` 打开该文件，然后以 `io:read` 读取单个项，直到文件结束，最后以 `file:close` 关闭该文件。
+
+下面这个 shell 会话，显示了当我们一次读取一个文件中的项时，所发生的事情：
+
+
+```erl
+1> {ok, S} = file:open("data1.dat", read).
+{ok,<0.87.0>}
+2> io:read(S, '').
+{ok,{person,"joe","armstrong",
+            [{occupation,programmer},{favoriteLanguage,erlang}]}}
+3> io:read(S, '').
+{ok,{cat,{name,"zorro"},{owner,"joe"}}}
+4> io:read(S, '').
+eof
+5> io:read(S, '').
+eof
+6> file:close(S).
+ok
+```
+
+这里我们用到的函数如下：
+
+- `-spec file:open(File, read) -> {ok, IoDevice} | {error, Why}`
+
+    会尝试以读取目的打开 `File`。当其可以打开该文件时，会返回 `{ok, IoDevice}`；否则返回 `{error, Reason}`。`IoDevice` 是个用于访问该文件的 I/O 设备。
+
+- `-spec io:read(IoDevice, Prompt) -> {ok, Term} | {error, Why} | eof`
+
+    会从 `IoDevice` 读取一个 Erlang 项。当 `IoDevice` 代表着某个已打开文件时，则 `Prompt` 会被忽略。当我们使用 `io:read` 从标准输入读取时，则 `Prompt` 就仅用于提供某个提示符。
+
+- `-spec file:close(IoDevice) -> ok | {error, Why}`
+
+    关闭 `IoDevice`。
+
+运用这些例程，我们就可以实现我们在上一小节中，曾用到的 `file:consult`。下面是 `file:consult` 可能的定义：
+
+
+[`lib_misc.erl`](http://media.pragprog.com/titles/jaerlang2/code/lib_misc.erl)
+
+
+```erlang
+{{#include ../../projects/ch16-code/lib_misc.erl:120:135}}
+```
 
 
 ## 写文件的方式
