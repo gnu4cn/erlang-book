@@ -270,7 +270,7 @@ C 程序有三个文件。
 > make: *** [Makefile:13：example1_drv.so] 错误 1
 > ```
 >
-> 参考：[How to compile an Erlang driver?](https://stackoverflow.com/a/19305649/12288760)
+>   参考：[How to compile an Erlang driver?](https://stackoverflow.com/a/19305649/12288760)
 
 
 ### 运行程序
@@ -295,3 +295,63 @@ true
 - 这个示例程序没有试图统一 Erlang 和 C 对整数为何的概念。我们只假定了 Erlang 和 C 中的整数是单个字节，而忽略了精度及符号的所有问题。在某个实际应用中，我们就必须仔细考虑相关参数的确切类型与精度。事实上，这可能相当困难，因为 Erlang 乐于管理任意大小的整数，而 C 等语言则对整数精度等，有固定概念；
 
 - 在没有首先启动负责接口的驱动前，我们无法直接运行那些 Erlang 函数（也就是说，在咱们可运行该程序之前，某个程序必须要执行 `example1:start()`）。我们会希望能在系统启动时，自动执行这个操作。这完全可行，但需要一些有关系统如何启动和停止的知识。我们将在 [23.7 节 “应用程序”](./Ch23-making_a_system_with_otp.md#应用程序) 中讨论这个问题。
+
+
+## 在 Erlang 中调用 Shell 脚本
+
+
+设想我们打算从 Erlang 中调用某个 shell 脚本。为此，我们可使用库函数 `os:cmd(Str)`。他会运行 `Str` 字符串中的命令，并捕获结果。下面是个使用 `ip add show dev lo` 命令的示例：
+
+
+```erlang
+1> os:cmd("ip add show dev lo").
+"1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000\n    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00\n    inet 127.0.0.1/8 scope host lo\n       valid_lft forever preferred_lft forever\n    inet6 ::1/128 scope host noprefixroute \n       valid_lft forever preferred_lft forever\n"
+```
+
+
+结果需要解析，提取出我们感兴趣的信息。
+
+
+## 高级接口技术
+
+除前面讨论到的技术外，还有一些其他可用于将 Erlang 与外部程序对接的技术。
+
+
+接下来介绍的技术正不断改进，而且随着时间推移，其变化速度往往比 Erlang 本身更快。因为这一原因，他们在这里未被详细介绍。有关描述已移至在线归档，以便他们更快地得以更新。
+
+
+ - *链入的驱动*
+
+    这些程序遵守与前面讨论的端口驱动同样协议。唯一不同的是，驱动代码是链接到 Erlang 内核，而因此是在 Erlang 的操作系统主进程中运行。要构造链入的驱动，必须要添加初始化驱动的少量代码，然后这个驱动必须要被编译，并链接到 Erlang 的虚拟机。
+
+    [Port Drivers](https://www.erlang.org/doc/system/c_portdriver.html) 有着链入式驱动的最新示例，以及如何对不同操作系统编译他们。
+
+    > **译注**：原文提到的 [erlang/linked_in_drivers](git://github.com/erlang/linked_in_drivers.git) 已在 GitHub 上找不到，应是合并到了新版本的 Erlang/OTP 发布中。
+
+- *原生实现函数*
+
+    NIF 即 *原生实现函数*。他们是一些以 C（或某些会编译到原生代码的语言） 编写的函数，并会被链接进到 Erlang 虚拟机中。原生实现函数会直接将参数传递到 Erlang 进程栈和堆上，并可直接访问全部 Erlang 内部数据结构。
+
+    有关 NIFs 的示例及最新信息，可在 [`erl_nif`](https://www.erlang.org/doc/apps/erts/erl_nif.html)。
+
+    > **译注**： 原文所之的代码仓库 [erlang/nifs](git://github.com/erlang/nifs.git) 已找不到，应是已被合并到新的 Erlang/OTP 发布中。
+
+- *C 节点*
+
+    所谓 C 节点，是以 C 实现、遵守 Erlang 分布式协议的一些节点。“真正的” 分布式 Erlang 节点，可以某个 C 节点对话，并将认为这个 C 节点是个 Erlang 节点（前提是他不会试图在 C 节点上做任何花哨的事，比如发送 Erlang 代码给他执行）。
+
+    C 节点在 https://www.erlang.org/doc/system/tutorial.html 处的互操作性教程中有介绍。
+
+
+那么，现在我们清楚了如何将 Erlang 与外部世界对接。在接下来的几章中，我们将了解如何从 Erlang 内部，访问文件和套接字。
+
+
+
+## 练习
+
+
+1. 请下载前面给出的端口驱动代码，并在咱们的系统上测试；
+
+2. 请前往 [Port Drivers](https://www.erlang.org/doc/system/c_portdriver.html)。下载链入驱动的代码，并在咱们的系统上测试。其最棘手的部分，是找出编译和链接该代码的正确命令。当咱们在这个练习上失败时，请在 Erlang 邮件列表中寻求帮助；
+
+3. 请尝试咱们是否能找到一条发现咱们计算机有着什么样 CPU 的操作系统命令。当咱们能找到这样的命令，就编写个返回咱们 CPU 型号的函数，使用函数 `os:cmd/1`，调用这条操作系统命令。
