@@ -151,10 +151,150 @@ ok
 {{#include ../../projects/ch16-code/lib_misc.erl:120:135}}
 ```
 
+这 *不* 是 `file:consult` 真正定义的样子。标准库使用了带有更好错误报告的改进版本。
+
+
+现在是检视标准库中所包含版本的好时机。当咱们已经理解前面那个版本时，那么咱们应会很容易跟上库中的代码。只有一个问题：我们需要找到 `file.erl` 代码的源码。为了找到该源码，我们就要使用可找到任何已加载模组目标代码的函数 `code:which`。
+
+
+```erlang
+1> code:which(file).
+"/usr/lib/erlang/lib/kernel-10.3.2/ebin/file.beam"
+```
+
+在标准发布下，每个库都有两个子目录。一个名为 `src`，包含着源码。另一个名为 `ebin`，包含编译后的 Erlang 代码。因此，`file.erl` 的源码，应是在下面的目录中：
+
+```console
+/usr/lib/erlang/lib/kernel-10.3.2/src/file.erl
+```
+
+> **译注**：在译者使用的基于 ArchLinux 的 Manjaro 发行版中，`file.erl` 位于上述位置。而原文为 `/usr/local/lib/erlang/lib/kernel-2.16.1/src/file.erl`。
+
+当其他方法都不奏效，而手册页面又没有提供咱们有关代码的问题时，那么快速查看源码，往往就能揭示答案。现在我（作者）知道这种情况应不会发生，但我们都是人，而文档有时也不能回答咱们所有的问题。
+
+### 一次读取文件中的一行
+
+
+当我们将 `io:read` 改为 `io:get_line` 时，我们就能一次读取文件中的一行。`io:get_line` 会读取字符，直到他遇到换行符或文件结束符。下面是一个示例：
+
+```erlang
+1> {ok, S} = file:open("data1.dat", read).
+{ok,<0.87.0>}
+2> io:get_line(S, '').
+"{person, \"joe\", \"armstrong\",\n"
+3> io:get_line(S, '').
+"        [{occupation, programmer},\n"
+4> io:get_line(S, '').
+"         {favoriteLanguage, erlang}]}.\n"
+5> io:get_line(S, '').
+"\n"
+6> io:get_line(S, '').
+"{cat, {name, \"zorro\"},\n"
+7> io:get_line(S, '').
+"      {owner, \"joe\"}}.\n"
+8> io:get_line(S, '').
+eof
+9> file:close(S).
+ok
+```
+
+> *知识点*：
+>
+> - a line-feed character
+>
+> - end-of-file
+
+
+
+### 将整个文件读取到一个二进制值中
+
+
+咱们可使用 `file:read_file(File)`，使用单个的原子操作，读取整个文件到某个二进制值。
+
+
+```erlang
+1> file:read_file("data1.dat").
+{ok,<<"{person, \"joe\", \"armstrong\",\n        [{occupation, programmer},\n         {favoriteLanguage, erlang}]}.\n\n{cat"...>>}
+```
+
+
+
+当 `file:read_file(File)` 成功执行时， 其会返回 `{ok, Bin}`，否则返回 `{error, Why}`。这是迄今为止，读取文件的最有效方法，也是我（作者）经常使用的方式。对于大多数操作，我（作者）都是在一次操作中，将整个文件读入内存，然后操作文件内容，并在一次操作中存储文件（使用 `file:write_file`）。稍后我们给出一个这方面的示例。
+
+### 以随机访问读取某个文件
+
+当我们打算读取的文件非常大，或其包含了某种外部定义格式的二进制数据时，那么我们可以 `raw` 模式打开该文件，并使用 `file:pread` 读取他的任意部分。
+
+下面是个示例：
+
+
+```erlang
+1> {ok, S} = file:open("data1.dat", [read, binary, raw]).
+{ok,{file_descriptor,prim_file,
+                     #{handle => #Ref<0.3050558618.3133800480.77952>,
+                       owner => <0.85.0>,
+                       r_buffer => #Ref<0.3050558618.3133800452.78324>,
+                       r_ahead_size => 0}}}
+2> file:pread(S, 22, 46).
+{ok,<<"rong\",\n        [{occupation, programmer},\n    ">>}
+3> file:pread(S, 1, 10).
+{ok,<<"person, \"j">>}
+4> file:pread(S, 2, 10).
+{ok,<<"erson, \"jo">>}
+5> file:close(S).
+ok
+```
+
+`file:pread(IoDevice,Start,Len)` 会精确读取 `IoDevice` 从字节 `Start` 开始的 `Len` 个字节（文件中的字节被编号了，因此文件中的第一个字节，就处于位置 0 处）。他会返回 `{ok，Bin}` 或 `{error，Why}`。
+
+最后，我们将使用随机文件访问的例程，编写在下一章我们会需要的一个使用工具历程。在 [17.6 节 *SHOUTcast 服务器*](./Ch17-programming_with_sockets.md#SHOUTcat-服务器) 中，我们将开发一个简单的 SHOUTcast 服务器（这是个所谓的流媒体服务器，在此情形下用于串流 MP3）。这个服务器的一部分，需要能够查找 MP3 文件中嵌入的艺术家及音轨名字。我们将在下一小节完成这个功能。
+
+
+### 读取 MP3 元数据
+
+MP3 是种用于存储压缩后音频数据的二进制格式。MP3 文件本身不包含文件内容的信息，因此，比如在某个包含着音乐的 MP3 文件中，录制该音乐的艺术家的名字，就不会包含在音频数据中。这一数据（音轨名字、艺术家名字等），会以一种称为 ID3 的标记块格式，存储在 MP3 文件内。ID3 标签，是由一位名叫 Eric Kemp 的程序员发明，以存储描述某个音频文件内容的元数据。ID3 格式实际上有很好几种，但出于我们的目的，我们将编写只访问两种最简单形式 ID3 标签的代码，即 ID3v1 和 ID3v1.1 两种标签。
+
+
+ID3v1 标签有着简单的结构 -- 文件的最后 128 个字节，包含了个固定长度的标签。其中前 3 个字节，包含 ASCII 字符 `TAG`，然后是几个固定长度的字段。整个 128 字节被打包如下：
+
+| 长度（字节） | 内容 |
+| :-- | :-- |
+| 3 | 包含字符 `TAG` 的头部 |
+| 30 | 标题 |
+| 30 | 艺术家 |
+| 30 | 专辑 |
+| 4 | 年份 |
+| 30 | 评论 |
+| 1 | 流派 |
+
+
+在 ID3v1 标签中，没有添加音轨编号的位置。Michael Mutschler 在 ID3v1.1 格式中，提出了做到这点的一种方法。该想法是将 30 字节的评论字段，改为下面这样：
+
+
+| 长度（字节） | 内容 |
+| :-- | :-- |
+| 28 | 评论 |
+| 1 | `0`（一个零） |
+| 1 | 音轨编号 |
+
+要编写个尝试读取 MP3 文件中 ID3v1 标记，并使用二进制的位匹配语法，匹配这些字段的程序并不难。下面是这个程序：
+
+
+[`id3_v1.erl`](http://media.pragprog.com/titles/jaerlang2/code/id3_v1.erl)
+
+
+```erlang
+{{#include ../../projects/ch16-code/id3_v1.erl}}
+```
+
+我们程序的主要入口，是 `id3_v1:dir(Dir)`。我们所做的第一件事，是调用 `lib_find:find(Dir, "*.mp3",true)`（稍后在 [16.6 节 *一个查找实用工具*](#一个查找实用工具) 中给出）找出我们的全部 MP3 文件，他会递归地扫描 `Dir` 下的目录，查找 MP3 文件。
+
+
+找到文件后，我们就要调用 `read_id3_tag` 解析标签。因为我们可只使用 [比特匹配语法](../part-ii/Ch07-binaries_and_the_bit_syntax.md#位语法) 就能完成解析，因此解析就得以大大简化，然后我们通过移除作为字符串定界符的尾部空白和零填充字符，我们就可以修整艺术家与音轨名字。最后，我们将结果转储到一个文件中，供今后使用（`lib_misc:dump` 于 [*转存到文件*](./Ch21-profiling_debugging_and_tracing.md#转储到文件) 小节讲述）。
 
 ## 写文件的方式
 
 ### 将项的列表写到某个文件
 
-### 将整个文件读入某个二进制值
+## 一个查找实用工具
 

@@ -1,5 +1,6 @@
 -module(lib_misc).
 -export([
+         dump/2,
          consult/1,
          for/3,
          qsort/1,
@@ -133,3 +134,5 @@ consult1(S) ->
         eof        -> [];
         Error      -> Error
     end.
+
+dump() -> .

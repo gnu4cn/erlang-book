@@ -384,7 +384,7 @@ find_sync(Bin, N) ->
 3> mp3_sync:find_sync(Bin, 1).
 {ok,172}
 ```
-    这个函数使用了 `file:read_file` 将整个文件读入一个二进制值（请参阅 [将整个文件读入某个二进制值](../part-iv/Ch16-programming_with_files.md#将整个文件读入一个二进制值)）。现在是 `is_header`：
+    这个函数使用了 `file:read_file` 将整个文件读取到一个二进制值中（请参阅 [将整个文件读入某个二进制值](../part-iv/Ch16-programming_with_files.md#将整个文件读取到一个二进制值中)）。现在是 `is_header`：
 
 
 
