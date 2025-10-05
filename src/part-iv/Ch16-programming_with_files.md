@@ -357,8 +357,8 @@ ok
 
 | 格式 | 结果 |
 | :-- | :-- |
-| <code>io:format("&#124;~10s&#124;", ["abc"])</code> | <code>&#124;       abc&#124;</code> |
-| <code>io:format("&#124;~-10s&#124;", ["abc"])</code> | <code>&#124;abc       &#124;</code> |
+| <code>io:format("&#124;~10s&#124;", ["abc"])</code> | <code>&#124;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;abc&#124;</code> |
+| <code>io:format("&#124;~-10s&#124;", ["abc"])</code> | <code>&#124;abc&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#124;</code> |
 | <code>io:format("&#124;~10.3.+s&#124;", ["abc"])</code> | <code>&#124;+++++++abc&#124;</code> |
 | <code>io:format("&#124;~10.7.+s&#124;", ["abc"])</code> | <code>&#124;+++abc++++&#124;</code> |
 | <code>io:format("&#124;~-10.10.+s&#124;", ["abc"])</code> | <code>&#124;abc+++++++&#124;</code> |
