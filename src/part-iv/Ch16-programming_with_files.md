@@ -364,6 +364,110 @@ ok
 | <code>io:format("&#124;~-10.10.+s&#124;", ["abc"])</code> | <code>&#124;abc+++++++&#124;</code> |
 
 
+### 写入行到文件
+
+以下示例与前面的类似 -- 我们只是使用了不同的格式化命令：
+
+
+```erlang
+1> {ok, S} = file:open("test2.dat", write).
+{ok,<0.87.0>}
+2> io:format(S, "~s~n", ["Hello readers"]).
+ok
+3> io:format(S, "~w~n", [123]).
+ok
+4> io:format(S, "~s~n", ["that's it"]).
+ok
+5> file:close(S).
+ok
+```
+
+
+这就创建了个名为 `test2.dat`，有着以下内容的文件：
+
+
+```console
+Hello readers
+123
+that's it
+```
+
+
+### 在一次操作中写入整个文件
+
+
+这是写入某个文件的最有效率方式。`file:write_file(File, IO)` 会将作为某个 I/O 列表的 `IO` 中的数据，写入到 `File`。(所谓 I/O 列表，是个其元素为一些 I/O 列表、二进制文件或 0 至 255 整数的列表。当 I/O 列表作为输出时，他会被自动 “扁平化”，即全部列表的括号或被移除）。这种方法非常高效，也是我（作者）经常使用的一种方法。下一小节中的程序，会演示这点。
+
+
+- **列出某个文件中的 URL**
+
+我们来编写个名为 `urls2htmlFile(L, File)` 的简单函数，其会接收一个 URL 的列表 `L`，并创建一个其中 URL 将以可点击链接形式呈现的 HTML 文件。这就让我们可操练在一次 I/O 操作中，创建整个文件的技术。我们将在 `scavenge_urls` 模组中编写咱们的程序。首先是程序头部：
+
+
+[`scavenge_urls.erl`](http://media.pragprog.com/titles/jaerlang2/code/scavenge_urls.erl)
+
+
+```erlang
+{{#include ../../projects/ch16-code/scavenge_urls.erl:1:3}}
+```
+
+
+该程序有两个入口点。`urls2htmlFile(Urls, File)` 会取一个 URL 的列表，并创建一个包含每个 URL 可点击链接的 HTML 文件；`bin2urls(Bin)` 会检索某个二进制值，并返回包含在这个二进制值中的所有 URL 的列表。`urls2htmlFile` 如下所示：
+
+
+[`scavenge_urls.erl`](http://media.pragprog.com/titles/jaerlang2/code/scavenge_urls.erl)
+
+
+```erlang
+{{#include ../../projects/ch16-code/scavenge_urls.erl:5:17}}
+```
+
+这段代码会返回一个字符的 I/O 列表。请注意，我们并未尝试展开列表（进行扁平化处理，这样做效率相当低）；我们构造了个字符的深层列表，然后直接将其丢给了输出例程。当我们以 `file:write_file` 将某个 I/O 列表写入文件时，I/O 系统会自动展开列表（也就是说，其会只输出列表中嵌入的字符，而不会输出列表的括号本身）。最后，下面是从二进制值中提取 URL 的代码：
+
+
+[`scavenge_urls.erl`](http://media.pragprog.com/titles/jaerlang2/code/scavenge_urls.erl)
+
+```erlang
+{{#include ../../projects/ch16-code/scavenge_urls.erl:19:29}}
+```
+
+
+要运行这个程序，我们需要获取一些要解析的数据。输入数据（一个二进制值）是个 HTML 页面的内容，因此我们需要一个 HTML 页面来清理。为此，我们将使用 `socket_examples:nano_get_url`（参见 [从服务器获取数据](./Ch17-programming_with_sockets.md#自服务器获取数据)）。
+
+我们将在 shell 下一步步完成。
+
+```erlang
+1> B = socket_examples:nano_get_url("erlang.xfoss.com", "/"),
+   L = scavenge_urls:data2urls(B),
+   scavenge_urls:urls2htmlFile(L, "gathered.html").
+ok
+```
+
+这会产生文件 `gathered.html`。
+
+```html
+{{#include ../../projects/ch16-code/gathered.html}}
+```
+
+
+> **译注**：这里用到的 `socket_examples.erl` 代码，与原文不同。用到的代码如下。
+>
+> ```erlang
+> {{#include ../../projects/ch16-code/socket_examples.erl}}
+> ```
+>
+> 译者尝试使用接受消息方式，接受 TLSSocket 下的数据，但并未成功。故转而使用了 `ssl:recv/2` 函数接收。
+> 此时接收到的并非二进制数据，而是列表数据。
+>
+> 参考：
+>
+> - [`ssl` 手册页](https://www.erlang.org/docs/26/man/ssl)
+
+
+### 写入某个随机读写文件
+
+
+
 
 ## 一个查找实用工具
 
