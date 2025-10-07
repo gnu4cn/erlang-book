@@ -148,7 +148,7 @@ ok
 
 
 ```erlang
-{{#include ../../projects/ch16-code/lib_misc.erl:122:137}}
+{{#include ../../projects/ch16-code/lib_misc.erl:124:139}}
 ```
 
 这 *不* 是 `file:consult` 真正定义的样子。标准库使用了带有更好错误报告的改进版本。
@@ -306,7 +306,7 @@ ID3v1 标签有着简单的结构 -- 文件的最后 128 个字节，包含了�
 
 
 ```erlang
-{{#include ../../projects/ch16-code/lib_misc.erl:146:149}}
+{{#include ../../projects/ch16-code/lib_misc.erl:148:151}}
 ```
 
 
@@ -466,8 +466,252 @@ ok
 
 ### 写入某个随机读写文件
 
+以随机读写模式写入某个文件，与读取类似。首先，我们必须以 `write` 模式打开该文件。接着，我们要使用 `file:pwrite(IoDev, Position, Bin)` 函数，写入该文件。
+
+下面是个示例：
+
+```erlang
+1> {ok, S} = file:open("some_filename_here", [raw, write, binary]).
+{ok,{file_descriptor,prim_file,
+                     #{handle => #Ref<0.2401962644.1478361113.218650>,
+                       owner => <0.85.0>,
+                       r_buffer => #Ref<0.2401962644.1478361092.219082>,
+                       r_ahead_size => 0}}}
+2> file:pwrite(S, 10, <<"new">>).
+ok
+3> file:close(S).
+ok
+```
 
 
+这会将从文件中偏移量 10 出，写下字符 *new*，覆盖原先的内容。
+
+```binary
+          new
+```
+
+## 目录与文件操作
+
+`file` 模组中有三个用于目录操作的函数。
+
+- `list_dir(Dir)` 用于产生 `Dir` 下文件的列表；
+- `make_dir(Dir)` 会创建一个新的目录；
+- 而 `del_dir(Dir)` 则会删除某个目录。
+
+
+当我（作者）在我用于编写这本书代码的目录上，运行 `list_dir` 时，我们将看到类似下面的内容：
+
+```erlang
+1> cd("/home/hector/erlang-book/projects/ch16-code").
+/home/hector/erlang-book/projects/ch16-code
+ok
+2> file:list_dir(".").
+{ok,["data1.dat","id3_v1.beam","lib_find.erl",
+     "lib_find.beam","mp3data.tmp","id3_v1.erl","test1.dat",
+     "test2.dat","lib_misc.erl","lib_misc.beam","cacerts.pem",
+     "cacert.pem","socket_examples.beam","scavenge_urls.beam",
+     "gathered.html","scavenge_urls.erl","socket_examples.erl",
+     "some_filename_here"]}
+```
+
+注意，这里没有文件的特定顺序，也没有表明该目录下的文件，是文件还是目录，他们大小如何等等。
+
+
+要找出目录清单中单个文件的信息，我们将使用 `file:read_file_info`，这将是下一小节的主题。
+
+
+### 找出某个文件的信息
+
+
+要找出某个文件 `F` 的信息，我们就要调用 `file:read_file_info(F)`。当 `F` 是个有效的文件或目录名时，他会返回 `{ok, Info}`。其中 `Info` 是类型 `#file_info` 的一条记录，其被定义为如下：
+
+
+```erlang
+-record(file_info,
+        {
+         size,          % Size of file in bytes.
+         type,          % Atom: device, directory, regular,
+                        % or other.
+         access,        % Atom: read, write, read_write, or none.
+         atime,         % The local time the file was last read:
+                        % {{Year, Mon, Day}, {Hour, Min, Sec}}.
+         mtime,         % The local time the file was last written.
+         ctime,         % The interpretation of this time field
+                        % is dependent on operating system.
+                        % On Unix it is the last time the file or
+                        % or the inode was changed. On Windows,
+                        % it is the creation time.
+         mode,          % Integer: File permissions. On Windows,
+                        % the owner permissions will be duplicated
+                        % for group and user.
+         links,         % Number of links to the file (1 if the
+                        % filesystem doesn't support links).
+         ...
+}).
+```
+
+*注意*：其中 `mode` 和 `access` 字段是重叠的。咱们可使用 `mode`，在一次操作中设置多个文件属性，而 `access` 则只能用于一些更简单的操作。
+
+要查找某个文件的大小和类型，我们会如下例所示那样调用 `read_file_info`（注意我们必须包含 `file.hrl`，其包含了 `#file_info` 这个记录的定义）：
+
+```erlang
+{{#include ../../projects/ch16-code/lib_misc.erl:153:159}}
+```
+
+> **译注**：函数 `lib_misc:file_size_and_type/1` 的输出如下。
+>
+> ```erlang
+> 5> lib_misc:file_size_and_type("lib_misc.erl").
+> {regular,3198}
+> ```
+
+现在，我们可通过添加函数 `ls()` 中有关文件的信息，增强 `list_file` 所返回的目录清单，如下所示：
+
+
+```erlang
+{{#include ../../projects/ch16-code/lib_misc.erl:153:159}}
+```
+
+现在，当我们列出文件时，他们是有序的，并包含更多有用信息。
+
+```erlang
+7> lib_misc:ls(".").
+[{"cacert.pem",{regular,1376}},
+ {"cacerts.pem",{regular,790}},
+ {"data1.dat",{regular,150}},
+ {"gathered.html",{regular,5114}},
+ {"id3_v1.beam",{regular,2064}},
+ {"id3_v1.erl",{regular,1830}},
+ {"lib_find.beam",{regular,1528}},
+ {"lib_find.erl",{regular,1632}},
+ {"lib_misc.beam",{regular,4544}},
+ {"lib_misc.erl",{regular,3331}},
+ {"mp3data.tmp",{regular,6778}},
+ {"scavenge_urls.beam",{regular,1604}},
+ {"scavenge_urls.erl",{regular,859}},
+ {"socket_examples.beam",{regular,1296}},
+ {"socket_examples.erl",{regular,641}},
+ {"some_filename_here",{regular,13}},
+ {"test1.dat",{regular,46}},
+ {"test2.dat",{regular,28}}]
+```
+
+
+为方便目的，`filelib` 模组导出了一些诸如 `file_size(File)` 及 `is_dir(X)` 等小例程。这些例程只是 `file:read_file_info` 的一些接口。当我们只打算获取某个文件的大小时，调用 `filelib:file_size` 要比调用 `file:read_file_info` 及解包 `#file_info` 记录中的元素更方便。
+
+
+### 拷贝与删除文件
+
+
+`file:copy(Source, Destination)` 会将文件 `Source` 拷贝到文件 `Destination`。
+
+`file:delete(File)` 会删除 `File`。
+
+## 位与片段
+
+到目前为止，我们已提及我（作者）日常文件处理的大部分函数。接下来列出的主题不会在此讨论；详细信息可在手册页面找到。
+
+
+- *文件模式*
+
+    当我们以 `file:open` 打开某个文件时，我们是以某种特定模式，或多种模式的组合打开该文件。实际上，模式比我们可能想到的要多得多；例如，以使用 `compressed` 模式开关读写 gzip 压缩的文件就是可行的，等等。完整模式清单请参见 [手册页面](https://www.erlang.org/docs/21/man/file#open-2)；
+
+
+- *修改时间，组别，符号链接*
+
+    我们可以通过 `file` 中的一些例程，设置所有这些字段；
+
+
+- *错误代码*
+
+    我曾轻描淡写地说过，所有错误都是 `{error, Why}` 形式的；事实上，`Why` 是某个原子（例如，`enoent` 表示某个文件不存在，等等）-- 有大量的错误代码，他们 [在手册中](https://www.erlang.org/doc/apps/kernel/file.html#module-posix-error-codes) 都有描述。
+
+- `filename` 模组
+
+
+    `filename` 模组有一些用于拆分目录中的完整文件名、找出文件扩展名等，以及自各个组成部分，重建出文件名的有用例程。所有这些，都会以与平台无关方式完成。
+
+- `filelib` 模组
+
+    `filelib` 模组中有少数可为我们节省一些工作的历程。例如，`filelib:ensure_dir(Name)` 会确保给定文件或目录名字 `Name` 的所有父目录都存在，在必要时尝试创建出他们。
 
 ## 一个查找实用工具
 
+
+作为最后的示例，我们将使用 `file:list_dir` 和 `file:read_file_info`，构造一个通用目的的 “查找” 工具。
+
+
+该模组的主要入口如下：
+
+```erlang
+lib_find:files(Dir, RegExp, Recursive, Fun, Acc0)
+```
+
+其中参数如下：
+
+- `Dir`
+
+    开始检索文件的目录名字。
+
+- `RegExp`
+
+    测试我们已找到文件的一个 shell 风格正则表达式。当我们遇到的文件，与该正则表达式匹配时，则 `Fun(File,Acc)` 将被调用，其中 `File` 是与该正则表达式匹配文件的名字。
+
+- `Recursive = true | false`
+
+
+    决定检索是否应递归到搜索路径中，当前目录的子目录的开关。
+
+- `Fun(File, AccIn) -> AccOut`
+
+    当 `regExp` 匹配上 `File` 时，应用到 `File` 的函数。`Acc` 是个初始值为 `Acc0` 累积项。每次 `Fun` 被调用时，其都必须返回一个新的累积项值，该累积项会在下次调用 `Fun` 时，传递给 `Fun`。累积项的最终值，就是 `lib_find:files/5` 的返回值。
+
+
+我们可将我们想要的任意函数， 传递给 `lib_find:files/5`。例如，我们可使用下面的函数，并在最初传递给他一个空列表，构建一个文件列表：
+
+```erlang
+fun(File, Acc) -> [File|Acc] end
+```
+
+该模组入口 `lib_find:files(Dir, ShellRegExp, Flag)` 为该程序的一种更常见的用法，提供了一个简化入口点。这里 `ShellRegExp` 是种比正则表达式完整形式，更容易编写的 shell 风格的通配符模式。
+
+作为这种简短形式调用序列的示例，以下调用：
+
+```erlang
+lib_find:files(Dir, "*.erl", true)
+```
+
+会递归地找出 `Dir` 下的所有 Erlang 文件。当最后参数为 `false` 时，那么 `Dir` 目录下的 Erlang 文件才会被发现 -- 他不会查找那些子目录。
+
+最后，以下便是代码：
+
+
+```erlang
+{{#include ../../projects/ch16-code/lib_find.erl}}
+```
+
+这就是查找文件的方法。咱们会注意到，这个程序是纯顺序的。要加快其运行速度，咱们可能需要使用多个并行进程，使其并行化。我（作者）不会在这里这样做。我（作者）将让你考虑这个问题。
+
+在与并发结合时，Erlang 下的文件访问，会给到我们解决复杂问题的强大工具。当我们打算以并行方式分析大量文件时，我们会生成许多进程，其间每个进程分析一个单独文件。我们必须要注意的是，确保两个进程不会在同一时间，读写同一个文件。
+
+
+高效的文件操作最佳方式，是以在一次操作中读及写文件，以及在写入某个文件前，创建 I/O 列表达成的。
+
+
+## 练习
+
+1. 当某个 Erlang 文件 `X.erl` 被编译时，一个文件 `X.beam` 就会被创建出来（在该次编译成功时）。请编写检查某个 Erlang 模组是否需要重新编译的模组。通过比较相关 Erlang 和 beam 文件的最后修改时间戳，完成这一目的；
+
+2. 请编写个计算某个小文件 MD5 校验和的程序，并使用 `erlang:md5/1` 这个 BIF 计算该数据的 MD5 校验和（有关此 BIF 的详细信息，请参阅 [其手册页面](https://www.erlang.org/doc/apps/erts/erlang.html#md5/1) ）；
+
+3. 对某个大文件（比如几百兆字节）重复前一练习。这次要以小的数据块方式读取文件，使用 `erlang:md5_init`、`erlang:md5_update` 和 `erlang:md5_final` 等 BIFs，计算该文件的 MD5 校验和；
+
+4. 请使用 `lib_find` 这个模组，查找咱们计算机中的所有 `.jpg` 文件。计算出每个文件的 MD5 校验和，并通过比较这些 MD5 校验和，发现是否有任何两个图片是相同的；
+
+5. 请编写一种计算某个文件 MD5 校验和，并将其与该文件最后修改时间一起，保存在缓存中的缓存机制。当我们想要某个文件的 MD5 和时，就检查这个缓存，发现该值是否已被计算出来，并在文件的最后修改时间发生变化时，重新计算该值；
+
+6. Twitter 帖子长度正好是 140 字节。请编写个名为 `twit_store.erl` 的随机访问 Twitter 帖子存储模组，其会导出以下函数：
+
+    - `init(K)` 为 K 个 Twitter 帖子分配空间；
+    - `store(N, Buf)` 将编号为 `N`（`1...K`）的 Twitter 帖子，与数据 `Buf`（140 字节的二进制值）存储在该存储中；
+    - `fetch(N)` 获取编号 `N` 的 Twitter 帖子数据。
