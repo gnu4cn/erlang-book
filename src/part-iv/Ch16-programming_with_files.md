@@ -453,7 +453,23 @@ ok
 > **译注**：这里用到的 `socket_examples.erl` 代码，与原文不同。用到的代码如下。
 >
 > ```erlang
-> {{#include ../../projects/ch16-code/socket_examples.erl}}
+> -module(socket_examples).
+> -export([nano_get_url/0, nano_get_url/2]).
+> %% -import(lists, [reverse/1]).
+>
+> nano_get_url() ->
+>     nano_get_url("www.google.com", "/").
+>
+> nano_get_url(Host, Path) ->
+>     {ok, Socket} = gen_tcp:connect(Host, 443, [{active, false}]),
+>     ssl:start(),
+>     {ok, TLSSocket} = ssl:connect(Socket, [{verify, verify_peer}, {cacerts, public_key:cacerts_get()}, {server_name_indication, Host}]),
+>
+>     Request = io_lib:format("GET ~s HTTP/1.1\r\nHost: ~s\r\nConnection: close\r\n\r\n", [Path, Host]),
+>     ssl:send(TLSSocket, list_to_binary(Request)),
+>     {ok, Data} = ssl:recv(TLSSocket, 0),
+>     ssl:close(TLSSocket),
+>     Data.
 > ```
 >
 > 译者尝试使用接受消息方式，接受 TLSSocket 下的数据，但并未成功。故转而使用了 `ssl:recv/2` 函数接收。
