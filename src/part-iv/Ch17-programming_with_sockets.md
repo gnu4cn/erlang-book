@@ -20,7 +20,7 @@ UDP 允许应用程序相互发送一些短的报文（称为 *数据报，datag
 
 
 ```erlang
-{{#include ../../projects/ch17-code/socket_examples.erl:5:19}}
+{{#include ../../projects/ch17-code/socket_examples.erl:10:24}}
 ```
 
 这段代码会如下工作：
@@ -39,7 +39,7 @@ UDP 允许应用程序相互发送一些短的报文（称为 *数据报，datag
 重组数据分片的代码，看起来如下：
 
 ```erlang
-{{#include ../../projects/ch17-code/socket_examples.erl:13:19}}
+{{#include ../../projects/ch17-code/socket_examples.erl:18:24}}
 ```
 
 那么，当分片到达时，我们只需将他们添加到 `SoFar` 这个列表的头部。当所有片段都到达且套接字关闭时，我们就反转这个列表，并将所有分片连接起来。
@@ -148,7 +148,7 @@ TCP 的套接字数据，只是无差别的字节流。在传输期间，这些�
 
 
 ```erlang
-{{#include ../../projects/ch17-code/socket_examples.erl:21:41}}
+{{#include ../../projects/ch17-code/socket_examples.erl:26:46}}
 ```
 
 这段代码工作如下：
@@ -180,9 +180,206 @@ TCP 的套接字数据，只是无差别的字节流。在传输期间，这些�
 
 
 ```erlang
-{{#include ../../projects/ch17-code/socket_examples.erl:43:53}}
+{{#include ../../projects/ch17-code/socket_examples.erl:48:58}}
 ```
 
+为测试我们的代码，我们将在同一台机器上，运行客户端和服务器，因此 `gen_tcp:connect` 函数中的主机名，被硬连线到了 `localhost`。
 
+请留意客户端中 `term_too_binary` 被调用来编码消息的方式，以及在服务器上 `binary_too_term` 被调用来重构出消息的方式。
+
+要运行这个示例，我们需要打开两个终端窗口，并在各个窗口中启动 Erlang shell。
+
+首先我们要启动服务器。
+
+```erlang
+1> socket_examples:start_nano_server().
+```
+
+在服务器窗口中，我们将看不到任何输出，因为什么都还没发生。然后移步客户端窗口，并执行以下命令：
+
+> **译注**：执行下面的命令，观察得到的结果，就会发现在 2345 端口上已经有程序在监听。
+>
+> ```console
+> $ ss -ntlp | grep 2345                                                                                                       ✔
+> LISTEN 0      5            0.0.0.0:2345       0.0.0.0:*    users:(("beam.smp",pid=183649,fd=17))
+> ```
+
+```erlang
+1> socket_examples:nano_client_eval("list_to_tuple([2+3*4,10+20])").
+```
+
+在服务器的窗口，我们就会看到如下内容：
+
+```erlang
+Server received binary = <<131,107,0,28,108,105,115,116,95,116,111,95,116,117,
+                           112,108,101,40,91,50,43,51,42,52,44,49,48,43,50,48,
+                           93,41>>
+Server (unpacked) "list_to_tuple([2+3*4,10+20])"
+Server replying = {14,30}
+Server socket closed
+ok
+```
+
+最后，在服务器窗口中，我们将看到下面这个输出：
+
+```erlang
+Server socket closed
+```
+
+### 顺序与并行服务器
+
+在上一小节中，我们构造了个只接受一个连接并随后终止的服务器。稍微修改一下这些代码，我们就可以构造出两种不同类型的服务器。
+
+- 顺序服务器 -- 一种一次只接受一个连接的服务器；
+- 并行服务器 -- 一种同时接受多个并行连接的服务器。
+
+
+原先的代码像下面这样启动：
+
+```erlang
+start_nano_server() ->
+    {ok, Listen} = gen_tcp:listen(...),
+    {ok, Socket} = gen_tcp:accept(Listen),
+    loop(Socket).
+...
+```
+
+我们将修改这种方式，构造出我们的两个服务器变种。
+
+
+**顺序服务器**
+
+要构造一个顺序服务器，我们就要将这段代码，修改为如下：
+
+
+```erlang
+start_seq_server() ->
+    {ok, Listen} = gen_tcp:listen(...),
+    seq_loop(Listen).
+
+seq_loop(Listen) ->
+    {ok, Socket} = gen_tcp:accept(Listen),
+    loop(Socket),
+    seq_loop(Listen).
+
+loop(..) -> %% as before
+```
+
+这与上一示例中的工作方式基本相同，但由于我们想要服务多个请求，所以我们就让监听套接字打开，而未调用 `gen_tcp:close(Listen)`。另一区别是在 `loop(Socket)` 结束后，我们再次调用了 `seq_loop(Listen)`，其会等待下一连接。
+
+
+当某个客户端在服务器忙于某个现有连接时，尝试连接到该服务器，那么这个连接将被排队，直到服务器完成那个现有连接。当排队连接数超出监听积压队列大小，那么该连接将被拒绝。
+
+我们只给出的是启动服务器的代码。停止服务器很简单（停止并行服务器也很简单）；只要杀死启动服务器的进程。`gen_tcp` 会将自身链接到控制进程，并在控制进程死亡时，他就会关闭套接字。
+
+
+**并行服务器**
+
+构造并行服务器的诀窍在于，当每次 `gen_tcp:accept` 获取一个新连接时，都立即生成一个新的进程。
+
+```erlang
+start_parallel_server() ->
+    {ok, Listen} = gen_tcp:listen(...),
+    spawn(fun() -> par_connect(Listen) end).
+
+par_connect(Listen) ->
+    {ok, Socket} = gen_tcp:accept(Listen),
+    spawn(fun() -> par_connect(Listen) end),
+    loop(Socket).
+
+loop(..) -> %% as before
+```
+
+这段代码类似于我们前面看到的顺序服务器。最重要的区别，是增加了个 `spawn`，其确保我们会对每个新的套接字连接，创建一个并行进程。现在是比较两者的好机会。咱们应该关注两个 `spawn` 语句的位置，并看看他们如何把顺序服务器，变成了并行服务器。
+
+
+> **译注**：运行这个并行服务器，并在另一窗口发起请求时，得到的响应如下：
+>
+> ```erlang
+> 1> socket_examples:nano_client_eval("list_to_tuple([3+3*4,10+45,10*100])").
+> Client received binary = <<131,104,3,97,15,97,55,98,0,0,3,232>>
+> Client result = {15,55,1000}
+> ok
+> 2> socket_examples:nano_client_eval("list_to_tuple([3+3*4,10+45,10*1000])").
+> Client received binary = <<131,104,3,97,15,97,55,98,0,0,39,16>>
+> Client result = {15,55,10000}
+> ok
+> ```
+>
+> 服务器上的输出为：
+>
+>
+> ```erlang
+> 2> socket_examples:start_parallel_server().
+> <0.92.0>
+> Server received binary = <<131,107,0,35,108,105,115,116,95,116,111,95,116,117,
+>                            112,108,101,40,91,51,43,51,42,52,44,49,48,43,52,53,
+>                            44,49,48,42,49,48,48,93,41>>
+> Server (unpacked) "list_to_tuple([3+3*4,10+45,10*100])"
+> Server replying = {15,55,1000}
+> Server socket closed
+> Server received binary = <<131,107,0,36,108,105,115,116,95,116,111,95,116,117,
+>                            112,108,101,40,91,51,43,51,42,52,44,49,48,43,52,53,
+>                            44,49,48,42,49,48,48,48,93,41>>
+> Server (unpacked) "list_to_tuple([3+3*4,10+45,10*1000])"
+> Server replying = {15,55,10000}
+> Server socket closed
+> ```
+
+全部三种服务器，都调用了 `gen_tcp:listen` 和 `gen_tcp:accept`；唯一的区别是，我们是在并行程序中，还是在顺序程序中，调用的这些函数。
+
+
+### 注意事项
+
+请留意以下几点：
+
+- 创建出套接字（通过调用 `gen_tcp:accept` 或 `gen_tcp:connect`）的进程，叫做该套接字的 *控制进程*。该套接字上的所有信息，都将发送给这个控制进程；当控制进程死亡时，那么这个套接字将被关闭。通过调用 `gen_tcp:controlling_process(Socket,NewPid)`，套接字的控制进程可被更改为 `NewPid`；
+
+- 我们的并行服务器，可潜在创建出上万连接。我们可能打算限制同时连接的最大数量。这可以通过维护一个任一时间处于活动状态的连接计数器实现。每次得到个新连接时，我们就会递增这个计数器，而在每次某个连接结束时，我们会递减这个计数器。我们可以此限制系统中，同时连接的总数；
+
+- 在我们已接受某个连接后，显式地设置要求的套接字选项是个好主意，就像这样：
+
+    ```erlang
+    {ok, Socket} = gen_tcp:accept(Listen),
+    inet:setopts(Socket, [{packet,4},binary,
+                          {nodelay,true},{active,true}]),
+    loop(Socket)
+    ```
+
+- 从 Erlang R11B-3 版本开始，就允许多个 Erlang 进程，在同一个监听套接字上调用 `gen_tcp:accept/1`。这简化了构造并行服务器，因为咱们可以有一个预生成进程池，其中所有进程都在 `gen_tcp:accept/1` 状态下等待。
+
+
+## 主动与被动套接字
+
+
+Erlang 的套接字，可以三种模式打开：
+
+- *主动，active*；
+- *主动一次, active once*；
+- 或 *被动, passive*。
+
+这是通过在 `gen_tcp:connect(Address, Port, Options)` 或 `gen_tcp:listen(Port, Options)` 的 `Options` 参数中，加入 `{active, true | false | once}` 选项完成的。
+
+当 `{active, true}` 被指定时，那么一个主动套接字将被创建；`{active, false}` 则会指定一个被动套接字。`{active,once}` 会创建一个主动套接字，但针对一个报文的接收；在其接收完这条报文后，在可接收下一条报文前，其必须被重新启用。
+
+
+在接下来的几个小节中，我们将介绍这些不同类型套接字的用法。
+
+主动套接字和被动套接字的区别，在于在信息被套接字收到时，会发生什么。
+
+- 在某个主动套接字被创建后，当数据（在该套接字）接收到时，会有 `{tcp, Socket, Data}` 信息发送到控制进程。控制进程无法控制这些信息的流向。某个异常客户端可能会将数千条消息发送到系统，而这些消息都会发送到控制进程。控制进程无法阻止这种消息流；
+
+- 当套接字是在被动模式下打开时，那么控制进程必须调用 `gen_tcp:recv(Socket,N)`，从接收该套接字上的数据。然后，他将尝试精准接收该套接字上的 `N` 个字节。当 `N = 0` 时，就会返回所有可用字节。在这种情况下，服务器可通过选择何时调用 `gen_tcp:recv`，控制来自客户端的消息流。
+
+
+被动套接字用于控制到服务器的数据流。为了说明这点，我们可以三种方式，编写某个服务器的消息接收循环。
+
+
+- 主动的消息接收（非阻塞）
+- 被动消息接收（阻塞）
+- 混合的消息接收（部分阻塞）
+
+
+### 主动的消息接收（非阻塞）
 
 ## SHOUTcast 服务器

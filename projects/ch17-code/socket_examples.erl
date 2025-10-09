@@ -1,5 +1,12 @@
 -module(socket_examples).
--export([nano_get_url/0, nano_get_url/1, nano_client_eval/1]).
+-export([
+         start_parallel_server/0,
+         start_seq_server/0,
+         start_nano_server/0,
+         nano_get_url/0,
+         nano_get_url/1,
+         nano_client_eval/1
+        ]).
 -import(lists, [reverse/1]).
 
 nano_get_url() ->
@@ -42,7 +49,7 @@ loop(Socket) ->
 
 nano_client_eval(Str) ->
     {ok, Socket} = gen_tcp:connect("localhost", 2345,
-                                  [binary, {packet, 4}]),
+                                   [binary, {packet, 4}]),
     ok = gen_tcp:send(Socket, term_to_binary(Str)),
     receive
         {tcp,Socket,Bin} ->
@@ -51,3 +58,25 @@ nano_client_eval(Str) ->
             io:format("Client result = ~p~n", [Val]),
             gen_tcp:close(Socket)
     end.
+
+start_seq_server() ->
+    {ok, Listen} = gen_tcp:listen(2345, [binary, {packet, 4},
+                                         {reuseaddr, true},
+                                         {active, true}]),
+    seq_loop(Listen).
+
+seq_loop(Listen) ->
+    {ok, Socket} = gen_tcp:accept(Listen),
+    loop(Socket),
+    seq_loop(Listen).
+
+start_parallel_server() ->
+    {ok, Listen} = gen_tcp:listen(2345, [binary, {packet, 4},
+                                         {reuseaddr, true},
+                                         {active, true}]),
+    spawn(fun() -> par_connect(Listen) end).
+
+par_connect(Listen) ->
+    {ok, Socket} = gen_tcp:accept(Listen),
+    spawn(fun() -> par_connect(Listen) end),
+    loop(Socket).
