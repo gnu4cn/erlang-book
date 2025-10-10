@@ -382,4 +382,90 @@ Erlang 的套接字，可以三种模式打开：
 
 ### 主动的消息接收（非阻塞）
 
+我们的首个示例，会以主动模式打开一个套接字，然后接收该套接字上的消息。
+
+
+```erlang
+{ok, Listen} = gen_tcp:(Port, [..,{active,true}...]),
+{ok, Socket} = gen_tcp:accept(Listen),
+loop(Socket).
+
+loop(Socket) ->
+    receive
+        {tcp, Socket, Data} ->
+            ... do something with the data ...
+        {tcp_closed, Socket} ->
+            ...
+    end.
+```
+
+此进程无法控制到那个服务器循环的消息流。当客户端产生数据速度，快于服务器消费该数据速度时，那么系统就会被消息 *淹没* -- 消息缓冲区将被填满，进而系统可能崩溃，或行为异常。
+
+
+这种服务器被称为 *非阻塞* 的服务器，因为他无法阻塞客户端。只有当我们确信非阻塞服务器能够满足客户端需求时，我们才应编写非阻塞服务器。
+
+
+### 被动消息接收（阻塞式）
+
+
+在这一小节中，我们将编写个阻塞式的服务器。该服务器会通过设置 `{active, false}` 选项，打开一个被动套接字。这个服务器不会被试图以过多数据，淹没他的过度活跃客户端崩溃掉。
+
+
+服务器循环种的代码，在其每次打算接收数据时，都要调用 `gen_tcp:recv`。在服务器调用 `recv` 之前，客户端将出现阻塞。请注意，即使 `recv` 未被调用，操作系统也会完成一些允许客户端在阻塞前，发送少量数据的缓冲。
+
+
+```erlang
+{ok, Listen} = gen_tcp:listen(Port, [..,{active,false}...]),
+{ok, Socket} = gen_tcp:accept(Listen),
+loop(Socket).
+
+loop(Socket) ->
+    case gen_tcp:recv(Socket, N) of
+        {ok, B} ->
+            ... do something with the data ...
+            loop(Socket);
+        {error, closed} ->
+            ...
+    end.
+```
+
+### 混合方式（部分阻塞）
+
+
+咱们可能会认为，将被动模式用于所有服务器，便是对的做法。不幸的是，当我们处于被动模式中时，我们只能等待一个套接字上的数据。这对于编写那些必须等待多个套接字上数据的服务器，毫无用处。
+
+幸运的是，我们可以采取一种既非阻塞，也非非阻塞的混合方式。我们以选项 `{active, once}` 打开套接字。在这种模式下，套接字是主动的，*但只对一条消息主动*。在向控制进程发送一条信息后，他必须显式调用 `inet:setopts`，重新启用下一条消息的接收。在此之前，系统将阻塞。这是两全其美的办法。代码如下：
+
+
+```erlang
+{ok, Listen} = gen_tcp:listen(Port, [..,{active, once}...]),
+{ok, Socket} = gen_tcp:accept(Listen),
+loop(Socket).
+
+
+loop(Socket) ->
+    receive
+        {tcp, Socket, Data} ->
+            ... do something with the data ...
+            %% when you're ready enable the next messsage
+            inet:setopts(Socket, [{active, once}]),
+            loop(Socket);
+        {tcp_closed, Socket} ->
+            ...
+    end.
+```
+
+
+使用 `{active, once}` 这个选项，用户就可实现流量控制的一些高级形式（有时称为 *流量整形*），从而防止服务器被过多信息淹没。
+
+
+> **找出连接来自何处**
+>
+> 设想我们编写了某种在线服务器，发现有人不断向我们的网站发送垃圾数据。要尝试防止这种情况，我们就需要指导连接来自何处。要发现这点，我们可调用 `inet:peername(Socket)`。
+>
+> - `@spec inet:peername(Socket) -> {ok, {IP_Address, Port}} | {error, Why}`
+>
+>     这个函数会返回连接另一端的 IP 地址和端口，从而服务器可以发现是谁发起的该连接。`IP_Address` 是个整数元组，`{N1,N2,N3,N4}` 表示 IPv4 的 IP 地址，`{K1,K2,K3,K4,K5,K6,K7,K8}` 表示 IPv6 的 IP 地址。这里，`Ni` 是范围 0 至 255 之间的整数，`Ki` 是范围在 0 至 65535 间的整数。
+
+
 ## SHOUTcast 服务器
