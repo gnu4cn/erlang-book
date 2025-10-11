@@ -615,8 +615,46 @@ client received: {udp,#Port<0.3>,
 
 我们应该注意到，由于 UDP 是种无连接协议，服务器无法通过拒绝读取来自客户端数据来阻止客户端 -- 服务器不知道客户机是谁。
 
-大 UDP 数据包在通过网络时可能会被分片。当 UDP 数据大小，比数据包在网络上传输时，所经过的路由器允许的最大传输单元 (MTU) 大小大时，就会出现分片。优化 UDP 网络的一个常见建议，便是从一个较小的数据包大小（比如约 500 字节）开始，然后在测量吞吐量的同时，逐渐将其增大。当在某个时刻吞吐量急剧下降时，那么咱们就清楚数据包太大了。
+大的 UDP 数据包在通过网络时，可能会被分片。当 UDP 数据的大小，大于了数据包在网络上传输时，所经过路由器的允许最大传输单元 (MTU) 大小时，就会出现分片。优化 UDP 网络的一个常见建议，便是从一个较小的数据包大小（比如约 500 字节）开始，然后在测量吞吐量的同时，逐渐将其增大。当在某个时刻吞吐量急剧下降时，咱们就知道数据包太大了。
 
+某个 UDP 数据包可被两次投送（这会惊讶到一些人），因此咱们必须仔细编写远程过程调用的代码。比如就可能出现对某个第二次查询的回复，实际上是对第一次查询的一个重复回复。为避免这种情况，我们可将客户端代码，修改为包含一个唯一引用，并检查该引用是否被服务器返回。为生成唯一引用，我们要调用 Erlang 的内建函数 `make_ref`，其保证会返回一个全局唯一的引用。现在的远程过程调用代码，看起来如下：
+
+
+```erlang
+client(Request) ->
+    {ok, Socket} = gen_udp:open(0, [binary]),
+    Ref = make_ref(),   %% make a unique reference
+    B1 = term_to_binary({Ref, Request}),
+    ok = gen_udp:send(Socket, "localhost", 4000, B1),
+    wait_for_ref(Socket, Ref).
+
+wait_for_ref(Socket, Ref) ->
+    receive
+        {udp, Socket, _, _, Bin} ->
+            case binary_to_term(Bin) of
+                {Ref, Val} ->
+                    %% got the correct value
+                    Val;
+                {_SomeOtherRef, _} ->
+                    %% some other value throw it away
+                    wait_for_ref(Socket, Ref)
+            end
+    after 1000 ->
+        ...
+    end.
+```
+
+现在我们学完了 UDP。UDP 通常用于有低延迟要求，同时即使偶尔丢失数据包也无所谓的在线游戏。
+
+
+## 广播到多台机器
+
+最后，我们将看看设置广播信道的方式。下面这段代码非常简单。
+
+
+```erlang
+{{#include ../../projects/ch17-code/broadcast.erl}}
+```
 
 
 ## SHOUTcast 服务器
