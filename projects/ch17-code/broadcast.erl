@@ -2,7 +2,7 @@
 -export([send/1, listen/0]).
 
 send(IoList) ->
-    case inet:ifget("eth0", [broadaddr]) of
+    case inet:ifget("virbr0", [broadaddr]) of
         {ok, [{broadaddr, Ip}]} ->
             io:format("Broadcast IP: ~p~n", [Ip]),
             {ok, S} = gen_udp:open(5010, [{broadcast, true}]),

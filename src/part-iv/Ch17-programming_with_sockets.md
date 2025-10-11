@@ -14,7 +14,7 @@ UDP 允许应用程序相互发送一些短的报文（称为 *数据报，datag
 
 我们将从一个从服务器获取数据的简单 TCP 程序，开始我们的套接字编程之旅。这之后，我们将编写一个简单顺序 TCP 服务器，并展示其如何并行化，来处理多个并行会话。
 
-### 自服务器获取数据
+### 获取服务器上的数据
 
 我们来以编写一个名为 `nano_get_url/0`，使用 TCP 套接字从 http://httpforever.com 获取 HTML 页面的小函数开始。
 
@@ -106,7 +106,7 @@ receive_data(Socket, SoFar) ->
 这或多或少就是 web 客户端的工作方式（重点是 *或少* -- 我们将必须完成大量工作，才能在 web 浏览器中正确渲染出结果数据）。不过，前面的代码是咱们自己实验的一个好起点。咱们或许会尝试修改这段代码，获取并存储完整的某个网站，或者自动前往并阅读咱们的电子邮件。可能性是无限的。
 
 
-### 简单 TCP 服务器
+### 一个简单的 TCP 服务器
 
 
 在上一小节中，我们编写了个简单的客户端。现在我们来编写个服务器。
@@ -656,5 +656,246 @@ wait_for_ref(Socket, Ref) ->
 {{#include ../../projects/ch17-code/broadcast.erl}}
 ```
 
+这里我们需要两个端口，一个发送广播，另一个监听应答。我们已选择端口 5010 发送广播请求，端口 6000 监听广播消息（这两个数字没有意义；我（作者）只是在我的系统上，选择了两个空闲端口）。
+
+只有执行广播的那个进程，才会打开端口 5000，但网络中的所有机器，都要调用 `broadcast:listen()`，他会打开端口 6000 并监听广播消息。
+
+`broadcast:send(IoList)` 会将 `IoList` 广播到局域网上的所有机器。
+
+
+*注意*：要使其正常工作，（网络）接口的名字必须正确，并且广播必须被支持。例如，在我（作者）的 iMac 上，我使用了名字为 `"en0"`，而不是 `"eth0"`。还要注意的是，当运行 UDP 监听器的主机，位于不同网络的子网上，那么 UDP 的广播就不可能到达他们，因为默认情况下路由器会丢弃此类 UDP 广播。
+
+> **译注**：以下是笔者在一个由宿主机及虚拟机组成的本地网络上的实验输出。
+>
+> - 在一台虚拟机上发送广播消息
+>
+> ```erlang
+> 1> broadcast:send("test").
+> Broadcast IP: {192,168,122,255}
+> ok
+> 2> broadcast:send(["weath", " is ", "good"]).
+> Broadcast IP: {192,168,122,255}
+> ok
+> ```
+>
+> - 在宿主机及其他虚拟机上收到消息
+>
+> ```console
+> $ erl -noshell -s broadcast listen
+> received: {udp,#Port<0.3>,{192,168,122,122},5010,"test"}
+> received: {udp,#Port<0.3>,{192,168,122,122},5010,"weath is good"}
+> ```
+
 
 ## SHOUTcast 服务器
+
+我们将运用我们新掌握的套接字编程技能，编写一个 SHOUTcast 服务器，来结束本章。[SHOUTcast](https://www.shoutcast.com/) 是个由 Nullsoft 公司的人，开发的用于串流音频数据的协议。SHOUTcast 使用 HTTP 作为传输协议，发送 MP3 或 AAC 编码的音频数据。
+
+
+要了解其工作原理，我们将首先了解这个 SHOUTcast 协议。然后，我们将了解服务器的整体结构。我们将完成代码。
+
+
+### SHOUTcast 协议
+
+SHOUTcast 协议相当简单。
+
+
+SHOUTcast 协议相当简单。
+
+
+1. 首先，客户端（可以是 XMMS、Winamp 或 iTunes 等）向 SHOUTcast 服务器发送一个 HTTP 请求。下面是我（作者）在家中运行 SHOUTcast 服务器时，XMMS 生成的请求：
+
+```console
+GET / HTTP/1.1
+Host: localhost
+User-Agent: xmms/1.2.10
+Icy-MetaData:1
+```
+
+2. 我（作者）的 SHOUTcast 会以下面的内容回复：
+
+```console
+ICY 200 OK
+icy-notice1: <BR>This stream requires
+  <a href=http://www.winamp.com/>;Winamp</a><BR>
+icy-notice2: Erlang Shoutcast server<BR>
+icy-name: Erlang mix
+icy-genre: Pop Top 40 Dance Rock
+icy-url: http://localhost:3000
+content-type: audio/mpeg
+icy-pub: 1
+icy-metaint: 24576
+icy-br: 96
+... data ...
+```
+
+
+3. 现在，SHOUTcast 服务器就发送连续的数据流。而数据则有着如下结构：
+
+
+```console
+F H F H F H F ...
+```
+
+
+其中 `F` 是 MP3 音频数据的块，长度必须正好为 24 576 字节（该值是 `icy-metaint` 参数所给定的）。`H` 是个头部块。头部块由单个字节 `K` 后跟刚好 `16*K` 字节数据组成。因此，能用二进制表示的最小头部块便是 `<<0>>`。下一个头部块可被表示如下：
+
+
+```erlang
+<<1,B1,B2,...,B16>>
+```
+
+头部数据部分的内容，是个 `StreamTitle=' ...';StreamUrl='http:// ...';` 形式的字符串，其会被向右填充为零，以填满整个块。
+
+
+### SHOUTcast 服务器工作原理
+
+
+要构造一个服务器，我们必须注意以下细节：
+
+1. 构造一个 *播放列表*。我们的服务器会使用一个包含着我们在 [读取 MP3 元数据](./Ch16-programming_with_files.md#读取-mp3-元数据) 中，所创建歌曲标题的列表。音频文件会从该列表中随机选择；
+
+2. 构造一个并行服务器，这样我们就能以并行方式提供多个串流。我们可使用 [并行服务器](#并行服务器) 中描述的技术，完成这点；
+
+3. 对于每个音频文件，我们打算只发送音频数据，而 *不* 发送嵌入的 ID3 标签到客户端。音频编码器应会跳过坏的数据，因此原则上我们可以与数据一起发送 ID3 标签。实际上，当我们移除 ID3 标签时，程序似乎会运行得更好。
+
+    要移除这些标签，我们就要使用位于本书可下载源代码中的 `code/id3_tag_lengths.erl` 中代码。
+
+
+### SHOUTcast 服务器的伪代码
+
+
+在看最终程序前，我们先来看看细节省略后，代码的整体流程。
+
+
+```erlang
+{{#include ../../projects/ch17-code/shoutcast_server_temp.erl}}
+```
+
+当咱们看到真实代码时，就会发现细节略有不同，但原则是同样的。完整的代码列表为在这里展示，而是在文件 [`code/shout.erl`](http://media.pragprog.com/titles/jaerlang2/code/shout.erl) 中。
+
+### 运行这个 SHOUTcast 服务器
+
+要运行这个服务器并测试其是否工作，我们需要执行以下三个步骤：
+
+1. 构造一个播放列表；
+2. 启动该服务器；
+3. 将某个客户端指向该服务器。
+
+要构造播放列表，请完成以下步骤：
+
+1. 切换到代码目录；
+2. 编辑 `mp3_manager.erl` 这个文件中，`start1` 函数中的路径，为指向包含咱们要提供服务的音频文件目录的根目录；
+3. 编译 `mp3_manager`，并执行 `mp3_manager:start1()`。咱们将看到如下的一些输出：
+
+    ```erlang
+    1> c(mp3_manager).
+    mp3_manager.erl:11:2: Warning: export_all flag enabled - all functions will be exported
+    %   11| -compile(export_all).
+    %     |  ^
+
+    {ok,mp3_manager}
+    2> mp3_manager:start1().
+    ** dumping to mp3data.tmp
+    ok
+    ```
+
+    若咱们感兴趣，咱们现在可以查看 `mp3data` 这个文件，看看分析结果。
+
+
+现在我们就可以启动这个 SHOUTcast 服务器了。
+
+
+```erlang
+1> shout:start().
+<0.87.0>
+```
+
+
+要测试该服务器，请完成以下步骤：
+
+
+1. 前往另一个窗口启动某个音频播放器，并将其指向名为 `http://localhost:3000` 的串流；
+
+    在我（作者）的系统上，我使用 XMMS 并执行了以下命令：
+
+    ```console
+    xmms http://localhost:3000
+    ```
+
+    *注意*：若咱们想要从另一台电脑访问该服务器，咱们将必须提供服务器正运行在的机器 IP 地址。比如要使用我 Windows 机器上的 Winamp 访问该服务器，那么我就要使用 Winamp 中的 `Play > URL` 菜单，并在 `Open URL` 对话框中，输入地址 `http://192.168.1.168:3000`。
+
+    而在我（作者）的 iMac 使用 iTunes 时，我使用了 `Advanced > Open Stream` 菜单，并提供前面的 URL 访问该服务器。
+
+
+2. 咱们将在咱们启动该服务器的窗口中，看到一些诊断输出；
+
+3. 享用吧！
+
+
+> **译注**：译者在使用 `ffplay http://localhost:3000` 测试服务器是否工作时，出现以下报错。
+>
+> ```console
+> ...
+> [http @ 0x7fea240013c0] Stream ends prematurely at 0, should be 18446744073709551615
+> http://localhost:3000: Input/output error
+>     nan    :  0.000 fd=   0 aq=    0KB vq=    0KB sq=    0B
+> ```
+>
+> 同时服务器窗口中的报错如下。
+>
+> ```erlang
+> ...
+>             {shout,play_songs,3,[{file,"shout.erl"},{line,76}]}]}
+> =ERROR REPORT==== 11-Oct-2025::18:30:02.877365 ===
+> Error in process <0.1189.0> with exit value:
+> {function_clause,
+>     [{shout,make_header1,
+>          [{function_clause,
+>               [{mp3_manager,parse_txt,
+>                    [<<1>>],
+>                    [{file,"mp3_manager.erl"},{line,74}]},
+>                {mp3_manager,parse_frame,1,
+>                    [{file,"mp3_manager.erl"},{line,68}]},
+>                {lists,map_1,2,[{file,"lists.erl"},{line,2390}]},
+>                {lists,map_1,2,[{file,"lists.erl"},{line,2390}]},
+>                {lists,map,2,[{file,"lists.erl"},{line,2385}]},
+>                {mp3_manager,parse_frames,1,
+>                    [{file,"mp3_manager.erl"},{line,64}]},
+>                {mp3_manager,read_id3_tag,1,
+>                    [{file,"mp3_manager.erl"},{line,30}]},
+>                {mp3_manager,handle,1,[{file,"mp3_manager.erl"},{line,24}]}]}],
+>          [{file,"shout.erl"},{line,187}]},
+>      {shout,unpack_song_descriptor,1,[{file,"shout.erl"},{line,175}]},
+>      {shout,play_songs,3,[{file,"shout.erl"},{line,75}]}]}
+>
+> ```
+>
+> 在使用 VLC 连接该服务器后，服务器窗口中弹出了诊断输出，但播放器侧没有播放音乐。后期可能需要进一步调试该服务器。
+
+
+在本章中，我们只介绍了操作套接字的一些最常用到的函数。有关套接字 API 的更多信息，请参阅 [`gen_tcp`](https://www.erlang.org/doc/apps/kernel/gen_tcp.html)、[`gen_udp`](https://www.erlang.org/doc/apps/kernel/gen_udp.html) 及 `inet` 的手册页面。
+
+
+套接字接口与 `term_too_binary/1` 及其反义词 `binary_too_term` 两个 BIFs 的简单组合，就会使网络通讯非常容易。我（作者）建议咱们，完成下面的练习亲身体验一下。
+
+
+在下一章中，我们将学习 websocket。使用 websocket，Erlang 进程可以直接与 web 浏览器通信，而无需遵循 HTTP 协议。这非常适合于实现一些低延迟的 web 应用，并为 web 应用编程，提供了一种简便方法。
+
+
+## 练习
+
+
+1. 请修改 `nano_get_url/0` 的代码（[*获取服务器上的数据*](#获取服务器上的数据) 小节），在必要处添加一些适当的头部，并执行在需要时进行重定向，以便获取任何网页。请在多个网站上测试这一特性；
+
+2. 请输入 [一个简单的 TCP 服务器](#一个简单的-tcp-服务器) 代码。然后修改代码以接收 `{Mod, Func, Args}` 元组而非字符串。最后计算 `Reply = apply(Mod, Func, Args)` 并将值发送回到套接字上；
+
+    请编写与本章中前面所给出版本类似的一个函数 `nano_client_eval(Mod, Func, Args)`，要将 `Mod`、`Func` 及 `Arity` 编码为可被修改后服务器代码，所能理解的形式。
+
+    请首先在同一台机器上测试客户端与服务器代码是否正确工作，然后在同一局域网内的两台机器上，最后在互联网上的两台机器上测试。
+
+3. 请使用 UDP 代替 TCP 重复前一练习；
+
+4. 通过在将二进制值发送到传出套接字上前立即对其进行编码，并在传入套接字上收到后立即对其进行解码，从而增加一个加密层；
+
+5. 请构造创建一个简单的 "类电子邮件" 系统。使用 Erlang 的项作为消息，并将其存储在 `${HOME}/mbox` 目录下。

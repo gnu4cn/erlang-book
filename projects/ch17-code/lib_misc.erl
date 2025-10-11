@@ -1,6 +1,7 @@
 -module(lib_misc).
 -include_lib("kernel/include/file.hrl").
 -export([
+         random_seed/0,
          string2value/1,
          ls/1,
          file_size_and_type/1,
@@ -170,4 +171,12 @@ string2value(Str) ->
     Bindings = erl_eval:new_bindings(),
     {value, Value, _} = erl_eval:exprs(Exprs, Bindings),
     Value.
+
+random_seed() ->
+    {_,_,X} = erlang:now(),
+    {H,M,S} = time(),
+    H1 = H * X rem 32767,
+    M1 = M * X rem 32767,
+    S1 = S * X rem 32767,
+    put(random_seed, {H1,M1,S1}).
 
