@@ -1,0 +1,13 @@
+<script type="text/javascript" src="./jquery-1.7.1.min.js"></script>
+<script type="text/javascript" src="./websock.js"></script>
+<link rel="stylesheet" href="./clock1.css" type="text/css">
+<body>
+  <div id="clock"></div>
+  <button id="start" class="live_button">start</button>
+  <button id="stop" class="live_button">stop</button>
+</body>
+<script>
+  $(document).ready(function(){
+    connect("localhost", 2233, "clock1");
+  });
+</script>
