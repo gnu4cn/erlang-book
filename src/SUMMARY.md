@@ -35,3 +35,4 @@
     - [文件编程](part-iv/Ch16-programming_with_files.md)
     - [套接字编程](part-iv/Ch17-programming_with_sockets.md)
     - [使用 websockets 和 Erlang 浏览网页](part-iv/Ch18-browsing_with_websockets_and_erlang.md)
+    - [使用 ETS 和 DETS 存储数据](part-iv/Ch19-storing_data_with_ets_and_dets.md)
