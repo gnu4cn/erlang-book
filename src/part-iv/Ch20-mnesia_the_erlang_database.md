@@ -64,3 +64,112 @@ FALLBACK.BUP
 
 
 ## 数据库查询
+
+在我们已创建了数据库后，我们就可以开始使用他。我们将从 Mnesia 的查询开始。当咱们看完之后，咱们可能会惊讶于 Mnesia 的查询，看起来很同时像 SQL 及列表综合，所以实际上要入门咱们几乎不需要学习什么。事实上，列表综合和 SQL 二者看起来很像并不奇怪。因为二者都基于数学的集合论。
+
+
+在所有我们的示例中，我（作者）将假设咱们已创建了个有两个，分别叫作 `shop` 和 `cost` 表的数据库。这两个表包含的数据，在 [表 8, *`shop` 表*](#table-8)和 [表 9，*`cost` 表*](#table-9) 给出了。
+
+Mnesia 中的表，是行的集合或包，其中每行都是一条 Erlang 的记录。要在 Mnesia 中表示这些表，我们需要一些定义了表中各个列的记录定义。这些定义如下所示：
+
+
+| *Item* | *Quantity* | *Cost* |
+| :- | :- | :- |
+| apple | 20 | 2.3 |
+| orange | 100 | 3.8 |
+| pear | 200 | 3.6 |
+| banana | 420 | 4.5 |
+| potato | 2456 | 1.2 |
+
+<a name="table-8"></a>
+
+**表 8** -- **`shop` 表**
+
+
+| *Name* | *Price* |
+| :- | :- |
+| apple | 1.5 |
+| orange | 2.4 |
+| pear | 2.2 |
+| banana | 1.5 |
+| potato | 0.6 |
+
+<a name="table-9"></a>
+**表 9** -- **`cost` 表**
+
+```erlang
+{{#include ../../projects/ch19-code/test_mnesia.erl:18:19}}
+```
+
+在可操作数据库前，我们需要创建一个数据库 schema、启动该数据库、添加一些数据表的定义以及停止数据库，并重启他。这些只需执行这一过程一次。下面即这段代码：
+
+
+```erlang
+{{#include ../../projects/ch19-code/test_mnesia.erl:22:28}}
+```
+
+```erlang
+1> test_mnesia:do_this_once().
+=INFO REPORT==== 16-Oct-2025::09:04:52.441325 ===
+    application: mnesia
+    exited: stopped
+    type: temporary
+
+stopped
+```
+
+现在，我们就可以继续咱们的示例了。
+
+
+### 选取表中的所有数据
+
+
+下面是选择 `shop` 表中所有数据的代码。(对于你们中了解 SQL 的来说，每个代码片段都以显示要执行相应操作的等价 SQL 开头。）
+
+
+```erlang
+{{#include ../../projects/ch19-code/test_mnesia.erl:34:38}}
+```
+
+这段代码的核心，是对 `qlc:q` 的调用，其会将查询（他的参数）编译为用于查询数据库的某种内部形式。我们把生成的查询，传递给一个名为 `do()` 的函数，其定义在靠近 `test_mnesia` 底部处。他负责运行查询并返回结果。为便于从 erl 中调用所有这些，我们将其映射到函数 `demo(select_shop)`。
+
+在可使用数据库前，我们需要一个启动他并加载表定义的例程。这个例程必须在使用数据库前被运行，但每个 Erlang 会话中其只能被运行一次。
+
+
+```erlang
+{{#include ../../projects/ch19-code/test_mnesia.erl:30:32}}
+...
+{{#include ../../projects/ch19-code/test_mnesia.erl:77:90}}
+...
+{{#include ../../projects/ch19-code/test_mnesia.erl:133:139}}
+```
+
+现在我们就可以启动数据库，并进行一次查询了。
+
+
+```erlang
+1> test_mnesia:start().
+ok
+2> test_mnesia:reset_tables().
+{atomic,ok}
+3> test_mnesia:demo(select_shop).
+[{shop,pear,200,3.6},
+ {shop,apple,20,2.3},
+ {shop,orange,100,3.8},
+ {shop,potato,2456,1.2},
+ {shop,banana,420,4.5}]
+```
+
+*注意*：表中的行可以任意顺序出现。
+
+这个示例中，建立查询的行如下：
+
+
+```erlang
+qlc:q([X || X <- mnesia:table(shop)])
+```
+
+这看起来很像列表综合（参见 [4.5 节，列表综合](../part-ii/Ch04-modules_and_functions.md#列表综合)）。事实上，`qlc` 就代表查询列表理解。它是我们用来访问 Mnesia 数据库中数据的模块之一。
+
+
+
