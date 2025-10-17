@@ -413,4 +413,183 @@ ok
 ### 加载测试数据
 
 
+现在我们知道事务的工作原理，那么我们就可以看看，加载测试数据的代码。
 
+函数 `test_mnesia:example_tables/0` 被用来提供初始化数据库表的数据。其中元组的第一个元素，是表的名字。其后是以原始记录定义中所给出顺序一致的数据表数据。
+
+```erlang
+{{#include ../../projects/ch19-code/test_mnesia.erl:77:90}}
+```
+
+随后是将示例表中数据，插入 Mnesia 的代码。此代码只是针对由 `example_tables/1` 所返回列表中的每个元组，调用 `mnesia:write`。
+
+```erlang
+{{#include ../../projects/ch19-code/test_mnesia.erl:133:139}}
+```
+
+### 函数 `do()`
+
+
+由 `demo/1` 调用的函数 `do()`，稍微有些复杂。
+
+
+```erlang
+{{#include ../../projects/ch19-code/test_mnesia.erl:71:74}}
+```
+
+
+这个函数在一次 Mnesia 事务中，调用了 `qlc:e(Q)`。其中 `Q` 是个已编译的 QLC 查询，`qlc:e(Q)` 会执行这个查询，并以列表形式返回该查询的所有答复。返回值 `{atomic, Val}` 表示这个事务以值 `Val` 成功了。`Val` 为事务函数的值。
+
+
+## 在数据表中存储复杂数据
+
+使用传统 DBMS 的一个缺点是，咱们只可在数据表列中，存储有限的数据类型。咱们可存储整数、字符串、浮点数等。但当咱们想要存储某个复杂对象时，那咱们就麻烦了。因此，举例来说，当咱们是名 Java 程序员时，在 SQL 数据库中存储 Java 对象，就相当麻烦。
+
+
+Mnesia 设计用于存储 Erlang 的数据结构。事实上，咱们可将任何咱们想要的 Erlang 数据结构，存储在 Mnesia 数据表中。
+
+
+为演示这点，我们将设想一些建筑师想把他们的设计，存储在一个 Mnesia 数据库中。首先，我们必须定义一个记录表示他们设计的记录。
+
+
+```erlang
+{{#include ../../projects/ch19-code/test_mnesia.erl:20}}
+```
+
+然后我们就可以定义个将一些涉及，添加到数据库的函数。
+
+
+```erlang
+{{#include ../../projects/ch19-code/test_mnesia.erl:143:163}}
+```
+
+现在，我们便可将一些设计，添加到数据库。
+
+
+```erlang
+1> test_mnesia:start().
+ok
+2> test_mnesia:add_plans().
+{atomic,ok}
+```
+
+现在我们有了数据库中的一些规划。我们可以下面的访问函数，提取这些规划：
+
+
+```erlang
+{{#include ../../projects/ch19-code/test_mnesia.erl:165:167}}
+```
+
+```erlang
+3> test_mnesia:get_plan(fred).
+{atomic,[{design,fred,{rectangle,10,5}}]}
+4> test_mnesia:get_plan({jane, {house,23}}).
+{atomic,[{design,{jane,{house,23}},
+                 {house,[{floor,1,[{doors,3},{windows,12},{rooms,5}]},
+                         {floor,2,[{doors,2},{rooms,4},{windows,15}]}]}}]}
+```
+
+
+正如咱们所见，数据库的键和提取到的记录，都可以是任意 Erlang 项。
+
+
+在技术术语下，我们讲在数据库中的数据结构，与咱们编程语言中的数据结构间，不存在 *阻抗失配*。这意味着将复杂数据结构插入数据库，及从数据库中删除，会非常快。
+
+
+
+## 数据表类型与位置
+
+
+我们可将 Mnesia 的数据表配置为多种方式。首先，数据表可在内存中，或在磁盘上（或两者兼而有之）。其次，数据表可位于一台机器上，或复制在多台机器上。
+
+
+当我们设计咱们的数据表时，我们必须考虑我们打算在表中存储数据的类型。下面是数据表的一些属性：
+
+- *RAM 数据表*
+
+    这些数据表非常快。他们中的数据是 *瞬态的*，因此当机器崩溃或我们停止 DBMS 时，数据就会丢失。
+
+
+- *磁盘数据表*
+
+    磁盘数据表应能在崩溃后继续幸存（前提是磁盘未受物理损坏）。
+
+    当某个 Mnesia 事务写入某个数据表，而该表为存储在磁盘上的时，实际发生的情况，是该事务的数据会首先写入一个磁盘日志。这个磁盘日志会持续增长，同时这个磁盘日志中的信息，就会定期与数据库中别的数据合并，进而该磁盘日志中的条目会被清除。当系统崩溃时，那么下次系统被重启时，出于一致性目的，这个磁盘日志会被检查，同时在数据库可用前，日志中任何未完成条目，都会被添加到数据库中。一旦某个事务已经成功，其中数据就会被正确写入磁盘日志，而当系统在此之后失效，那么当系统下次重启时，该事务中所做出的更改，都应幸免于这次崩溃。
+
+    当系统在某次事务期间崩溃，那么对数据库所做的更改应会丢失。
+
+
+> **分片表**
+>
+> Fragmented Tables
+>
+> Mnesia 支持 “分片” 表（数据库术语中的 *水平分区，horizontal partitioning*）。这一特性是为实现一些超大数据表设计的。数据表被分割成存储在不同机器上的一些分片。这些分片本身就是一些 Mnesia 数据表。分片可像其他数据表一样，被复制、有着索引等。
+>
+> 更多详情，请参阅 [Mnesia 用户指南](https://www.erlang.org/docs/26/apps/mnesia/users_guide) 。
+
+在使用 RAM 表前，咱们需要进行一些实验，确定整个表是否适合放入物理内存。当 RAM 表无法放入物理内存时，系统将频繁翻页，这将不利于性能。
+
+
+RAM 表是瞬态的，因此当我们打算构建某个容错应用时，我们将需要在磁盘上复制该 RAM 表，或在第二台机器上将其复制为 RAM 表或磁盘表，或两者兼而有之。
+
+### 创建数据表
+
+
+要创建一个数据表，我们就调用 `mnesia:create_table(Name,ArgS)`，其中 `ArgS` 是个 `{Key,Val}` 的元组列表。当数据表成功创建时，`create_table` 会返回 `{atomic, ok}`；否则他会返回 `{aborted, Reason}`。`create_table` 的一些常见参数如下：
+
+- `Name`
+
+    这是数据表的名字（一个原子）。依惯例，他是某个 Erlang 记录的名字 -- 数据表的行，将是该记录的一些实例；
+
+- `{type, Type}`
+
+    这个参数指定数据表的类型。`Type` 为 `set`、`ordered_set` 或 `bag` 之一。这些类型的含义与 [19.1 节 表的类型](Ch19-storing_data_with_ets_and_dets.md#数据表的类型) 中描述相同的意义；
+
+- `{disc_copies, NodeList}`
+
+    `NodeList` 是该数据表将被存储的磁盘副本所在 Erlang 节点的列表。当我们使用这一选项时，系统将同样在我们执行此操作的节点上，创建该表的 RAM 副本。
+
+    在一个节点上有个 `disc_copies` 类型的复制表，并在另一节点上有着存储为不同类型的同一个表，是可行的。当我们希望达到如下目标时，这种做法是可取的：
+
+    - 读操作要特别快，并要在 RAM 中完成；
+    - 写操作要对持久存储完成。
+
+
+- `{ram_copies, NodeList}`
+
+    `NodeList` 是个 Erlang 节点列表，数据表的 RAM 副本将存储在其上；
+
+- `{disc_only_copies, NodeList}`
+
+    `NodeList` 是一个 Erlang 节点列表，仅数据的磁盘副本被被存储于其上。这些数据表没有 RAM 副本，访问较慢；
+
+- `{attributes, AtomList}`
+
+    这是某个特定表中，值的列名字列表。请注意，要创建一个包含 Erlang 记录 `xxx` 的数据表，我们可以使用 `{attributes, record_info(fields,xxx)}` 这种语法（或者，我们可指定一个显式的记录字段名字列表）。
+
+
+*注意*：`create_table` 的选项比我（作者）这里介绍的要多。有关全部选项的详细信息，请参阅 [`mnesia` 的手册页面](https://www.erlang.org/docs/24/man/mnesia.html#create_table-2)。
+
+
+### 数据表属性的常见组合
+
+在下文中，我们将假定 `Attrs` 是个 `{attributes,...}` 元组。
+
+
+下面是涵盖了最常见情况的，一些常用数据表配置选项：
+
++ `mnesia:create_table(shop, [Attrs])`
+
+    - 这会在单个节点上，构造一个驻留内存的数据表；
+    - 当节点崩溃时，该数据表将会丢失；
+    - 这是所有数据格中最快的；
+    - 该数据表必须装入内存。
+
++ `mnesia:create_table(shop, [Attrs, {disc_copies, [node()]}])`
+
+    - 这会在一个节点上，构造一个驻留内存表以及一个磁盘副本；
+    - 当节点崩溃时，该表将从磁盘恢复；
+    - 这种数据表有着高速的读访问，但写访问较慢；
+    - 该数据表应可装入内存。
+
++ `mnesia:create_table(shop, [Attrs, {disc_only_copies, [node()]}])`
