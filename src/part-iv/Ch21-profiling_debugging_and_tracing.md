@@ -137,5 +137,7 @@ Playing:<<"title: track018 performer: .. ">>
 >
 > <sup>a</sup>：Joe's Abstract Machine, 首个 Erlang 编译器。
 
+设计一些造成全部覆盖率计数都大于零的测试用例，是一种系统地找出咱们程序中隐藏错误的宝贵方法。
+
 
 ### 转储到文件
