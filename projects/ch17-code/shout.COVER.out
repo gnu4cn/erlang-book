@@ -1,0 +1,196 @@
+File generated from /home/hector/erlang-book/projects/ch17-code/shout.erl by COVER 2025-10-18 at 18:57:40
+
+****************************************************************************
+
+        |  %% ---
+        |  %%  Excerpted from "Programming Erlang, Second Edition",
+        |  %%  published by The Pragmatic Bookshelf.
+        |  %%  Copyrights apply to this code. It may not be used to create training material,
+        |  %%  courses, books, articles, and the like. Contact us if you are in doubt.
+        |  %%  We make no guarantees that this code is fit for any purpose.
+        |  %%  Visit http://www.pragmaticprogrammer.com/titles/jaerlang2 for more book information.
+        |  %%---
+        |  -module(shout).
+        |  
+        |  %% In one window > shout:start()
+        |  %% in another window xmms http://localhost:3000/stream
+        |  
+        |  -export([start/0]).
+        |  -import(lists, [map/2, reverse/1]).
+        |  
+        |  -define(CHUNKSIZE, 24576).
+        |  
+        |  start() ->
+     1..|      spawn(fun() ->
+     1..|  		  start_parallel_server(3000),
+        |  		  %% now go to sleep - otherwise the
+        |  		  %% listening socket will be closed
+     1..|  		  lib_misc:sleep(infinity)
+        |  	  end).
+        |  
+        |  start_parallel_server(Port) ->
+     1..|      {ok, Listen} = gen_tcp:listen(Port, [binary, {packet, 0},
+        |  					 {reuseaddr, true},
+        |  					 {active, true}]),
+     1..|      PidSongServer = spawn(fun() -> songs() end),
+     1..|      spawn(fun() -> par_connect(Listen, PidSongServer) end).
+        |  
+        |  par_connect(Listen, PidSongServer) ->
+    28..|      {ok, Socket} = gen_tcp:accept(Listen),
+    27..|      spawn(fun() -> par_connect(Listen, PidSongServer) end),
+    27..|      inet:setopts(Socket, [{packet,0},binary, {nodelay,true},{active, true}]),
+    27..|      get_request(Socket, PidSongServer, []).
+        |  
+        |  get_request(Socket, PidSongServer, L) ->
+    27..|      receive
+        |  	{tcp, Socket, Bin} ->
+    27..|  	    L1 = L ++ binary_to_list(Bin),
+        |  	    %% split checks if the header is complete
+    27..|  	    case split(L1, []) of
+        |  		more ->
+        |  		    %% the header is incomplete we need more data
+     0..|  		    get_request(Socket, PidSongServer, L1);
+        |  		{Request, _Rest} ->
+        |  		    %% header is complete
+    27..|  		    got_request_from_client(Request, Socket, PidSongServer)
+        |  	    end;
+        |  	{tcp_closed, Socket} ->
+     0..|  	    void;
+        |  
+        |  	_Any  ->
+        |  	    %% skip this
+     0..|  	    get_request(Socket, PidSongServer, L)
+        |      end.
+        |  
+    27..|  split("\r\n\r\n" ++ T, L) -> {reverse(L), T};
+  2494..|  split([H|T], L)           -> split(T, [H|L]);
+     0..|  split([], _)              -> more.
+        |  
+        |  got_request_from_client(Request, Socket, PidSongServer) ->
+    27..|      Cmds = string:tokens(Request, "\r\n"),
+    27..|      Cmds1 = map(fun(I) -> string:tokens(I, " ") end, Cmds),
+    27..|      is_request_for_stream(Cmds1),
+    27..|      gen_tcp:send(Socket, [response()]),
+    27..|      play_songs(Socket, PidSongServer, <<>>).
+        |  
+        |  
+        |  play_songs(Socket, PidSongServer, SoFar) ->
+   358..|      Song = rpc(PidSongServer, random_song),
+   358..|      {File,PrintStr,Header} = unpack_song_descriptor(Song),
+   331..|      case id3_tag_lengths:file(File) of
+        |  	error ->
+   331..|  	    play_songs(Socket, PidSongServer, SoFar);
+        |  	{Start, Stop} ->
+     0..|  	    io:format("Playing:~p~n",[PrintStr]),
+     0..|  	    {ok, S} = file:open(File, [read,binary,raw]),
+     0..|  	    SoFar1 = send_file(S, {0,Header}, Start, Stop, Socket, SoFar),
+     0..|  	    file:close(S),
+     0..|  	    play_songs(Socket, PidSongServer, SoFar1)
+        |      end.
+        |  
+        |  
+        |  send_file(S, Header, OffSet, Stop, Socket, SoFar) ->
+        |      %% OffSet = first byte to play
+        |      %% Stop   = The last byte we can play
+     0..|      Need = ?CHUNKSIZE - byte_size(SoFar),
+     0..|      Last = OffSet + Need,
+     0..|      if
+        |  	Last >= Stop ->
+        |  	    %% not enough data so read as much as possible and return
+     0..|  	    Max = Stop - OffSet,
+     0..|  	    {ok, Bin} = file:pread(S, OffSet, Max),
+     0..|  	    list_to_binary([SoFar, Bin]);
+        |  	true ->
+     0..|  	    {ok, Bin} = file:pread(S, OffSet, Need),
+     0..|  	    write_data(Socket, SoFar, Bin, Header),
+     0..|  	    send_file(S, bump(Header),
+        |  		      OffSet + Need,  Stop, Socket, <<>>)
+        |      end.
+        |  
+        |  
+        |  write_data(Socket, B0, B1, Header) ->
+        |      %% Check that we really have got a block of the right size
+        |      %% this is a very useful check that our program logic is
+        |      %% correct
+     0..|      case byte_size(B0) + byte_size(B1) of
+        |  	?CHUNKSIZE ->
+     0..|  	    case gen_tcp:send(Socket, [B0, B1, the_header(Header)]) of
+     0..|  		ok -> true;
+        |  		{error, closed} ->
+        |  		    %% this happens if the player
+        |  		    %% terminates the connection
+     0..|  		    exit(playerClosed)
+        |  	    end;
+        |  	_Other ->
+        |  	    %% don't send the block - report an error
+     0..|  	    io:format("Block length Error: B0 = ~p b1=~p~n",
+        |  		      [byte_size(B0), byte_size(B1)])
+        |      end.
+        |  
+     0..|  bump({K, H})     -> {K+1, H}.
+        |  
+        |  the_header({K, H}) ->
+     0..|      case K rem 5 of
+     0..|  	0 -> H;
+     0..|  	_ -> <<0>>
+        |      end.
+        |  
+        |  
+    27..|  is_request_for_stream(_) -> true.
+        |  
+        |  
+        |  response() ->
+    27..|      ["ICY 200 OK\r\n",
+        |       "icy-notice1: <BR>This stream requires",
+        |       "<a href=\"http://www.winamp.com/\">Winamp</a><BR>\r\n",
+        |       "icy-notice2: Erlang Shoutcast server<BR>\r\n",
+        |       "icy-name: Erlang mix\r\n",
+        |       "icy-genre: Pop Top 40 Dance Rock\r\n",
+        |       "icy-url: http://localhost:3000\r\n",
+        |       "content-type: audio/mpeg\r\n",
+        |       "icy-pub: 1\r\n",
+        |       "icy-metaint: ",integer_to_list(?CHUNKSIZE),"\r\n",
+        |       "icy-br: 96\r\n\r\n"].
+        |  
+        |  
+        |  songs() ->
+     1..|      {ok,[SongList]} = file:consult("mp3data.tmp"),
+     1..|      lib_misc:random_seed(),
+     1..|      songs_loop(SongList).
+        |  
+        |  
+        |  songs_loop(SongList) ->
+   359..|      receive
+        |  	{From, random_song} ->
+   358..|  	    I = rand:uniform(length(SongList)),
+   358..|  	    Song = lists:nth(I, SongList),
+   358..|  	    From ! {self(), Song},
+   358..|  	    songs_loop(SongList)
+        |      end.
+        |  
+        |  rpc(Pid, Q) ->
+   358..|      Pid ! {self(), Q},
+   358..|      receive
+        |  	{Pid, Reply} ->
+   358..|  	    Reply
+        |      end.
+        |  
+        |  unpack_song_descriptor({File, {_Tag,Info}}) ->
+   358..|      PrintStr = list_to_binary(make_header1(Info)),
+   331..|      L1 = ["StreamTitle='",PrintStr,
+        |  	  "';StreamUrl='http://localhost:3000';"],
+        |      %% io:format("L1=~p~n",[L1]),
+   331..|      Bin = list_to_binary(L1),
+   331..|      Nblocks = ((size(Bin) - 1) div 16) + 1,
+   331..|      NPad = Nblocks*16 - size(Bin),
+   331..|      Extra = lists:duplicate(NPad, 0),
+   331..|      Header = list_to_binary([Nblocks, Bin, Extra]),
+        |      %% Header is the Shoutcast header
+   331..|      {File, PrintStr, Header}.
+        |  
+        |  make_header1([{track,_}|T]) ->
+   230..|      make_header1(T);
+        |  make_header1([{Tag,X}|T]) ->
+   901..|      [atom_to_list(Tag),": ",X," "|make_header1(T)];
+        |  make_header1([]) ->
+   331..|      [].
