@@ -98,14 +98,14 @@ Mnesia 中的表，是行的集合或包，其中每行都是一条 Erlang 的�
 **表 9** -- **`cost` 表**
 
 ```erlang
-{{#include ../../projects/ch19-code/test_mnesia.erl:18:19}}
+{{#include ../../projects/ch20-code/test_mnesia.erl:18:19}}
 ```
 
 在可操作数据库前，我们需要创建一个数据库 schema、启动该数据库、添加一些数据表的定义以及停止数据库，并重启他。这些只需执行这一过程一次。下面即这段代码：
 
 
 ```erlang
-{{#include ../../projects/ch19-code/test_mnesia.erl:22:28}}
+{{#include ../../projects/ch20-code/test_mnesia.erl:22:28}}
 ```
 
 ```erlang
@@ -128,7 +128,7 @@ stopped
 
 
 ```erlang
-{{#include ../../projects/ch19-code/test_mnesia.erl:34:38}}
+{{#include ../../projects/ch20-code/test_mnesia.erl:34:38}}
 ```
 
 这段代码的核心，是对 `qlc:q` 的调用，其会将查询（他的参数）编译为用于查询数据库的某种内部形式。我们把生成的查询，传递给一个名为 `do()` 的函数，其定义在靠近 `test_mnesia` 底部处。他负责运行查询并返回结果。为便于从 erl 中调用所有这些，我们将其映射到函数 `demo(select_shop)`。
@@ -137,11 +137,11 @@ stopped
 
 
 ```erlang
-{{#include ../../projects/ch19-code/test_mnesia.erl:30:32}}
+{{#include ../../projects/ch20-code/test_mnesia.erl:30:32}}
 ...
-{{#include ../../projects/ch19-code/test_mnesia.erl:77:90}}
+{{#include ../../projects/ch20-code/test_mnesia.erl:77:90}}
 ...
-{{#include ../../projects/ch19-code/test_mnesia.erl:133:139}}
+{{#include ../../projects/ch20-code/test_mnesia.erl:133:139}}
 ```
 
 现在我们就可以启动数据库，并进行一次查询了。
@@ -189,7 +189,7 @@ qlc:q(Var)
 
 
 ```erlang
-{{#include ../../projects/ch19-code/test_mnesia.erl:41:45}}
+{{#include ../../projects/ch20-code/test_mnesia.erl:41:45}}
 ```
 
 ```erlang
@@ -211,7 +211,7 @@ qlc:q(Var)
 
 
 ```erlang
-{{#include ../../projects/ch19-code/test_mnesia.erl:48:55}}
+{{#include ../../projects/ch20-code/test_mnesia.erl:48:55}}
 ```
 
 ```erlang
@@ -226,7 +226,7 @@ qlc:q(Var)
 
 
 ```erlang
-{{#include ../../projects/ch19-code/test_mnesia.erl:56:69}}
+{{#include ../../projects/ch20-code/test_mnesia.erl:56:69}}
 ```
 
 
@@ -246,7 +246,7 @@ qlc:q(Var)
 我们可如下往 `shop` 表中添加一行：
 
 ```erlang
-{{#include ../../projects/ch19-code/test_mnesia.erl:92:97}}
+{{#include ../../projects/ch20-code/test_mnesia.erl:92:97}}
 ```
 
 这个函数会创建一条 `shop` 记录，并将其插入该表。
@@ -285,7 +285,7 @@ ok
 
 
 ```erlang
-{{#include ../../projects/ch19-code/test_mnesia.erl:99:104}}
+{{#include ../../projects/ch20-code/test_mnesia.erl:99:104}}
 ```
 
 ```erlang
@@ -365,7 +365,7 @@ mnesia:transaction(F),
 
 
 ```erlang
-{{#include ../../projects/ch19-code/test_mnesia.erl:107:130}}
+{{#include ../../projects/ch20-code/test_mnesia.erl:107:130}}
 ```
 
 这段代码写得非常愚蠢，因为我（作者）想要展示事务机制的工作原理。首先，我（作者）要更新数据库中苹果的数量。这是我在检查橙子数量 *前* 完成的。我执行这个操作的原因，是要展示当事务失败时，这一更改会被 “撤销”。通常情况下，我（作者）会将写回橙子和苹果数据到数据库，延迟到我已确定我有着足够橙子之后。
@@ -418,13 +418,13 @@ ok
 函数 `test_mnesia:example_tables/0` 被用来提供初始化数据库表的数据。其中元组的第一个元素，是表的名字。其后是以原始记录定义中所给出顺序一致的数据表数据。
 
 ```erlang
-{{#include ../../projects/ch19-code/test_mnesia.erl:77:90}}
+{{#include ../../projects/ch20-code/test_mnesia.erl:77:90}}
 ```
 
 随后是将示例表中数据，插入 Mnesia 的代码。此代码只是针对由 `example_tables/1` 所返回列表中的每个元组，调用 `mnesia:write`。
 
 ```erlang
-{{#include ../../projects/ch19-code/test_mnesia.erl:133:139}}
+{{#include ../../projects/ch20-code/test_mnesia.erl:133:139}}
 ```
 
 ### 函数 `do()`
@@ -434,7 +434,7 @@ ok
 
 
 ```erlang
-{{#include ../../projects/ch19-code/test_mnesia.erl:71:74}}
+{{#include ../../projects/ch20-code/test_mnesia.erl:71:74}}
 ```
 
 
@@ -453,14 +453,14 @@ Mnesia 设计用于存储 Erlang 的数据结构。事实上，咱们可将任�
 
 
 ```erlang
-{{#include ../../projects/ch19-code/test_mnesia.erl:20}}
+{{#include ../../projects/ch20-code/test_mnesia.erl:20}}
 ```
 
 然后我们就可以定义个将一些涉及，添加到数据库的函数。
 
 
 ```erlang
-{{#include ../../projects/ch19-code/test_mnesia.erl:143:163}}
+{{#include ../../projects/ch20-code/test_mnesia.erl:143:163}}
 ```
 
 现在，我们便可将一些设计，添加到数据库。
@@ -477,7 +477,7 @@ ok
 
 
 ```erlang
-{{#include ../../projects/ch19-code/test_mnesia.erl:165:167}}
+{{#include ../../projects/ch20-code/test_mnesia.erl:165:167}}
 ```
 
 ```erlang

@@ -37,3 +37,4 @@
     - [使用 websockets 和 Erlang 浏览网页](part-iv/Ch18-browsing_with_websockets_and_erlang.md)
     - [使用 ETS 和 DETS 存储数据](part-iv/Ch19-storing_data_with_ets_and_dets.md)
     - [Mnesia：Erlang 的数据库](part-iv/Ch20-mnesia_the_erlang_database.md)
+    - [性能分析、调试与追踪](part-iv/Ch21-profiling_debugging_and_tracing.md)
