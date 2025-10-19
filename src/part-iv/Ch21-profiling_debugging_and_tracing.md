@@ -140,4 +140,134 @@ Playing:<<"title: track018 performer: .. ">>
 设计一些造成全部覆盖率计数都大于零的测试用例，是一种系统地找出咱们程序中隐藏错误的宝贵方法。
 
 
+## 生成交叉引用
+
+
+在我们开发某个程序时，对咱们的代码运行偶尔的交叉引用检查是个好主意。当有遗漏的函数时，咱们就将在运行咱们的程序前，而不是之后发现他们。
+
+
+使用 `xref` 模组，我们便可生成交叉引用。只有当咱们的代码在 `debug_info` 开关设置下编译时，`xref` 才工作。
+
+我（作者）无法向咱们展示 `xref` 对本书附带代码的输出，因为这些代码的开发已经完成，且没有任何遗漏函数。
+
+
+作为代替，我（作者）将向咱们展示，当我（作者）对我的一个业余项目中的代码，运行交叉引用检查时发生的情况。
+
+
+`vsg` 是个我（作者）或许有一天会发布的简单图形程序。我们将对我（作者）正在其下开发这个程序的 `vsg` 目录下的代码进行分析。
+
+
+```console
+$ cd /home/joe/2007/vsg-1.6
+$ rm *.beam
+$ erlc +debug_info *.erl
+$ erl
+1> xref:d('.').
+[{deprecated,[]},
+{undefined,[{{new,win1,0},{wish_manager,on_destroy,2}},
+{{vsg,alpha_tag,0},{wish_manager,new_index,0}},
+{{vsg,call,1},{wish,cmd,1}},
+{{vsg,cast,1},{wish,cast,1}},
+{{vsg,mkWindow,7},{wish,start,0}},
+{{vsg,new_tag,0},{wish_manager,new_index,0}},
+{{vsg,new_win_name,0},{wish_manager,new_index,0}},
+{{vsg,on_click,2},{wish_manager,bind_event,2}},
+{{vsg,on_move,2},{wish_manager,bind_event,2}},
+{{vsg,on_move,2},{wish_manager,bind_tag,2}},
+{{vsg,on_move,2},{wish_manager,new_index,0}}]},
+{unused,[{vsg,new_tag,0},
+{vsg_indicator_box,theValue,1},
+{vsg_indicator_box,theValue,1}]}]
+```
+
+其中 `xref:d('.')` 对当前目录下，所有以那个调试标记（`+debug_info`）编译的代码，执行了一次交叉引用分析。他生成了废弃、未定义及未使用函数的一些列表。
+
+与大多数工具一样，`xref` 有着大量选项，因此，当咱们打算使用这个程序所拥有的一些更为强大特性时，阅读 [手册](https://www.erlang.org/doc/apps/tools/xref_chapter.html) 是必要的。
+
+
+## 编译器诊断
+
+在我们编译某个程序时，当我们的源代码语法不正确时，编译器会提供给我们有用的错误消息。大多数错误消息是不言自明的：当我们漏掉了个括号、逗号或关键字时，编译器将给出一条带有问题语句文件名及行号的错误消息。下面是我们可能看到的一些错误。
+
+
+### 头部不匹配
+
+当组成某个函数定义的子句，没有同样名字与元数时，我们将得到以下报错：
+
+
+```erlang
+foo(1,2) ->
+    a;
+foo(2,3,1) ->
+    b.
+```
+
+```erlang
+1> c(bad).
+bad.erl:5:1: head mismatch: function foo with arities 2 and 3 is regarded as two distinct functions. Is the number of arguments incorrect or is the semicolon in foo/2 unwanted?
+%    5| foo(2,3,1) ->
+%     | ^
+
+error
+```
+
+
+### 未绑定的变量
+
+
+下面是一些包含着非绑定变量的代码：
+
+
+```erlang
+foo(A, B) ->
+    bar(A, dothis(X), B),
+    baz(Y, X).
+```
+
+```erlang
+1> c(bad).
+bad.erl:4:5: function bar/3 undefined
+%    4|     bar(A, dothis(X), B),
+%     |     ^
+
+bad.erl:4:12: function dothis/1 undefined
+%    4|     bar(A, dothis(X), B),
+%     |            ^
+
+bad.erl:4:19: variable 'X' is unbound
+%    4|     bar(A, dothis(X), B),
+%     |                   ^
+
+bad.erl:5:5: function baz/2 undefined
+%    5|     baz(Y, X).
+%     |     ^
+
+bad.erl:5:9: variable 'Y' is unbound
+%    5|     baz(Y, X).
+%     |         ^
+
+bad.erl:3:1: Warning: function foo/2 is unused
+%    3| foo(A, B) ->
+%     | ^
+
+error
+```
+
+这意味着在第 2 行中，变量 `X` 没有值。实际上，错误并不在第 2 行上，但是在第 2 行处检测到的，该行正是那个未绑定变量 `X` 的第一次出现（在第 3 行上 `X` 也被使用了，但编译器只报告了错误出现的第一行）。
+
+
+### 未终止字符串
+
+
+当我们忘记了某个字符串或原子中的最后引号时，我们将得到以下错误消息：
+
+
+```erlang
+unterminated string starting with "..."
+```
+
+
+有时，找到缺失引号可能非常棘手。当咱们收到这条消息，又确实无法看到缺失引号在何处时，那么较要尝试把一个引号，放在咱们认为问题可能所在的地方，然后重新编译该程序。这样做可能产生出将帮助咱们找出该错误的一个更精确诊断。
+
+
 ### 转储到文件
