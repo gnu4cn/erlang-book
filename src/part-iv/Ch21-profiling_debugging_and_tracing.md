@@ -555,7 +555,7 @@ true
 
     会启动一个新的图形监视器。这是调试器的主窗口。他显示了调试器正监控的所有进程状态；
 
-[调试器初始视窗](../images/debugger.png)
+![调试器初始视窗](../images/debugger.png)
 
 - `ii(Mod)`
 
