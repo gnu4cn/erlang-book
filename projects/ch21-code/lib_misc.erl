@@ -1,6 +1,7 @@
 -module(lib_misc).
 -include_lib("kernel/include/file.hrl").
 -export([
+         glurk/2,
          deliberate_error/1,
          deliberate_error1/1,
          random_seed/0,
@@ -193,3 +194,11 @@ bad_function(A, _) ->
 
 deliberate_error1(A) ->
     bad_function(A, 12).
+
+-define(NYI(X), (begin
+                     io:format("*** NYI ~p ~p ~p~n", [?MODULE, ?LINE, X]),
+                     exit(nyi)
+                 end)).
+
+glurk(X, Y) ->
+    ?NYI({glurk, X, Y}).

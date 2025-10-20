@@ -439,9 +439,145 @@ Erlang 程序员会使用各种调试程序的技巧。到目前为止，最常�
 
 ### `io:format` 的调试
 
+添加一些打印语句到程序，是最最常见的调试形式。咱们只要在咱们程序中的一些关键位置处，添加一些打印咱们感兴趣变量值的 `io:format(...)` 语句。
 
 
+在调试一些并行程序时，在向另一进程发送信息 *前*，及咱们收到消息 *后*，立即打印消息，通常是个好主意。
 
-Debugging Erlang is pretty easy. That might surprise you, but this is a consequence of having single-assignment variables. Since Erlang has no pointers and no mutable state (with the exception of ETS tables and process dictionaries), finding out where things have gone wrong is rarely a problem. Once we have observed that a variable has an incorrect value, it’s relatively easy to find out when and where this happened.
+
+当我（作者）在编写某个并发程序时，我几乎总是这样开始编写接收循环：
+
+```erlang
+loop(...) ->
+    receive
+        Any ->
+            io:format("*** warning unexpected message: ~p~n", [Any]),
+            loop(...)
+    end.
+```
+
+然后，在我将一些模式添加到这个接收循环时，当我的进程收到任何他不理解的消息时，我就会收到打印的告警消息。我（作者）还会使用 `spawn_link` 代替 `spawn`，确保当我的进程异常退出时，错误消息会被打印。
+
+
+我（作者）经常会用到一个宏 `NYI`（not yet implemented，尚未实现的），我将其定义为如下：
+
+
+```
+{{#include ../../projects/ch21-code/lib_misc.erl:198:201}}
+```
+
+那么我可能如下使用这个宏：
+
+```erlang
+{{#include ../../projects/ch21-code/lib_misc.erl:203:204}}
+```
+
+函数 `glurk` 的主体尚未编写，因此当我调用 `glurk` 时，程序会崩溃。
+
+```erlang
+> lib_misc:glurk(1, 2).
+*** NYI lib_misc 204 {glurk,1,2}
+** exception exit: nyi
+     in function  lib_misc:glurk/2 (lib_misc.erl:204)
+```
+
+程序会退出同时一条错误消息显示出来，因此我（作者）知道其是实现我的函数之时。
 
 ### 转储到文件
+
+当我们感兴趣的数据结构很大，那么我们可使用 `dump/2` 等函数，将其写入某个文件。
+
+
+```erlang
+{{#include ../../projects/ch21-code/lib_misc.erl:147:152}}
+```
+
+这个函数会打印一条告警消息，提醒我们已创建一个新文件。然后，他会添加一个 `.tmp` 文件扩展到文件名（这样我们就可在以后轻松删除所有临时文件）。然后，他会将我们感兴趣的项，漂亮地打印到一个文件。在稍后阶段我们可用某种文本编辑器，检查这个文件。在检查大型数据结构时，这种技巧简单而尤其有用。
+
+
+### 使用错误记录器
+
+
+我们可使用错误日志记录器，并创建一个带有调试输出的文本文件。为此，我们要创建个如下的配置文件：
+
+
+```erlang
+{{#include ../../projects/ch21-code/elog5.config}}
+```
+
+然后我们已下面的命令启动 Erlang：
+
+
+```console
+erl -config elog5.config
+```
+
+经由调用 `error_logger` 模组中例程创建的任何错误消息，以及在 shell 下打印的任何错误消息，都将最终存入配置文件中所指定的那个文件。
+
+
+## Erlang 的调试器
+
+标准 Erlang 发行版包含了个调试器。除了告诉咱们如何启动这个调试器，并提供文档指向外，我（作者）不会在这里多说什么。在启动后，使用这个调试器非常简单。咱们可检查变量、单步运行代码、设置断点等等。
+
+由于我们将经常打算调试多个进程，该调试器还可生成自身的副本，从而我们可以有多个调试窗口，每个咱们正在调试的进程都有个调试窗口。
+
+
+唯一棘手的事情，是启动这个调试器。
+
+
+```erlang
+1> %% recompile lib_misc so we can debug it
+   c(lib_misc, [debug_info]).
+{ok,lib_misc}
+2> im().    %% A window will pop up. Ignore it for now
+<0.97.0>
+3> ii(lib_misc).
+{module,lib_misc}
+4> iaa([init]).
+true
+5> lib_misc:
+...
+```
+
+运行这写命令，会打开 [图 1，*调试器初始窗口*](#figure-1) 中显示的视窗。
+
+
+在调试器中，咱们可设置断点、检查变量等。
+
+
+所有不带模组前缀的命令（`ii/1`、`iaa/1` 等），都是模组 `i` 中导出的。这便是调试器/解释器的接口模组。这些可在 shell 下，无需给出模组前缀即可访问。
+
+
+我们调用以让调试器运行的函数，完成以下事情：
+
+
+- `im()`
+
+    会启动一个新的图形监视器。这是调试器的主窗口。他显示了调试器正监控的所有进程状态；
+
+[调试器初始视窗](../images/debugger.png)
+
+- `ii(Mod)`
+
+    解析模组 `Mod` 中的代码；
+
+- `iaa([init])`
+
+    在任何执行所解析出代码的进程启动时，将调试器附着到该进程。
+
+
+要了解有关调试的更多信息，请尝试这些资源：
+
+- [Debugger](https://www.erlang.org/docs/24/apps/debugger/debugger.pdf)
+
+    调试器参考手册是对调试器的介绍，带有屏幕截图、API 文档等。他是调试器正式用户的必读资料；
+
+- [Debugger/Interpreter Interface](https://www.erlang.org/doc/apps/debugger/i.html)
+
+    这里咱们可找到 shell 下可用的一些调试器命令。
+
+
+
+
+
+
