@@ -267,7 +267,181 @@ unterminated string starting with "..."
 ```
 
 
-有时，找到缺失引号可能非常棘手。当咱们收到这条消息，又确实无法看到缺失引号在何处时，那么较要尝试把一个引号，放在咱们认为问题可能所在的地方，然后重新编译该程序。这样做可能产生出将帮助咱们找出该错误的一个更精确诊断。
+有时，找到缺失引号可能非常棘手。当咱们收到这条消息，又确实无法看到缺失引号在何处时，那么较要尝试把一个引号，放在咱们认为问题可能所在的地方，然后重新编译该程序。这样做可能产生出一个，将帮助咱们找出该错误的更精确诊断。
 
+
+## 不安全的变量
+
+当我们编译下面的代码时：
+
+
+```erlang
+foo() ->
+    case bar() of
+        1 ->
+            X = 1,
+            Y = 2;
+        2 ->
+            X = 3
+    end,
+    b(X).
+```
+
+我们将得到以下告警：
+
+```erlang
+1> c(bad).
+...
+bad.erl:8:13: Warning: variable 'Y' is unused
+%    8|             Y = 2;
+%     |             ^
+...
+```
+
+这只是个告警，因为 `Y` 定义过但未使用。当我们现在把这个程序，改成下面这样：
+
+```erlang
+foo() ->
+    case bar() of
+        1 ->
+            X = 1,
+            Y = 2;
+        2 ->
+            X = 3
+    end,
+    b(X, Y).
+```
+
+我们将得到如下报错：
+
+```erlang
+2> c(bad).
+...
+bad.erl:14:10: variable 'Y' unsafe in 'case' (line 7, column 5)
+%   14|     b(X, Y).
+%     |          ^
+...
+```
+
+编译器会认为这个程序，可能采取其中 `case` 表达式的第二个分支（在这种情况下，变量 `Y` 将是未定义的），因此他产生了一条 “unsafe variable” 的错误消息。
+
+
+### 遮蔽变量
+
+遮蔽变量是一些会把先前定义的变量值隐藏起来的变量，这样咱们就不能使用那些先前定义变量的值。下面是个例子：
+
+
+```erlang
+foo(X, L) ->
+    lists:map(fun(X) -> 2*X end, L).
+```
+
+
+```erlang
+...
+bad.erl:3:5: Warning: variable 'X' is unused
+%    3| foo(X, L) ->
+%     |     ^
+
+bad.erl:4:19: Warning: variable 'X' shadowed in 'fun'
+%    4|     lists:map(fun(X) -> 2*X end, L).
+%     |                   ^
+
+...
+```
+
+这里，编译器担心我们可能在咱们的程序中犯了个错。在那个 fun 内我们计算 `2*X`，但我们说的是哪个 `X` 呢：是这个 fun 的参数 `X`，还是 `foo` 的参数 `X`？
+
+
+当这种情况发生时，最好的办法是重命名其中一个 `X`，使告警消失。我们可将这段代码重写如下：
+
+```erlang
+foo(X, L) ->
+    lists:map(fun(Z) -> 2*Z end, L).
+```
+
+现在当我们打算在那个 fun 定义中使用 `X` 时，就没有问题了。
+
+
+## 运行时诊断
+
+当某个 Erlang 进程崩溃时，我们可能会收到一条错误消息。要看到该错误消息，某个别的进程必须要监视这个崩溃进程，并在被监视进程死掉时，打印一条错误消息。当我们只是以 `spawn` 创建某个进程，然后该进程死亡时，我们就不会收到任何错误消息。当我们打算要看到所有错误信息时，最好的办法就是使用 `spawn_link`。
+
+
+### 栈追踪
+
+
+每次某个链接到 shell 的进程崩溃时，一个栈跟踪都将被打印。为查看栈跟踪中有什么内容，我们将编写个带有故意出错的简单函数，并在 shell 中调用该函数。
+
+
+```erlang
+{{#include ../../projects/ch21-code/lib_misc.erl:185:191}}
+```
+
+```erlang
+1> lib_misc:deliberate_error("file.erl").
+** exception error: no match of right hand side value {error,badarg}
+     in function  lib_misc:bad_function/2 (lib_misc.erl:190)
+     in call from lib_misc:deliberate_error/1 (lib_misc.erl:186)
+```
+
+当我们调用 `lib_misc:deliberate_error("file.erl")` 时，一个报错出现了，同时系统打印了一条后跟一个堆栈跟踪的报错消息。该错误消息如下：
+
+```erlang
+** exception error: no match of right hand side value {error,badarg}
+```
+
+这来自下面这行：
+
+```erlang
+{{#include ../../projects/ch21-code/lib_misc.erl:190}}
+```
+
+调用 `file:open/2` 返回了 `{error, badarg}`。这是因为 `{abc,123}` 不是 `file:open` 的一个有效输入值。当我们尝试将返回值与 `{ok, Bin}` 匹配时，我们就会得到一个 `badmatch` 的错误，而运行时系统就会打印 `** exception error... {error, badarg}`。
+
+错误信息之后是个栈跟踪。栈跟踪会以该错误发生处的函数名字开始。随后是个函数名字清单，以及当前函数完成时，将返回到函数的模组名字和行号。因此，错误发生在 `lib_misc:bad_function/2`，其将返回到 `lib_misc:deliberate_error/1`，以此类推。
+
+
+请注意，只有栈跟踪中的那些顶部条目，才是真正感兴趣的。当对错误函数的调用序列，涉及某个尾调用时，那么该调用将不在栈跟踪中。例如，当我们将函数 `deliberate_error1` 定义为下面这样时：
+
+
+```erlang
+{{#include ../../projects/ch21-code/lib_misc.erl:194:195}}
+```
+
+那么当我们调用这个函数，并得到一个错误时，函数 `deliberate_error1` 就将不出现在栈追踪里。
+
+
+```erlang
+2> lib_misc:deliberate_error1("bad.erl").
+** exception error: no match of right hand side value {error,badarg}
+     in function  lib_misc:bad_function/2 (lib_misc.erl:191)
+```
+
+到 `deliberate_error1` 的调用不在跟踪中，是因为 `bad_function` 是作为 `deliberate_error1` 中的最后一条语句被调用的，当他完成时将不返回到 `deliberate_error1`，而会返回 `deliberate_error1` 的调用者。
+
+
+（这是一种 *最后调用* 优化的结果；当某个函数中最后被执行的是个函数调用时，那么该调用实际上会被一次跳转取代。在没有这项优化下，我们用来编码消息接收循环的 *无限循环* 编程方式，就会不工作。然而，由于这项优化，在调用栈上的那个调用函数，实际上就被那个被调用函数取代了，而因此在栈跟踪中成为不可见。）
+
+
+## 调试技巧
+
+调试 Erlang 非常容易。这可能会惊讶到咱们，但这正是采用单赋值变量的结果。由于 Erlang 没有指针，没有可变状态（ETS 数据表和进程字典除外），找出出错的地方就很少成为问题。一旦我们发现某个变量有着不正确的值，找出问题发生的时间和地点就会相对容易。
+
+
+我（作者）发现调试器，是我编写 C 程序时非常有用的工具，因为我可以让他监视变量，并在变量的值发生变化时告诉我。这点通常很重要，因为 C 中的内存，可通过指针间接改变。要明白某块内存的修改来自 *何处* 可能很难。在 Erlang 中，我（作者）不觉得同样需要个调试器，因为我们不能经由指针，修改状态。
+
+Erlang 程序员会使用各种调试程序的技巧。到目前为止，最常见技术就是仅仅添加一些打印语句到不正确的程序。当咱们感兴趣的数据结构变得非常庞大时，这种技巧就会失效，在这种情况下，他们可被转储到某个文件，用于随后的检查。
+
+
+有些人会使用错误日志，保存错误消息，别的人则会将错误日志写入文件。这样做行不通时，我们可使用 Erlang 的调试器，或追踪程序的执行。我们来分别看看这两种技巧。
+
+
+### `io:format` 的调试
+
+
+
+
+Debugging Erlang is pretty easy. That might surprise you, but this is a consequence of having single-assignment variables. Since Erlang has no pointers and no mutable state (with the exception of ETS tables and process dictionaries), finding out where things have gone wrong is rarely a problem. Once we have observed that a variable has an incorrect value, it’s relatively easy to find out when and where this happened.
 
 ### 转储到文件

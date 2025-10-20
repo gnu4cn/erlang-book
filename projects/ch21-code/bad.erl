@@ -1,5 +1,4 @@
 -module(bad).
 
-foo(A, B) ->
-    bar(A, dothis(X), B),
-    baz(Y, X).
+foo(X, L) ->
+    lists:map(fun(X) -> 2*X end, L).
