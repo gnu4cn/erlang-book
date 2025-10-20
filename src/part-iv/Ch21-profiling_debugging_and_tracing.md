@@ -462,7 +462,7 @@ loop(...) ->
 我（作者）经常会用到一个宏 `NYI`（not yet implemented，尚未实现的），我将其定义为如下：
 
 
-```
+```erlang
 {{#include ../../projects/ch21-code/lib_misc.erl:198:201}}
 ```
 
@@ -577,7 +577,168 @@ true
     这里咱们可找到 shell 下可用的一些调试器命令。
 
 
+## 追踪消息与进程执行
+
+咱们可以一种特殊方式，在无需编译代码下追踪某个进程。追踪某个进程（或多个进程），提供了一种了解咱们系统行为方式的强大方法，而可用于在无需修改代码下，测试复杂系统。在嵌入式系统中，或咱们无法修改被测代码的场合，这尤其有用。
+
+在底层，我们可通过调用一些 Erlang 的 BIFs，设置一个跟踪。使用这些 BIFs 设置一些复杂跟踪会比较困难，因此多个库就被设计出来使这项任务更为容易。
 
 
+我们将以用于追踪的那些底层 Erlang BIFs，并看看如何设置一个简单的跟踪器；然后我们将看看可提供到这些跟踪 BIFs 的高层接口的一些库。
 
 
+对于底层的追踪，有两个 BIFs 特别重要。`erlang:trace/3` 基本上是说：“我打算监控这个进程，所以当有趣的事情发生时，请给发送给我一条消息。” 而 `erlang:trace_pattern` 则定义了什么是 “有趣的” 事情。
+
+
+- `erlang:trace(PidSpec, How, FlagList)`
+
+    这会启动一次跟踪。其中 `PidSpec` 告诉系统要跟踪什么。`How` 是个可打开或关闭跟踪的布尔值。`FlagList` 规定了要跟踪的内容（例如，我们可跟踪全部函数调用、所有发送的消息、垃圾回收与何时发生等等）。
+
+    一旦我们已调用 `erlang:trace/3`，那么在跟踪的事件发生时，调用这个 BIF 的进程即会被发送跟踪消息。跟踪事件本身，是由调用 `erlang:trace_pattern/3` 决定的；
+
+
+- `erlang:trace_pattern(MFA, MatchSpec, FlagList)`
+
+    这个 BIF 用于设置 *跟踪模式*。当该模式匹配时，所请求的操作就会被执行。这里的 `MFA` 是个 `{Module, Function, Args}` 元组，表示跟踪模式所适用的代码。`MatchSpec` 是个每次输入 `MFA` 所指定函数时，都会测试的模式，而 `FlagList` 则说明了在跟踪条件满足时，要执行的操作。
+
+
+编写 `MatchSpec` 的匹配规范较为复杂，且并不能真正加深我们对跟踪的理解。幸运的是，[一些库](https://www.erlang.org/doc/apps/stdlib/ms_transform.html) 让这一步变得更为容易了。
+
+
+使用前面的两个 BIFs，我们可编写一个简单的跟踪器。`trace_module(Mod, Fun)` 会在模组 `Mod` 上建立跟踪，然后执行 `Fun()`。我们打算跟踪 `Mod` 模组中的所有函数调用与返回值。
+
+
+```erlang
+{{#include ../../projects/ch21-code/tracer_test.erl:5:49}}
+```
+
+现在我们如下定义一个测试用例：
+
+
+```erlang
+{{#include ../../projects/ch21-code/tracer_test.erl:52:57}}
+```
+
+
+然后我们就可以追踪咱们的代码。
+
+
+```erlang
+1> c(tracer_test).
+{ok,tracer_test}
+2> tracer_test:test2().
+<0.92.0>
+Call: {tracer_test,'-trace_module1/2-fun-0-',
+                   [#Fun<tracer_test.2.47654391>,<0.92.0>]}
+Call: {tracer_test,do_trace,[<0.92.0>,#Fun<tracer_test.2.47654391>]}
+Call: {tracer_test,'-test2/0-fun-0-',[]}
+Call: {tracer_test,fib,[4]}
+Call: {tracer_test,fib,[3]}
+Call: {tracer_test,fib,[2]}
+Call: {tracer_test,fib,[1]}
+Return From: {tracer_test,fib,1} => 1
+Call: {tracer_test,fib,[0]}
+Return From: {tracer_test,fib,1} => 1
+Return From: {tracer_test,fib,1} => 2
+Call: {tracer_test,fib,[1]}
+Return From: {tracer_test,fib,1} => 1
+Return From: {tracer_test,fib,1} => 3
+Call: {tracer_test,fib,[2]}
+Call: {tracer_test,fib,[1]}
+Return From: {tracer_test,fib,1} => 1
+Call: {tracer_test,fib,[0]}
+Return From: {tracer_test,fib,1} => 1
+Return From: {tracer_test,fib,1} => 2
+Return From: {tracer_test,fib,1} => 5
+Return From: {tracer_test,'-test2/0-fun-0-',0} => 5
+Return From: {tracer_test,do_trace,2} => 5
+Return From: {tracer_test,'-trace_module1/2-fun-0-',2} => 5
+Other = {trace,<0.94.0>,exit,normal}
+```
+
+跟踪器的输出可以非常精细，并对了解程序的动态行为非常有价值。阅读代码会给到我们系统的一种静态图景。而观察信息流，则会给到我们系统动态行为的一种视图。
+
+
+### 使用追踪库
+
+
+我们可使用库模组 `dbg` 执行与上面相同的跟踪。这样做就隐藏了两个底层 Erlang BIFs 的全部细节。
+
+
+```erlang
+{{#include ../../projects/ch21-code/tracer_test.erl:59:64}}
+```
+
+运行这个测试用例，我们会得到以下输出：
+
+
+```erlang
+1> tracer_test:test1().
+(<0.85.0>) call tracer_test:fib(4)
+(<0.85.0>) call tracer_test:fib(3)
+(<0.85.0>) call tracer_test:fib(2)
+(<0.85.0>) call tracer_test:fib(1)
+(<0.85.0>) returned from tracer_test:fib/1 -> 1
+(<0.85.0>) call tracer_test:fib(0)
+(<0.85.0>) returned from tracer_test:fib/1 -> 1
+(<0.85.0>) returned from tracer_test:fib/1 -> 2
+(<0.85.0>) call tracer_test:fib(1)
+(<0.85.0>) returned from tracer_test:fib/1 -> 1
+(<0.85.0>) returned from tracer_test:fib/1 -> 3
+(<0.85.0>) call tracer_test:fib(2)
+(<0.85.0>) call tracer_test:fib(1)
+(<0.85.0>) returned from tracer_test:fib/1 -> 1
+(<0.85.0>) call tracer_test:fib(0)
+(<0.85.0>) returned from tracer_test:fib/1 -> 1
+(<0.85.0>) returned from tracer_test:fib/1 -> 2
+(<0.85.0>) returned from tracer_test:fib/1 -> 5
+5
+```
+
+
+这达到了与上一小节的同样目的，但是以库代码而不是使用那两个跟踪的 BIFs。要实现精细控制，咱们可能会想要使用两个跟踪 BIFs，编写咱们自己定制跟踪代码。而对于一些快速实验，库代码就足够了。
+
+要了解有关跟踪的更多信息，咱们需要阅读以下模组的三个手册页面：
+
+- [`dbg`](https://www.erlang.org/docs/22/man/dbg) 提供了到两个 Erlang 跟踪 BIFs 的简化接口；
+- [`ttb`](https://www.erlang.org/docs/19/man/ttb) 是另一个到跟踪 BIFs 的接口。他比 `dbg` 更为高级；
+- [`ms_transform`](https://www.erlang.org/doc/apps/stdlib/ms_transform.html) 构造了跟踪软件中使用的匹配规范。
+
+
+### 测试 Erlang 代码的一些框架
+
+对于一些复杂项目，咱们将想要建立某种测试框架，并将其集成到咱们的构建系统。以下是两种咱们或许想要调研的框架：
+
+- *通用测试框架*
+
+    通用测试框架，the Common Test Framework, CTF，是 Erlang/OTP 发行版的一部分。他提供了一套自动化测试的完整工具。通用测试框架被用于测试 Erlang 发行版本身，以及许多爱立信的产品；
+
+- *基于属性的测试*
+
+    基于属性的测试，property-based testing，是种找出咱们代码中难以发现错误的相对较新，非常好的技术。与其编写测试用例，我们只要以谓词逻辑的形式，描述系统的一些属性即可。测试工具会随机生成一些与系统属性一致的测试用例，并检查这些属性是否被违反。
+
+    目前有两种测试 Erlang 程序的基于属性测试工具：由 [一家名为 Quviq 的瑞典公司](https://www.quviq.com/) 提供的商业程序 QuickCheck，和受 QuickCheck 启发而开发的 [`proper`](https://github.com/proper-testing/proper)。
+
+
+祝贺，现在咱们了解了顺序和并发程序编程、文件与套接字、数据存储及数据库，以及咱们程序的调试和测试。
+
+
+在下一章中，我们会改变思路。我们将讨论开放电信平台，Open Telecom Platform, OTP。这是个反映了 Erlang 历史的奇怪名字。OTP 是个应用框架，或者说是一套编程模式，简化了容错的分布式系统代码的编写。他已在大量应用中被实战测试过，因此他给咱们自己的项目，提供了一个良好起点。
+
+
+## 练习
+
+1. 创建个新的目录，并将标准库模组 `dict.erl` 复制到该目录下。将一个错误添加到 `dict.erl`，从而当某个特定代码行被执行时其将崩溃。请编译这个模组；
+
+
+2. 现在我们有个损坏的 `dict` 模组，但我们可能还不 *知道* 他是损坏的，所以我们需要引发一个错误。请编写个以各种方式调用 `dict` 的简单测试模组，看看咱们能否让 `dict` 崩溃；
+
+3. 请使用覆盖率分析器，检查 `dict` 中每行代码的执行次数。将更多测试用例，添加到咱们的测试模组，检查咱们是否覆盖了 `dict` 中的所有代码行。目标是确保 `dict` 中的每行代码都会被执行。一旦咱们知道哪行代码未被执行，要逆向找出测试用例中，哪写代码行会导致某个特定代码行被执行，通常就是个轻松任务了；
+
+    请继续这样做，直到崩溃掉程序为止。这种情况迟早会发生，因为当每个行代码行都被覆盖到时，咱们就将触发了错误；
+
+
+4. 现在我们有了个错误。要假装咱们不知道该错误位于何处。请使用本章中的技巧，找出这个错误。
+
+    当咱们不知道错误位于何处时，这个练习效果会更好。让咱们的一位朋友破坏咱们的几个模组。在这些模组上运行尝试引发错误的覆盖率测试。一旦咱们引发错误，请使用调试技术，找出错误所在。
+Use the coverage analyzer to check how many times each line in dict has been executed. Add more test cases to your test module, checking to see that you are covering all the lines of code in dict. The goal is to make sure that every line of code in dict is executed. Once you know which lines are not being executed, it’s often an easy task to work backward and figure out which lines of code in the test cases would cause a particular line of code to be executed.
