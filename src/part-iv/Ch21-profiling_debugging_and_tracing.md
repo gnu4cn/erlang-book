@@ -741,4 +741,3 @@ Other = {trace,<0.94.0>,exit,normal}
 4. 现在我们有了个错误。要假装咱们不知道该错误位于何处。请使用本章中的技巧，找出这个错误。
 
     当咱们不知道错误位于何处时，这个练习效果会更好。让咱们的一位朋友破坏咱们的几个模组。在这些模组上运行尝试引发错误的覆盖率测试。一旦咱们引发错误，请使用调试技术，找出错误所在。
-Use the coverage analyzer to check how many times each line in dict has been executed. Add more test cases to your test module, checking to see that you are covering all the lines of code in dict. The goal is to make sure that every line of code in dict is executed. Once you know which lines are not being executed, it’s often an easy task to work backward and figure out which lines of code in the test cases would cause a particular line of code to be executed.
