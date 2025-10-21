@@ -226,10 +226,9 @@ ack
 >
 > 几年前，当我开始从而研究工作时，我正在 PlanetLab 下工作。我可以访问 PlanetLab 网络（一个全球研究网络 [planet-lab.org](https://planetlab.cs.princeton.edu/)），因此我在 PlanetLab 的所有机器（大约 450 台）上安装了 “空的” Erlang 服务器。我并不知道要在这些机器上做些什么，所以我只是建立了服务器基础架构，以便以后做些事情。
 >
-> 一旦我让这层运行起来，向这些空服务器发送信息，让他们成为一些真正的服务器就很容易了。
+> 一旦我让这层运行了起来，那么向这些空服务器发送信息，让他们成为一些真正的服务器就很容易。
 >
 > 通常做法是启动（例如）一个 web 服务器，然后安装一些 web 服务器插件。我的做法是后退一步，而安装一个空服务器。后期插件会将该空服务器，变成一个 web 服务器。当我们用完该 web 服务器后，我们可能会让其变成别的东西。
 
 
 
-As you can see from the previous examples, we can make a range of different types of servers, with different semantics and some quite surprising properties. This technique is almost too powerful. Used to its full potential, it can yield small programs of quite surprising power and beauty. When we make industrial-scale projects with dozens to hundreds of programmers involved, we might not actually want things to be too dynamic. We have to try to strike a balance between having something general and powerful and having something that is useful for commercial products. Having code that can morph into new versions while it runs is beautiful but terrible to debug if something goes wrong later. If we have made dozens of dynamic changes to our code and it then crashes, finding out exactly what went wrong is not easy.
