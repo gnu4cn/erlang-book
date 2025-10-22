@@ -56,6 +56,24 @@ RegProcName ! {event, E}
 {{#include ../../projects/ch23-code/event_handler.erl}}
 ```
 
+这个事件处理器 API 如下：
+
+- `event_handler:make(Name)`
+
+    构造一个名为 `Name`（一个原子）的 “什么都不做” 的事件处理器。这会提供一个往其发送事件之处；
+
+
+- `event_handler:event(Name, X)`
+
+    将事件 `X` 发送到名为 `Name` 的事件处理器；
+
+
+- `event_handler:add_handler(Name, Fun)`
+
+    将一个处理器 `Fun` 添加到叫做 `Name` 的事件处理器。现在，当某个事件 `X` 发生时，这个事件处理器将执行 `Fun(X)`。
+
+
+现在，我们将创建一个事件处理器，并产生一个错误。
 
 ## 错误记录器
 
