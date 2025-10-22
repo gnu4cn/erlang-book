@@ -290,7 +290,7 @@ Erlang 的 `gen_server` 模组，便是一系列逐渐复杂服务器（就像�
 
 
 ```erlang
-{{#include ../../projects/ch22-code/my_bank.erl:7:12}}
+{{#include ../../projects/ch22-code/my_bank.erl:10:15}}
 ```
 
 其中 `gen_server:start_link({local, Name}, Mod, ...)` 会启动一个 *本地* 服务器。当第一个参数是原子 `global` 时，他将启动一个可在 Erlang 节点集群上访问的全局服务器。`start_link` 的第二个参数为 `Mod`，即回调模组的名字。宏 `?MODULE` 会展开为该模组的名字 `my_bank`。我们将暂时忽略 `gen_server:start_link` 的其他参数。
@@ -322,4 +322,225 @@ Erlang 的 `gen_server` 模组，便是一系列逐渐复杂服务器（就像�
 
 *提示*：当咱们正使用 Emacs 时，那么只需敲几下键盘就能拉取到一个 `gen_server` 模板。当咱们在 Erlang 模式下编辑时，那么 `Erlang > Skeletons` 菜单会提供一个创建 `gen_server` 模板的选项卡。当咱们没有 Emacs 时，也不必惊慌。我（作者）已在本章末尾附上了这个模板。
 
+我们将以这个模板开始，对其稍加编辑。我们必须要做的，只是让那些接口例程中的参数，与这个模板中的参数达成一致。
 
+
+其中最重要的是 `handle_call/3` 这个函数。我们必须编写出与那些接口例程中定义的三个查询项匹配的代码。也就是说，我们必须填入下面的这些点：
+
+
+```erlang
+handle_call({new, Who}, From, State) ->
+    Reply  = ...
+    State1 = ...
+    {reply, Reply, State1};
+handle_call({add, Who, Amount}, From, State) ->
+    Reply  = ...
+    State1 = ...
+    {reply, Reply, State1};
+handle_call({remove, Who, Amount}, From, State) ->
+    Reply  = ...
+    State1 = ...
+    {reply, Reply, State1};
+```
+
+这段代码中 `Reply` 的值，将作为远程过程调用的返回值发送回客户端。
+
+而 `State` 只是个表示服务器全局状态，会在服务器中传递的变量。在我们的银行模组中，状态永不会改变；他只是个恒定的 ETS 数据表索引（尽管该数据表的内容会改变）。
+
+
+当我们填入模板并稍作编辑后，我们会得到以下代码：
+
+
+```erlang
+{{#include ../../projects/ch22-code/my_bank.erl:18:54}}
+```
+
+
+通过调用 `gen_server:start_link(Name,CallBackMod,StartArgs,Opts)`，我们启动了服务器；然后回调模组中第一个被调用的例程为 `Mod:init(StartArgs)`，其必须返回 `{ok, State}`。`State` 的值会作为 `handle_call` 中的第三个参数，重新出现。
+
+请注意我们停止服务器的方式。停止服务器的 `handle_call(stop, From, Tab)` 函数，会返回 `{stop, normal, stopped, Tab}`。其中第二个参数（`normal`），会被用作 `my_bank:terminate/2` 的第一个参数。第三个参数（`stoped`）会成为 `my_bank:stop()` 的返回值。
+
+
+就这样，我们完成了。那么我们去一趟这家银行吧。
+
+```erlang
+1> my_bank:start().
+{ok,<0.87.0>}
+2> my_bank:deposit("joe", 10).
+not_a_customer
+3> my_bank:new_account("joe").
+{welcome,"joe"}
+4> my_bank:deposit("joe",10).
+{thanks,"joe",your_balance_is,10}
+5> my_bank:deposit("joe",30).
+{thanks,"joe",your_balance_is,40}
+6> my_bank:withdraw("joe",15).
+{thanks,"joe",your_balance_is,25}
+7> my_bank:withdraw("joe",45).
+{sorry,"joe",you_only_have,25,in_the_bank}
+```
+
+## `gen_server` 回调的结构
+
+既然我们已经掌握了这个概念，我们将更加详细地了解一下，`gen_server` 的回调结构。
+
+
+### 启动服务器
+
+`gen_server:start_link(Name,Mod,InitArgs,Opts)` 这个调用，会启动一切。他会创建一个名为 `Name` 的通用服务器。回调模组为 `Mod`。`Opts` 会控制这个通用服务器的行为。我们可在这里指定消息日志、调试函数等。通用服务器会以 `Mod:init(InitArgs)` 启动。
+
+`init` 的模板条目，在 [图 2，*`init` 模板条目*](#fig-2) 中给出（完整模板可在 [A1.1 小节，*通用服务器模板*](../appendix/ap01-otp_templates.md#通用服务器模板) 中找到）：
+
+在正常操作下，我们只返回 `{ok, State}`。有关其他参数的含义，请查阅 [`gen_server` 的手册页面](https://www.erlang.org/docs/24/man/gen_server)。
+
+```erlang
+{{#include ../../projects/ch22-code/fig_2.erl:1:13}}
+```
+
+<a name="fig-2"></a>
+**图 2** -- **`init` 的模板条目**
+
+
+当 `{ok, State}` 返回时，那么我们就成功启动了服务器，同时初始状态为 `State`。
+
+### 调用服务器
+
+要调用服务器，客户端程序就要调用 `gen_server:call(Name,Request)`。这导致回调模组中的 `handle_call/3` 被调用。
+
+`handle_call/3` 有着如下的模板条目：
+
+
+```erlang
+{{#include ../../projects/ch22-code/fig_2.erl:16:32}}
+```
+
+`Request`（`gen_server:call/2` 的第二个参数），会作为 `handle_call/3` 的第一个参数重新出现。`From` 是请求客户端进程的 PID，`State` 是客户端的当前状态（译注：不应该是服务器的当前状态吗？）。
+
+
+通常我们会返回 `{reply, Reply, NewState}`。当这种情况发生时，`Reply` 会返回客户端，成为 `gen_server:call` 的返回值。`NewState` 是服务器的下一状态。
+
+至于别的返回值，即 `{noreply, ..}` 与 `{stop, ..}`，他们用到的频率相对较低。`noreply` 会造成服务器继续运行，但客户端将等待某个回复，因此服务器将必须把回复这个任务，委托给别的进程。调用带有适当参数的 `stop` 将停止服务器。
+
+### 调用与播发
+
+**Calls and Casts**
+
+我们已经看到 `gen_server:call` 和 `handle_call` 之间的相互作用。这用于实现 *远程过程调用*。而 `gen_server:cast(Name,Msg)` 实现的则是没有返回值的调用（实际上只是条消息，但传统上其被称为播发，以区别于远程过程调用）。
+
+
+相应的回调例程是 `handle_cast`；模板条目如下：
+
+```erlang
+{{#include ../../projects/ch22-code/fig_2.erl:35:46}}
+```
+
+这个处理器通常只返回改变服务器状态的 `{noreply, NewState}`，或停止服务器的 `{stop, ...}`。
+
+
+
+### 到服务器的自发消息
+
+**Spontaneous Messages to the Server**
+
+回调函数 `handle_info(Info, State)` 用于处理到服务器的一些自发消息。所谓自发消息，是指到并未经由显式调用 `gen_server:call` 或 `gen_server:cast`，而到达服务器的任何消息。例如，当服务器被链接到另一进程，且正在捕获退出（信号），那么他可能会突然收到一条未预期的 `{'EXIT', Pid, What}` 消息。或者，系统中任何发现了该通用服务器 `PID` 的进程，都可以直接发送给他一条消息。像这样的任何信息，最终都会作为 `info` 的值到达服务器处。
+
+
+`handle_info` 的模板条目如下：
+
+```erlang
+{{#include ../../projects/ch22-code/fig_2.erl:48:59}}
+```
+
+
+返回值与 `handle_cast` 的相同。
+
+
+## 再见，宝贝
+
+**Hasta la Vista, Baby**
+
+服务器可能因多种原因终止。某个 `handle_Something` 例程可能返回 `{stop, Reason, NewState}`，或者服务器可能以 `{'EXIT', reason}` 崩溃。在所有这些情况下，无论他们如何发生，`terminate(Reason, NewState)` 都将被调用。下面是其模板：
+
+```erlang
+{{#include ../../projects/ch22-code/fig_2.erl:61:73}}
+```
+
+这段代码无法返回新状态，因为我们已经终止了。但是，在我们终止时，清楚服务器的状态是非常有用的；我们可以将该状态存储在磁盘上、在某条消息中将其发送给其他进程，或者根据应用丢弃。当咱们想要咱们的服务器在未来要重启时，咱们就将必须编写一个由 `terminate/2` 触发的 “我会回来的” 函数。
+
+
+## 代码变更
+
+咱们可在服务器运行时，动态更改其状态。当系统执行软件升级时，这个回调函数会被发布处理子系统调用。
+
+> *知识点*：
+>
+> - the release handling subsystem
+
+这个话题，在 [OTP 系统文档中的发布处理小节](https://www.erlang.org/doc/system/release_handling.html)，有详细说明。
+
+
+```erlang
+{{#include ../../projects/ch22-code/fig_2.erl:61:73}}
+```
+
+
+## 填充 `gen_server` 模板
+
+构造某个 OTP `gen_server`，主要是以咱们自己的一些代码，弹入样板模板。下面是个示例；`gen_server` 的各个小节，均已在上一小节中列出。`gen_server` 的模板本身已内置于 Emacs 中，但若咱们未使用 Emacs，则可在 [A1.1 小节 *通用服务器模板*](../appendix/ap01-otp_templates.md#通用服务器模板) 中找到整个模板。
+
+
+我（作者）已填写这个模板，来构造一个名为 `my_bank` 的银行模组。下面这段代码即派生自该模板。我（作者）已移除该模板中的全部注释，这样咱们就可以清楚地看到代码结构。
+
+
+```erlang
+{{#include ../../projects/ch22-code/my_bank.erl}}
+```
+
+## 深入挖掘
+
+
+`gen_server` 实际上相当简单。我们还没讲完 `gen_server` 中的 *所有* 接口函数，也没有讨论所有接口函数的所有参数。一旦咱们掌握了这些基本概念，咱们就可以在 [`gen_server` 的手册页面](https://www.erlang.org/docs/24/man/gen_server) 上查找详细信息。
+
+在这一章中，我们只介绍了使用 `gen_server` 的最简单方式，但这应足以满足大多数目的。更复杂的一些应用，通常会让 `gen_server` 回复以 `noreply` 的返回值，而将真正回复委派给另一进程。有关这种做法的信息，请阅读 [“设计原则”](https://erlang.org/documentation/doc-4.9.1/doc/design_principles/des_princ.html) 文档，以及 [`sys`](https://www.erlang.org/docs/18/man/sys) 和 [`proc_lib`](https://www.erlang.org/doc/apps/stdlib/proc_lib.html) 两个模组的手册页面。
+
+
+这一章介绍了将服务器行为，抽象为两个组件的概念：一个是可用于所有服务器的 *通用* 组件，以及另一可用于对该通用组件定制的 *特定* 组件（或称处理器）。这一概念的主要好处，是代码整齐地分为了两部分。通用组件负责了并发及错误处理的许多方面，而处理器有的只是些顺序代码。
+
+
+在此之后，我们介绍了 OTP 系统中的第一个大的行为，即 `gen_server`，并展示了他如何由一个相当简单易懂的服务器，在几个小的转换步骤后，建立了起来。
+
+
+`gen_server` 可用于许多目的，但他并非万金油。`gen_server` 的这种客户机-服务器交互模式，有时会让人感觉别扭，而并不会自然地适应咱们的问题。当这种种情况发生时，咱们应重新考虑构造 `gen_server` 所需的那些转换步骤，并根据咱们问题的具体需求，调整这些步骤。
+
+当我们从单个的服务器转向系统时，我们将需要多个服务器；我们会打算监视这些服务器、以一致方式重启失效服务器并记录出错。这是下一章的主题。
+
+## 练习
+
+在下面这些练习中，我们将以 `job_centre` 模组，构造一个服务器，该模组使用 `gen_server` 实现一项作业管理服务。作业中心会保存一个务必要完成的作业队列。这些作业都有编号。任何人都可将作业添加到这个队列。工作进程可请求该队列中的作业，并告诉作业中心某项作业已完成。这些作业以一些 fun 表示。要执行某项作业 `F`，工作进程必须执行函数 `F()`。
+
+
+1. 请使用以下接口，实现这个作业中心功能：
+
+    - `job_centre:start_link() -> true.`
+
+        启动作业中心；
+
+    - `job_centre:add_job(F) -> JobNumber.`
+
+        添加一项作业 `F` 到作业队列。返回一个整数的作业编号；
+
+    - `job_centre:work_wanted() -> {JobNumber,F} | no.`
+
+        请求工作。当某个工作进程想要一项作业时，他会调用 `job_centre:work_wanted()`。当队列中有作业时，一个元组 `{JobNumber, F}` 即被返回。工作进程经由执行 `F()` 执行这项作业。当队列中没有作业时，`no` 即被返回。要确保同一作业在同一时间不能分配给多个工作进程。要确保系统是公平的，即作业会按他们被请求的顺序分配。
+
+    - `job_centre:job_done(JobNumber)`
+
+        发出某项作业已完成的信号。当某个作业进程已完成某项作业时，他必须调用 `job_centre:job_done(JobNumber)`。
+
+2. 请添加一个报告队列中作业，与正在进行的作业及已经完成作业状态的统计调用 `job_centre:statistics()`；
+
+3. 请添加监视工作进程的代码。当某个工作进程死掉时，要确保其正执行的作业，会返回到等待完成的作业池；
+
+4. 请检查那些懒惰的工作进程；这是些会接受作业，但不按时交付的工作进程。请将工作请求函数，修改为返回 `{JobNumber, JobTime, F}`，其中 `JobTime` 是工作进程必须在该时间前，完成的以秒计的时间。在 `JobTime - 1` 时刻，当工作进程还未结束这项作业时，服务器应发送一条 `hurry_up` 消息到这个工作进程。在 `JobTime + 1` 时，服务器应以一个 `exit(Pid, youre_fired)`，杀死那个工作进程；
+
+5. 可选题：请实现一个监视工作进程权利的工会服务器。检查他们是否在未收到警告下即被解雇。提示：请使用进程追踪原语，完成这一功能。
