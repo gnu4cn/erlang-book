@@ -75,7 +75,163 @@ RegProcName ! {event, E}
 
 现在，我们将创建一个事件处理器，并产生一个错误。
 
-## 错误记录器
+```erlang
+1> event_handler:make(errors).
+true
+2> event_handler:event(errors, hi).
+{event,hi}
+```
+
+没有特别的事情发生，因为我们尚未将某个回调模组，安装在这个事件处理器中。
+
+要让事件处理器执行某个操作，我们必须编写一个回调模组，并将其安装在事件处理器中。下面是一个事件处理器回调模组的代码：
+
+
+```erlang
+{{#include ../../projects/ch23-code/motor_controller.erl}}
+```
+
+一旦这个程序已被编译，其就可被安装。
+
+```erlang
+3> c(motor_controller).
+{ok,motor_controller}
+4> motor_controller:add_event_handler().
+{add,#Fun<motor_controller.0.3498618>}
+```
+
+现在当我们将事件发送到处理器时，他们由 `motor_controller:controller/1` 这个函数处理。
+
+
+```erlang
+5> event_handler:event(errors, cool).
+motor_controller ignored event: cool
+{event,cool}
+6> event_handler:event(errors, too_hot).
+Turn off the motor
+{event,too_hot}
+```
+
+这个练习有双重意义。首先，我们提供了要将事件发往的（事件处理器）名字；这便是那个名为 `errors` 的注册进程。然后，我们定义了将事件发送到这个注册进程的协议。但我们并未指定在消息到达时，会发生什么。事实上，所发生的只是我们执行 `no_Op(X)`。随后在稍后阶段，我们安装了个自定义事件处理器。此操作在本质上解耦了事件生成与事件处理，进而我们可在稍后阶段，在不影响事件生成下，决定咱们打算要如何处理事件。
+
+需要注意的关键，是事件处理器提供了一种，我们可在其中安装自定义处理器的基础设施。
+
+错误日志记录器这一基础设施，就遵循事件处理器这种模式。我们可将不同处理器，安装在错误记录器中，让其完成不同的事情。警报处理的基础设施，同样遵循了这种模式。
+
+
+## 错误日志记录器
+
+OTP 系统带有一个可定制的错误日志记录器。我们可从三个角度，讨论这个错误日志记录器。
+
+- 从 *程序员视角*，会关注那些他们为记录错误，而在代码中调用的一些函数；
+- 从 *配置角度*， 关注的是错误日志记录器存储其数据的位置及方式；
+- 从 *报告角度*，关注的是错误发生后的分析。
+
+我们将依次讨论这些方面。
+
+> **“改变主意”下的极其延后绑定**
+>
+> **Very Late Binding with "Change Your Mind"**
+>
+> 设想我们编写对程序员隐藏了 `event_handler:event` 例程的函数。比方说我们写了下面这个：
+>
+> ```erlang
+> {{#include ../../projects/ch23-code/lib_misc.erl:207:208}}
+> ```
+>
+> 然后我们告诉程序员，当出现问题时，就在代码中调用 `lib_misc:too_hot()`。在大多数编程语言中，对函数 `too_hot` 的调用，将是静态地，或被动态链接到调用这个函数代码。而一旦其被链接，那么他将依据代码，执行某项固定作业。当我们稍后改变了主意，决定了我们打算完成其他事情时，我们就没有改变系统行为的简单办法了。
+>
+> Erlang 的事件处理方式完全不同。他允许我们将事件产生与事件处理解耦。仅仅通过发送一个新的处理器函数到事件处理器，我们就可以随时更改事件处理。其中没有静态链接的代码，同时事件处理器可在需要时更改。
+>
+> 运用这种机制，我们可以构建 *与时俱进*，无需停止即可升级代码的系统。
+>
+> *注意*：这不是 “延迟绑定” -- 而是 “极其延迟绑定，进而咱们可在稍后改变主意”。
+>
+> **译注**：关于延迟绑定，又叫后期绑定或动态绑定，是一种函数或方法调用在运行时，而不是编译时被解析出的编程机制。
+>
+> 参考：[Wikipedia: Late binding](https://en.wikipedia.org/wiki/Late_binding)
+
+
+
+### 记录错误
+
+就程序员而言，错误日志记录器的 API 非常简单。下面是该 API 的一个简单子集：
+
+- `-spec error_logger:error_msg(String) -> ok`
+
+    发送一条错误消息到错误日志记录器。
+
+    ```erlang
+    > error_logger:error_msg("An error has occured\n").
+    =ERROR REPORT==== 23-Oct-2025::14:29:12.400578 ===
+    An error has occured
+
+    ok
+    ```
+
+- `-spec error_logger:error_msg(Format, Data) -> ok`
+
+    发送一条错误消息到错误日志记录器。其中参数与 `io:format(Format, Data)` 相同。
+
+    ```erlang
+    2> error_logger:error_msg("~s, an error has occured\n", ["Joe"]).
+    =ERROR REPORT==== 23-Oct-2025::14:31:25.390561 ===
+    Joe, an error has occured
+
+    ok
+    ```
+
+- `-spec error_logger:error_report(Report) -> ok`
+
+    发送一条标准错误报告，到错误日志记录器。
+
+    - `-type Report = [{Tag, Data} | term() | string() ].`
+    - `-type Tag = term().`
+    - `-type Data = term().`
+
+    ```erlang
+    4> error_logger:error_report([{tag1, data1},a_term,{tag2,data}]).
+    =ERROR REPORT==== 23-Oct-2025::14:35:38.744734 ===
+        tag1: data1
+        a_term
+        tag2: data
+    ok
+    ```
+
+
+这只是可用 API 的一个子集。详细讨论这一 API 并不特别有趣。反正在咱们的程序中，我只将使用 `error_msg`。全部细节位于 [`error_logger` 的手册页面](https://www.erlang.org/docs/19/man/error_logger)。
+
+
+### 配置错误日志记录器
+
+我们可以多种方式，配置错误日志记录器。我们可以在 Erlang shell 下，查看所有报错（这是在我们未做任何特殊设置时的默认设置）。我们可以所有报告于 shell 下的错误，写入单一的格式化文本文件。最后，我们可创建一个 *滚动日志*。咱们可把滚动日志，当作一个包含着由错误日志记录器所产生消息的大型循环缓冲区。当新信息到来时，他们会被追加到日志末尾，当日志充满时，日志中最早的那些条目会被删除。
+
+
+滚动日志非常有用。咱们要确定日志应占用多少个文件，以及每个单独日志文件的大小，而系统就会在一个大型循环缓冲区下，负责删除旧日志文件并创建出新文件。咱们可将日志设置为保存最近几天操作记录的大小，对于大多数目的这通常就足够了。
+
+
+- **标准错误日志记录器**
+
+当我们启动 Erlang 时，我们可以给系统一个 *启动参数*。
+
+- `$ erl -boot start_clean`
+
+    这会创建一个适合程序开发的环境。只提供简单的错误日志记录。(不带引导参数的 `erl` 命令，即等同于 `erl -boot start_clean`）；
+
+- `$ erl -boot start_sasl`
+
+    这会创建一个适合运行生产系统的环境。系统架构支持库，System Architecture Support Libraries, SASL，会负责错误日志记录、过载保护等等。
+
+日志文件的配置，最好在配置文件中完成，因为无人能记住日志记录器的所有参数。在一下小节中，我们将介绍默认系统的工作方式，然后介绍四种会改变错误日志记录器工作方式的特定配置。
+
+- **无配置下的 SASL**
+
+- **控制哪些会被记录**
+- **文本文件与 Shell**
+- **滚动日志与 Shell**
+- **生产环境**
+
+### 分析错误
 
 ## 监督树
 
