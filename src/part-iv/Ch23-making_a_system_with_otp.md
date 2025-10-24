@@ -6,7 +6,7 @@
 
 在我们构建这个系统时，我们必须要考虑错误。即使我们已全面测试了我们的软件，我们可能也未曾捕捉到所有 bugs。我们将假设咱们的一个服务器有着会崩溃掉服务器的致命错误。事实上，我们将引入一个将导致服务器崩溃的 *故意错误* 到咱们的一个服务器中。
 
-当该服务器崩溃时，我们将需要某种检测其已崩溃并重启他的机制。为此，我们将运用 *监督树* 的概念。我们将创建一个监控我们服务器，并在服务器崩溃时重启他们的监控器进程。
+当该服务器崩溃时，我们将需要某种检测其已崩溃并重启他的机制。为此，我们将运用 *监控树* 的概念。我们将创建一个监控我们服务器，并在服务器崩溃时重启他们的监控器进程。
 
 
 当然，当某个服务器崩溃时，我们将希望知道其崩溃的原因，从而我们可在稍后解决该问题。为记录所有错误，我们将使用 OTP 的错误记录器。我们将展示怎样配置这个错误日志记录器，以及如何从错误日志生成错误报告。
@@ -19,7 +19,7 @@
 
 最后，当一切都工作了时，我们将把我们所有的代码，打包成一个 OTP *应用*。这是一种将与某个特定问题相关的所有内容，进行分组的专门方式，以便其可由 OTP 系统自身启动、停止与管理。
 
-由于不同领域间存在许多循环依赖，因此这些材料的呈现顺序会略显棘手。错误日志只是事件管理的一个特例。警报则只是一些事件，同时错误日志记录器又是个受监督的进程，而进程监督器又可以调用错误日志记录器。
+由于不同领域间存在许多循环依赖，因此这些材料的呈现顺序会略显棘手。错误日志只是事件管理的一个特例。警报则只是一些事件，同时错误日志记录器又是个受监控的进程，而进程监控器又可以调用错误日志记录器。
 
 我（作者）将在此尝试强行采取某种顺序，并以某种有意义顺序，呈现这些主题。我们将完成以下事情：
 
@@ -155,6 +155,12 @@ OTP 系统带有一个可定制的错误日志记录器。我们可从三个角�
 
 ### 记录错误
 
+> **译注**：自 Erlang/OTP 21.0 引入新的 [日志 API](https://www.erlang.org/doc/apps/kernel/logger_chapter) 后，本节描述的 SASL 错误日志概念已被弃用。
+>
+> 旧的 SASL 错误日志记录行为，可通过将内核的配置参数 `logger_sasl_compatible` 设为 `true`，而重新启用。
+>
+> 参考：[SASL Error Logging](https://www.erlang.org/doc/apps/sasl/error_logging.html)
+
 就程序员而言，错误日志记录器的 API 非常简单。下面是该 API 的一个简单子集：
 
 - `-spec error_logger:error_msg(String) -> ok`
@@ -226,16 +232,172 @@ OTP 系统带有一个可定制的错误日志记录器。我们可从三个角�
 
 **无配置下的 SASL**
 
+下面是在无配置文件下，我们启动 SASL 时发生的情况：
+
+
+```erlang
+$ erl -boot start_sasl
+Erlang/OTP 28 [erts-16.0.3] [source] [64-bit] [smp:12:12] [ds:12:12:10] [async-threads:1] [jit:ns]
+
+Eshell V16.0.3 (press Ctrl+G to abort, type help(). for help)
+1>
+```
+
+> **译注**：译者在 Erlang/OTP 28 下以 `start_sasl` 参数启动 Erlang shell 时，已没有显示原著中的 `=PROGRESS REPORT===...` 输出。
+
+现在，我们将调用 `error_logger` 中的一个例程，报告一个错误。
+
+
+```erlang
+1> error_logger:error_msg("This is an error\n").
+=ERROR REPORT==== 24-Oct-2025::14:04:58.495506 ===
+This is an error
+
+ok
+```
+
+请注意这个错误被报告在 Erlang shell 下。错误于何处报告，取决于错误日志记录器的配置。
+
+
 **控制哪些会被记录**
+
+错误日志记录器，会生成数种类型的报告。
+
+- *监控器报告*
+
+    Supervisor reports. 每当某个 OTP 监控程序启动或停止某个受监控进程时，就会发出这类报告（我们将在 [23.5 小节 *监控树*](#监控树) 中讨论监控器）；
+
+- *进程报告*
+
+    每当某个 OTP 监控器启动或停止时，就会发出这类报告；
+
+- *崩溃报告*
+
+    当某个由一项 OTP 行为启动的进程，以除 `normal` 或 `shutdown` 外别的退出原因终止时，就会发出这类报告。
+
+
+这三个报告都是自动生成的，无需程序员务必执行任何操作。
+
+
+此外，我们可显式调用 `error_logger` 模组中的例程，生成三种类型的日志报告。这些日志报告让我们记录错误、告警及信息性消息。这三个术语并无语义上的意义；他们只是被程序员用于表示错误日志中，条目性质的一些标签。
+
+
+稍后，析错误日志被分析时，我们可使用这些标签，帮助我们决定要调查哪个日志条目。在我们配置错误日志记录器时，我们可选择只保存错误，而丢弃所有其他类型的条目。现在，我们将编写配置文件 `elog1.config`，来配置错误日志记录器。
+
+
+```erlang
+{{#include ../../projects/ch23-code/elog1.config}}
+```
+
+当我们以这个配置文件启动系统，我们就将只收到错误报告，而不会收到进程报告等。所有这些错误报告，都只会在 shell 下。
+
+
+```erlang
+$ erl -boot start_sasl -config elog1
+Erlang/OTP 28 [erts-16.0.3] [source] [64-bit] [smp:12:12] [ds:12:12:10] [async-threads:1] [jit:ns]
+
+Eshell V16.0.3 (press Ctrl+G to abort, type help(). for help)
+1> error_logger:error_msg("This is an error\n").
+=ERROR REPORT==== 24-Oct-2025::15:40:01.439357 ===
+This is an error
+
+ok
+```
 
 **文本文件与 Shell**
 
+
+下一个配置文件，会在 shell 下列出错误报告，而所有进程报告都会保存在一个文件中。
+
+```erlang
+{{#include ../../projects/ch23-code/elog2.config}}
+```
+
+要测试这个配置文件，我们要启动 Erlang，生成一条错误信息，然后查看这个日志文件。
+
+
+```erlang
+$ erl -boot start_sasl -config elog2
+Erlang/OTP 28 [erts-16.0.3] [source] [64-bit] [smp:12:12] [ds:12:12:10] [async-threads:1] [jit:ns]
+
+Eshell V16.0.3 (press Ctrl+G to abort, type help(). for help)
+1> error_logger:error_msg("This is an error\n").
+=ERROR REPORT==== 24-Oct-2025::15:45:50.436715 ===
+This is an error
+
+ok
+```
+
+现在当我们查看 `/home/hector/error_logs/THELOG` 时，我们将发现其如这样开始：
+
+
+```log
+=PROGRESS REPORT==== 24-Oct-2025::16:30:26.839997 ===
+    supervisor: {local,sasl_safe_sup}
+    started: [{pid,<0.91.0>},
+              {id,alarm_handler},
+              {mfargs,{alarm_handler,start_link,[]}},
+              {restart_type,permanent},
+              {significant,false},
+              {shutdown,2000},
+              {child_type,worker}]
+...
+```
+
+这只会列出进程报告，不然他们就会出现在 shell 下。进程报告属于一些重大事件，诸如启动与停止应用。但由 `error_logger:error_msg/1` 报告的错误，就不会保存在日志中。为此，我们必须配置某个滚动日志。
+
 **滚动日志与 Shell**
+
+
+下面的配置文件，会给到我们shell 输出，以及在某个滚动日志文件中写入的，所有内容的一份拷贝。
+
+
+```erlang
+{{#include ../../projects/ch23-code/elog3.config}}
+```
+
+
+```erlang
+$ erl -boot start_sasl -config elog3
+Erlang/OTP 28 [erts-16.0.3] [source] [64-bit] [smp:12:12] [ds:12:12:10] [async-threads:1] [jit:ns]
+
+Eshell V16.0.3 (press Ctrl+G to abort, type help(). for help)
+1> error_logger:error_msg("This is a error\n").
+=ERROR REPORT==== 24-Oct-2025::16:45:21.992913 ===
+This is a error
+
+ok
+```
+
+日志有着 10MB 的最大大小，并会在达到 10MB 时，日志会缠绕或 “滚动”。正如咱们能想到的，这是一种非常有用的配置。
+
+当我们运行系统时，所有错误都会进到一个滚动错误日志。本章稍后我们将了解，如何提取该日志中的错误。
+
+> **译注**：此时我们执行命令 `ll /home/hector/error_logs`，会看到该目录下多了两个文件。如下所示。
+>
+> ```console
+> $ ll /home/hector/error_logs
+> 总计 12K
+> -rw-r--r-- 1 hector hector 1.4K 10月24日 16:45 1
+> -rw-r--r-- 1 hector hector    1 10月24日 16:44 index
+> -rw-r--r-- 1 hector hector 1.2K 10月24日 16:30 THELOG
+> ```
+>
+> 其中 `1` 是个二进制文件，`index` 暂时没有内容。
 
 **生产环境**
 
+在生产环境下，我们真的会只对错误感兴趣，而对进程或信息报告不感兴趣，因此我们要让错误日志记录器只报告错误。在没有这一设置下，系统可能会被信息与进程报告所淹没。
+
+
+```erlang
+{{#include ../../projects/ch23-code/elog4.config}}
+```
+
+运行这个配置文件，会得到与前一示例类似的输出。不同的是，只有错误才会在错误日志中报告。
+
 ### 分析错误
 
-## 监督树
+## 监控树
 
 ## 应用程序
