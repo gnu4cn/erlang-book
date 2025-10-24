@@ -121,6 +121,13 @@ Turn off the motor
 
 ## 错误日志记录器
 
+> **译注**：自 Erlang/OTP 21.0 引入新的 [日志 API](https://www.erlang.org/doc/apps/kernel/logger_chapter) 后，本节描述的 SASL 错误日志概念已被弃用。
+>
+> 旧的 SASL 错误日志记录行为，可通过将内核的配置参数 `logger_sasl_compatible` 设为 `true`，而重新启用。
+>
+> 参考：[SASL Error Logging](https://www.erlang.org/doc/apps/sasl/error_logging.html)
+
+
 OTP 系统带有一个可定制的错误日志记录器。我们可从三个角度，讨论这个错误日志记录器。
 
 - 从 *程序员视角*，会关注那些他们为记录错误，而在代码中调用的一些函数；
@@ -136,7 +143,8 @@ OTP 系统带有一个可定制的错误日志记录器。我们可从三个角�
 > 设想我们编写对程序员隐藏了 `event_handler:event` 例程的函数。比方说我们写了下面这个：
 >
 > ```erlang
-> {{#include ../../projects/ch23-code/lib_misc.erl:207:208}}
+> too_hot() ->
+>     event_handler:event(errors, too_hot).
 > ```
 >
 > 然后我们告诉程序员，当出现问题时，就在代码中调用 `lib_misc:too_hot()`。在大多数编程语言中，对函数 `too_hot` 的调用，将是静态地，或被动态链接到调用这个函数代码。而一旦其被链接，那么他将依据代码，执行某项固定作业。当我们稍后改变了主意，决定了我们打算完成其他事情时，我们就没有改变系统行为的简单办法了。
@@ -155,11 +163,6 @@ OTP 系统带有一个可定制的错误日志记录器。我们可从三个角�
 
 ### 记录错误
 
-> **译注**：自 Erlang/OTP 21.0 引入新的 [日志 API](https://www.erlang.org/doc/apps/kernel/logger_chapter) 后，本节描述的 SASL 错误日志概念已被弃用。
->
-> 旧的 SASL 错误日志记录行为，可通过将内核的配置参数 `logger_sasl_compatible` 设为 `true`，而重新启用。
->
-> 参考：[SASL Error Logging](https://www.erlang.org/doc/apps/sasl/error_logging.html)
 
 就程序员而言，错误日志记录器的 API 非常简单。下面是该 API 的一个简单子集：
 
