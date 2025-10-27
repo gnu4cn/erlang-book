@@ -401,6 +401,630 @@ ok
 
 ### 分析错误
 
+读取错误日志，是 `rb` 这个模组的职责。他有着极为简单的接口。
+
+
+```erlang
+$ erl -boot start_sasl -config elog3
+...
+1> rb:help().
+
+Report Browser Tool - usage
+===========================
+rb:start()         - start the rb_server with default options
+rb:start(Options)  - where Options is a list of:
+      {start_log, FileName}
+         - default: standard_io
+      {max, MaxNoOfReports}
+         - MaxNoOfReports should be an integer or 'all'
+         - default: all
+...
+... many lines omitted ...
+...
+2> rb:start([{max,20}]).
+rb: reading report...done.
+rb: reading report...done.
+rb: reading report...done.
+rb: reading report...done.
+{ok,<0.96.0>}
+```
+
+首先，我们必须以正确的配置文件启动 Erlang，以便错误日志可被定位到；然后我们通过告诉报告浏览器，要读取多少日志条目（在本例中为最后 20 条），启动他。现在，我们将列出这个日志中的条目。
+
+
+```erlang
+3> rb:list().
+  No                Type   Process       Date     Time
+  ==                ====   =======       ====     ====
+  18            progress  <0.83.0> 2025-10-24 16:44:56
+  17            progress  <0.83.0> 2025-10-24 16:44:56
+  16            progress  <0.83.0> 2025-10-24 16:44:56
+  15            progress  <0.70.0> 2025-10-24 16:44:56
+  14               error  <0.71.0> 2025-10-24 16:45:21
+  13            progress  <0.83.0> 2025-10-24 16:56:09
+  12            progress  <0.83.0> 2025-10-24 16:56:09
+  11            progress  <0.83.0> 2025-10-24 16:56:09
+  10            progress  <0.70.0> 2025-10-24 16:56:09
+   9         warning_msg  <0.71.0> 2025-10-24 16:56:26
+   8            progress  <0.83.0> 2025-10-27 09:10:30
+   7            progress  <0.83.0> 2025-10-27 09:10:30
+   6            progress  <0.83.0> 2025-10-27 09:10:30
+   5            progress  <0.70.0> 2025-10-27 09:10:30
+   4            progress  <0.83.0> 2025-10-27 09:14:40
+   3            progress  <0.83.0> 2025-10-27 09:14:40
+   2            progress  <0.83.0> 2025-10-27 09:14:40
+   1            progress  <0.70.0> 2025-10-27 09:14:40
+ok
+```
+
+由调用 `error_logger:error_msg/1` 产生的错误日志条目消息，最终作为条目编号为 14 出现在日志中。我们可如下检查这个条目：
+
+
+```erlang
+4> rb:show(14).
+
+ERROR REPORT  <0.94.0>                                      2025-10-24 16:45:21
+===============================================================================
+
+This is a error
+ok
+```
+
+要隔离出某个特定报错，我们可使用诸如将找出所有与正则表达式 RegExp，匹配报告的 `rb:grep(RegExp)` 等命令。我（作者）不愿深入讨论如何分析错误日志的细节。最好的办法是花一些时间与 `rb` 交互，看看他能做些什么。请注意，咱们永远无需真正删除某个错误报告，因为滚动机制将最终删除旧的错误日志。
+
+若咱们打算保留所有错误日志，我们就必须要定期轮询错误日志，并移除感兴趣的信息。
+
+## 警报管理
+
+
+在我们编写咱们的应用时，我们只需要一个警报 -- 当 CPU 开始融化时我们将发出他，因为我们正计算某个巨大质数（请记住，我们正构造一家销售质数的公司）。这次我们将使用真正的 OTP 警报处理器（而不是我们本章开头看到的简单的那个）。
+
+
+这个警报处理器是 OTP `gen_event` 行为的一个回调模组。下面是这段代码：
+
+
+```erlang
+{{#include ../../projects/ch23-code/my_alarm_handler.erl}}
+```
+
+这段代码与我们早先在 [*调用服务器*](Ch22-introducing_otp.md#调用服务器) 中曾看到过的 `gen_server` 回调代码非常相似。其中的有趣例程是 `handle_event(Event,State)`。这个例程应返回 `{ok, NewState}`。`Event` 是个 `{EventType, EventArg}` 形式的元组，其中 `EventType` 为 `set_event` 或 `clear_event`，而 `EventArg` 是个用户提供的参数。稍后我们将看到这些事件是如何产生的。
+
+现在我们便可尽情玩耍。我们将启动系统、生成警报、安装警报处理器、生成新警报等等。
+
+
+```erlang
+1> alarm_handler:set_alarm(tooHot).
+ok
+=INFO REPORT==== 27-Oct-2025::10:17:44.805081 ===
+    alarm_handler: {set,tooHot}
+2> gen_event:swap_handler(alarm_handler,
+   {alarm_handler, swap},
+   {my_alarm_handler, xyz}).
+*** my_alarm_handler init: {xyz,{alarm_handler,[tooHot]}}
+ok
+3> alarm_handler:set_alarm(tooHot).
+=ERROR REPORT==== 27-Oct-2025::10:18:34.446221 ===
+*** Tell the Engineer to turn on the fan
+
+ok
+4> alarm_handler:clear_alarm(tooHot).
+=ERROR REPORT==== 27-Oct-2025::10:18:51.348601 ===
+*** Danger over. Turn off the fan
+
+ok
+```
+
+以下即为所发生的事情：
+
+1. 我们以 `-boot start_sasl` 启动了 Erlang。当我们这样做时，我们会得到一个标准警报处理器。当我们设置或清除某个警报时，什么也不会发生。这与我们早先曾讨论过的 “什么也不做” 事件处理器类似；
+
+2. 当我们设置了一条警报时（第 1 行），我们只会获取到一个信息报告。没有该警报的特别处理；
+
+3. 我们安装了个自定义的警报处理器（第 2 行）。`my_alarm_handler` 的参数 （`xyz`） 没有无特定意义；语法要求此处要有个值，但由于我们未用到这个值，进而我们只用 `xyz` 这个原子，当该参数被打印出时，我们就可以识别到他。
+
+    `*** my_alarm_handler_init: ...` 这个打印输出，来自我们的回调模组；
+
+4. 我们设置并清除了一个 `tooHot` 的警报（第 3 与 4 行）。这是由我们的自定义警报处理器处理的。通过阅读 shell 打印输出，我们即可验证这点。
+
+
+### 阅读日志
+
+我们来回到错误日志记录器，看看发生了什么。
+
+
+```erlang
+1> rb:start([max,20]).
+rb: reading report...done.
+rb: reading report...done.
+rb: reading report...done.
+rb: reading report...done.
+rb: reading report...done.
+rb: reading report...done.
+rb: reading report...done.
+{ok,<0.96.0>}
+2> rb:list().
+  No                Type   Process       Date     Time
+  ==                ====   =======       ====     ====
+...
+   7         info_report  <0.83.0> 2025-10-27 10:17:44
+   6               error  <0.83.0> 2025-10-27 10:18:34
+   5               error  <0.83.0> 2025-10-27 10:18:51
+   4            progress  <0.83.0> 2025-10-27 10:31:55
+   3            progress  <0.83.0> 2025-10-27 10:31:55
+   2            progress  <0.83.0> 2025-10-27 10:31:55
+   1            progress  <0.70.0> 2025-10-27 10:31:55
+ok
+3> rb:show(5).
+
+ERROR REPORT  <0.89.0>                                      2025-10-27 10:18:51
+===============================================================================
+
+*** Danger over. Turn off the fan
+ok
+4> rb:show(6).
+
+ERROR REPORT  <0.89.0>                                      2025-10-27 10:18:34
+===============================================================================
+
+*** Tell the Engineer to turn on the fan
+ok
+```
+
+
+那么，我们便可看到，错误日志记录机制工作了。
+
+
+在实践中，我们会确保错误日志足够几天或几周的运行。每几天（或几周），我们就会检查错误日志，并调查所有报错。
+
+*注意*：`rb` 模组有着选取特定错误类型，并将这些错误提取到某个文件中的一些函数。因此，分析错误日志的过程，可以是完全自动化的。
+
+
+## 应用服务器
+
+
+我们的应用有两个服务器：质数服务器，与面积服务器。
+
+
+### 质数服务器
+
+
+下面是这个质数服务器。他是使用 `gen_server` 行为（参见 [22.2 小节 *`gen_server` 入门*](Ch22-introducing_otp.md#gen_server-入门)） 编写。请注意，他包含了我们在上一小节中，开发的警报处理器。
+
+
+```erlang
+{{#include ../../projects/ch23-code/prime_server.erl}}
+```
+
+### 面积服务器
+
+现在是这个面积服务器。这也是以 `gen_server` 这个行为编写。请注意，以这种方式编写某个服务器，会非常快。在我（作者）编写这个示例时，我剪切并粘贴了质数服务器中的代码，并将其转换为了一个面积服务器。这一过程只花了几分钟。
+
+
+这个面积服务器，不是世上最出色的程序，他包含一个故意错误（咱们能找到吗？）。我（作者）的并不高明计划，是要让服务器崩溃，然后由监控器进程重新启动。更重要的是，我们将获取到错误日志中这一切的报告。
+
+
+```erlang
+{{#include ../../projects/ch23-code/area_server.erl}}
+```
+
+现在我们已编写咱们的应用代码，以一个小错误完成。现在，我们必须建立一种，检测及纠正任何可能在运行时出现错误的监控结构。
+
 ## 监控树
 
-## 应用程序
+
+所谓监控树，是一棵进程树。树中的上层进程（监控器），会监控树中的下层进程（工作进程），并在下层进程失败时重启他们。有两种类型的监控树。咱们可在下图中看到他们：
+
+![监控器类型](../images/types_of_supervisor.png)
+
+- *一对一监控树*
+
+    在 "一对一" 监控下，当某个工作进程失效时，他会被监控器重启；
+
+- *一对全体监控树*
+
+    在一对全体监控下，当有任何工作进程死掉时，那么全部工作进程都会被杀死（通过调用相应回调模组中的 `terminate/2` 函数）。然后全体工作进程会被重启。
+
+
+监控器是使用 OTP 的 *监控器* 行为创建的。这个行为是以指定了监控器策略，与启动监控树中各个工作进程方式的某个回调模组参数化的。监控树则是以下面这种形式的函数指定：
+
+
+```erlang
+init(...) ->
+    {ok, {
+          {RestartStrategy, MaxRestarts, Time},
+          [Worker1, Worker2, ...]
+         }}.
+```
+
+这里的 `RestartStrategy` 为原子 `one_for_one` 或 `one_for_all` 之一。`MaxRestarts` 与 `Time` 指定了某种 “重启频率”。当某个监控器在 `Time` 秒内，执行超过 `MaxRestarts` 次数时，那么这个监控器将终止所有工作进程，然后终止自身。这是要尝试停止在某个进程崩溃、被重启，然后又以同样原因崩溃，周而复始，无休止地循环的情形。
+
+`Worker1`、`Worker2` 等，属于描述如何启动各个工作进程的一些元组。我们将马上看到这些元组看起来的样子。
+
+现在，我们回到咱们的公司，建立一棵监控树。
+
+
+我们需要做的头一件事情，是为咱们的公司取个名字。咱们就叫 `sellaprime` 吧。`sellaprime` 这个监控器的工作，是确保质数和面积两个服务器，始终在运行。要达到着一个目的，我们将编写另一个回调模组，这次是 `gen_supervisor` 的。下面是这个回调模组：
+
+```erlang
+{{#include ../../projects/ch23-code/sellaprime_supervisor.erl}}
+```
+
+
+这段最重要部分，是由 `init/1` 返回的数据结构。
+
+```erlang
+{{#include ../../projects/ch23-code/sellaprime_supervisor.erl:22:34}}
+```
+
+这一数据结构，定义了一种监控策略。早先我们曾谈到监控策略与重启频率。现在只剩下面积服务器和质数服务器的启动规范了。
+
+
+`Worker` 规范是如下形式的一些元组：
+
+```erlang
+{Tag, {Mod, Func, ArgList},
+       Restart,
+       Shutdown,
+       Type,
+       [Mod1]}
+```
+
+这些参数意义如下：
+
+- `Tag`
+
+    这是个我们稍后（在必要时）可用来引用这个工作进程的原子标签；
+
+- `{Mod,Func,ArgList}`
+
+    这个参数定义了监控器将用来启动工作进程的函数。其会被用作 `apply(Mod, Fun, ArgList)` 的参数；
+
+- `Restart = permanent | transient | temporary`
+
+    某个 `permanent` 进程，将总是被重启。而 `transient` 进程只会在其以非正常退出值终止时，被重启。`temporary` 进程则绝不会被重启；
+
+- `Shutdown`
+
+    这是关闭时间。这是某个工作所允许用在终止过程的最长时间。当其用时长于这个时间时，他将被杀死；(别的值也可行，请参阅 [`supervisor` 手册页面](https://www.erlang.org/doc/apps/stdlib/supervisor.html)。）
+
+- `Type = worker | supervisor`
+
+    这个参数是被监控进程的类型。我们可通过在工作进程处，添加一些监控进程，构建处一棵监控进程树；
+
+- `[Mod1]`
+
+    当子进程为某个监控器，或 `gen_server` 行为的回调模组时，这便是那个回调模组的名字。(别的值也可行，请参阅 [`supervisor` 手册页面](https://www.erlang.org/doc/apps/stdlib/supervisor.html)。）
+
+这些参数看起来，比他们实际情况更可怕。实际上，咱们可剪切并粘贴前面面积服务器代码中的值，然后插入咱们模组的名字。这样做就将满足大多数目的。
+
+
+## 启动系统
+
+现在我们已准备好进入黄金时代。我们来成立咱们的公司吧。出发。我们就要看看，谁会想要买第一个质数！
+
+咱们来启动系统。
+
+
+```erlang
+1> sellaprime_supervisor:start_in_shell_for_testing().
+*** my_alarm_handler init: {xyz,{alarm_handler,[]}}
+area_server starting
+prime_server starting
+true
+```
+
+现在构造一次有效查询。
+
+
+```erlang
+2> area_server:area({square,10}).
+100
+```
+
+
+现在构造一次无效查询。
+
+```erlang
+3> area_server:area({rectangle,10,20}).
+area_server stopping
+=ERROR REPORT==== 27-Oct-2025::15:20:33.837892 ===
+** Generic server area_server terminating
+** Last message in was {area,{rectangle,10,20}}
+** When Server state == 1
+** Reason for termination ==
+** {function_clause,[{area_server,compute_area,
+                                  [{rectangle,10,20}],
+                                  [{file,"area_server.erl"},{line,36}]},
+                     {area_server,handle_call,3,
+                                  [{file,"area_server.erl"},{line,24}]},
+                     {gen_server,try_handle_call,4,
+                                 [{file,"gen_server.erl"},{line,2470}]},
+                     {gen_server,handle_msg,3,
+                                 [{file,"gen_server.erl"},{line,2499}]},
+                     {proc_lib,init_p_do_apply,3,
+                               [{file,"proc_lib.erl"},{line,333}]}]}
+** Client <0.94.0> stacktrace
+** [{gen,do_call,4,[{file,"gen.erl"},{line,262}]},
+    {gen_server,call,2,[{file,"gen_server.erl"},{line,1217}]},
+    {erl_eval,do_apply,7,[{file,"erl_eval.erl"},{line,924}]},
+    {shell,exprs,7,[{file,"shell.erl"},{line,937}]},
+    {shell,eval_exprs,7,[{file,"shell.erl"},{line,893}]},
+    {shell,eval_loop,4,[{file,"shell.erl"},{line,878}]}]
+
+area_server starting
+** exception exit: {{function_clause,[{area_server,compute_area,
+                                                   [{rectangle,10,20}],
+                                                   [{file,"area_server.erl"},{line,36}]},
+                                      {area_server,handle_call,3,
+                                                   [{file,"area_server.erl"},{line,24}]},
+                                      {gen_server,try_handle_call,4,
+                                                  [{file,"gen_server.erl"},{line,2470}]},
+                                      {gen_server,handle_msg,3,
+                                                  [{file,"gen_server.erl"},{line,2499}]},
+                                      {proc_lib,init_p_do_apply,3,
+                                                [{file,"proc_lib.erl"},{line,333}]}]},
+                    {gen_server,call,[area_server,{area,{rectangle,10,20}}]}}
+     in function  gen_server:call/2 (gen_server.erl:1221)
+```
+
+哎呀 -- 面积服务器崩溃了；我们遇到那个故意的错误。这次崩溃被监控器侦测到了，同时面积服务器被监控器重启。所有这一切都被错误日志记录器记录，且我们会得到该错误的打印输出。快速查看一下错误消息，就会发现什么出了问题。程序在尝试计算 `area_server:compute_area({rectangle,10,20})` 后崩溃。这在 `function_clause` 错误消息第一行处给出。错误消息格式为 `{Mod,Func,[Args]}`。当咱们往后看几页，到面积计算定义之处（在 `compute_area/1` 中），咱们应能找到那个错误。
+
+这次崩溃后，一切都回到正常，正如其原本那样。这次我们来构造一次有效请求。
+
+
+```erlang
+4> area_server:area({square,25}).
+625
+```
+
+我们又开始运行了。现在我们来生成一个小的质数。
+
+
+```erlang
+6> prime_server:new_prime(20).
+Generating a 20 digit prime ....................
+18282691556762757563
+```
+
+然后我们来生成一个大质数。
+
+```erlang
+6> prime_server:new_prime(120).
+Generating a 120 digit prime =ERROR REPORT==== 27-Oct-2025::15:53:10.372308 ===
+*** Tell the Engineer to turn on the fan
+
+................................................................................................................................................................
+=ERROR REPORT==== 27-Oct-2025::15:53:10.437621 ===
+*** Danger over. Turn off the fan
+
+564343921378122283839578947352265967832836673905694227681455496377102362668959473046746879629569802226504185167806181419
+```
+
+现在我们有了个工作的系统。当服务器崩溃时，他会被自动重启，同时错误日志中将有关于这个错误的信息。我们来看看错误日志。
+
+
+```erlang
+1> rb:start([{max,20}]).
+rb: reading report...done.
+rb: reading report...done.
+{ok,<0.96.0>}
+2> rb:list().
+  No                Type       Process       Date     Time
+  ==                ====       =======       ====     ====
+  20               error      <0.83.0> 2025-10-27 15:40:20
+  19               error      <0.71.0> 2025-10-27 15:40:20
+  18        crash_report  prime_server 2025-10-27 15:40:20
+  17   supervisor_report      <0.71.0> 2025-10-27 15:40:20
+  16            progress      <0.71.0> 2025-10-27 15:40:20
+  15               error      <0.71.0> 2025-10-27 15:44:57
+  14        crash_report   area_server 2025-10-27 15:44:57
+  13   supervisor_report      <0.71.0> 2025-10-27 15:44:57
+  12            progress      <0.71.0> 2025-10-27 15:44:57
+  11               error      <0.83.0> 2025-10-27 15:45:27
+  10               error      <0.71.0> 2025-10-27 15:45:27
+   9        crash_report  prime_server 2025-10-27 15:45:27
+   8   supervisor_report      <0.71.0> 2025-10-27 15:45:27
+   7            progress      <0.71.0> 2025-10-27 15:45:27
+   6               error      <0.83.0> 2025-10-27 15:53:10
+   5               error      <0.83.0> 2025-10-27 15:53:10
+   4            progress      <0.83.0> 2025-10-27 15:55:40
+   3            progress      <0.83.0> 2025-10-27 15:55:40
+   2            progress      <0.83.0> 2025-10-27 15:55:40
+   1            progress      <0.70.0> 2025-10-27 15:55:40
+ok
+```
+
+这里某个地方出错了。我们有份面积服务器的崩溃报告。要找出发生了什么，我们可查看这份错误报告。
+
+
+```erlang
+3> rb:show(14).
+
+CRASH REPORT  <0.101.0>                                     2025-10-27 15:44:57
+===============================================================================
+Crashing process
+   initial_call                              {area_server,init,['Argument__1']}
+   pid                                                                <0.101.0>
+   registered_name                                                  area_server
+   process_label                                                      undefined
+   error_info
+         {error,function_clause,
+               [{area_server,compute_area,
+                             [{rectangle,10,20}],
+                             [{file,"area_server.erl"},{line,36}]},
+                {area_server,handle_call,3,
+                             [{file,"area_server.erl"},{line,24}]},
+                {gen_server,try_handle_call,4,
+                            [{file,"gen_server.erl"},{line,2470}]},
+                {gen_server,handle_msg,3,
+                            [{file,"gen_server.erl"},{line,2499}]},
+                {proc_lib,init_p_do_apply,3,
+                          [{file,"proc_lib.erl"},{line,333}]}]}
+   ancestors
+         [sellaprime_supervisor,<0.94.0>,<0.73.0>,<0.71.0>,user_drv,<0.70.0>,
+         <0.66.0>,kernel_sup,<0.47.0>]
+   message_queue_len                                                          0
+   messages                                                                  []
+   links                                                             [<0.96.0>]
+   dictionary                                                                []
+   trap_exit                                                               true
+   status                                                               running
+   heap_size                                                               4185
+   stack_size                                                                29
+   reductions                                                             10812
+
+ok
+```
+
+
+其中打印输出 `{function_clause, compute_area, ...}` 准确给我们展示了，程序中服务器崩溃点。找到并纠正这个错误，就应很容易。我们来移步到下一错误。
+
+
+```erlang
+5> rb:show(6).
+
+ERROR REPORT  <0.89.0>                                      2025-10-27 15:53:10
+===============================================================================
+
+*** Tell the Engineer to turn on the fan
+ok
+```
+
+以及
+
+```erlang
+6> rb:show(5).
+
+ERROR REPORT  <0.89.0>                                      2025-10-27 15:53:10
+===============================================================================
+
+*** Danger over. Turn off the fan
+ok
+```
+
+这些是由计算太大的素数导致的咱们风扇警报！
+
+
+
+## 应用
+
+我们就快完成了。我们现在要做的，就是编写一个包含了有关我们应用信息的，扩展名为 `.app` 的文件。
+
+
+```erlang
+{{#include ../../projects/ch23-code/sellaprime.app}}
+```
+
+然后我们必须编写一个与上一文件中的 `mod` 文件，同样名字的回调模组。这个文件派生自 [A1.3 小节，*应用模板*](../appendix/ap01-otp_templates.md#应用模板) 中的模板。
+
+
+```erlang
+{{#include ../../projects/ch23-code/sellaprime_app.erl}}
+```
+
+这个模组必须导出 `start/2` 和 `stop/1` 两个函数。在我们完成所有这些后，我们就可以在 shell 下，启动和停止咱们的应用了。
+
+
+```erlang
+1> application:loaded_applications().
+[{kernel,"ERTS  CXC 138 10","10.3.2"},
+ {stdlib,"ERTS  CXC 138 10","7.0.3"},
+ {sasl,"SASL  CXC 138 11","4.3"}]
+2> application:load(sellaprime).
+ok
+3> application:loaded_applications().
+[{kernel,"ERTS  CXC 138 10","10.3.2"},
+ {stdlib,"ERTS  CXC 138 10","7.0.3"},
+ {sellaprime,"The Prime Number Shop","1.0.0"},
+ {sasl,"SASL  CXC 138 11","4.3"}]
+4> application:start(sellaprime).
+*** my_alarm_handler init: {xyz,{alarm_handler,[]}}
+area_server starting
+prime_server starting
+ok
+5> application:stop(sellaprime).
+prime_server stopping
+area_server stopping
+=INFO REPORT==== 27-Oct-2025::16:19:53.527540 ===
+    application: sellaprime
+    exited: stopped
+    type: temporary
+
+ok
+6> application:unload(sellaprime).
+ok
+7> application:loaded_applications().
+[{kernel,"ERTS  CXC 138 10","10.3.2"},
+ {stdlib,"ERTS  CXC 138 10","7.0.3"},
+ {sasl,"SASL  CXC 138 11","4.3"}]
+```
+
+
+现在这就是个完全成熟的 OTP 应用了。在第 2 行处，我们加载了这个应用；这会加载所有代码，但不会启动这个应用。第 4 行启动了这个应用程序，第 5 行停止这个应用。请注意，我们可在打印输出中，看到应用被启动和停止的时间。面积服务器和质数服务器中的相应回调函数，都被调用了。在第 6 行，我们卸载了这个应用。该应用的所有模组代码都会被移除。
+
+
+当我们使用 OTP 构建一些复杂系统时，我们会将他们打包为应用。这允许我们统一地启动、停止及管理他们。
+
+
+请注意，当我们使用 `init:stop()` 关闭系统时，所有正在运行的应用，都将以有序方式被关闭。
+
+
+```erlang
+1> application:start(sellaprime).
+*** my_alarm_handler init: {xyz,{alarm_handler,[]}}
+area_server starting
+prime_server starting
+ok
+2> q().
+ok
+prime_server stopping
+area_server stopping
+3> %
+```
+
+第二条命令后的两行，就来自面积和质数两个服务器，这表明 `gen_server` 回调模组中的 `terminate/2` 方法被调用了。
+
+
+## 文件系统的组织
+
+我（作者）还未曾提到有关文件系统组织的任何内容。这是有意的 -- 我的用意是一次只以一件事，让咱们感到迷惑。
+
+
+表现良好的 OTP 应用，通常会将属于该应用不同部分的文件，放在一些定义明确的位置。这不是必需的；只要在运行时所有相关文件能被找到，文件组织方式就并不重要。
+
+
+在本书中，我（作者）就把大部分演示文件，放在了同一目录下。这样简化了这些示例，并避免了检索路径，及不同程序间交互下的问题。
+
+
+`sellaprime` 这间公司中用到的主要文件如下：
+
+
+| *文件* | *内容* |
+| :- | :- |
+| `area_server.erl` | 面积服务器 -- 一个 `gen_server` 的回调模组。 |
+| `prime_server.erl` | 质数服务器 -- 一个 `gen_server` 的回调模组。 |
+| `sellaprime_supervisor.erl` | 监控器的回调模组。 |
+| `sellaprime_app.erl` | 应用的回调模组。 |
+| `my_alarm_handler.erl` | `gen_event` 的事件回调模组。 |
+| `sellaprime.app` | 应用规范。 |
+| `elog4.config` | 错误日志记录器的配置文件。 |
+
+要了解这些文件及模组的使用方式，我们可以看看在我们启动这个应用时，发生事件的顺序。
+
+
+1. 我们以下面的命令启动系统：
+
+    ```erlang
+    $ erl -boot start_sasl -config elog4
+    Erlang/OTP 28 [erts-16.0.3] [source] [64-bit] [smp:12:12] [ds:12:12:10] [async-threads:1] [jit:ns]
+
+    Eshell V16.0.3 (press Ctrl+G to abort, type help(). for help)
+    1> application:start(sellaprime).
+    ...
+    ```
+
+    `sellaprime.app` 这个文件，必须位于 Erlang 被启动处的根目录下，或这个目录的某个子目录中。
+
+    应用控制器随后会查找 `sellaprime.app` 中的一个 `{mod, ...}` 声明。这个声明包含着应用控制器的名字。在我们的示例中，这便是 `sellaprime_app` 模组；
+
+2. 回调例程 `sellaprime_app:start/2` 被调用；
