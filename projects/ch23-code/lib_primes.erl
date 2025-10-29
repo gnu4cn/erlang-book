@@ -6,61 +6,61 @@
 %%  We make no guarantees that this code is fit for any purpose.
 %%  Visit http://www.pragmaticprogrammer.com/titles/jaerlang2 for more book information.
 %%---
--module(lib_primes).
+-module(lib_primes).                                                    %% Line 1
 -export([make_prime/1, is_prime/1, make_random_int/1]).
 
 make_prime(1) -> %% <label id="make_primes1" />
-    lists:nth(rand:uniform(4), [2,3,5,7]);
+    lists:nth(rand:uniform(4), [2,3,5,7]);                              %%      5
 make_prime(K) when K > 0 -> %% <label id="make_primes2" />
     new_seed(),
     N = make_random_int(K),
     if N > 3 ->
-	    io:format("Generating a ~w digit prime ",[K]),
+	    io:format("Generating a ~w digit prime ",[K]),                  %%     10
 	    MaxTries = N - 3,
 	    P1 = make_prime(MaxTries, N+1),
 	    io:format("~n",[]),
 	    P1;
-	true ->
+	true ->                                                             %%     15
 	    make_prime(K)
     end. %% <label id="make_primes3" />
 
 make_prime(0, _) ->    %% <label id="prime_loop1" />
-    exit(impossible);
+    exit(impossible);                                                   %%     20
 make_prime(K, P) ->
     io:format(".",[]),
     case is_prime(P) of
 	true  -> P;
-	false -> make_prime(K-1, P+1)
+	false -> make_prime(K-1, P+1)                                       %%     25
     end. %% <label id="prime_loop2" />
 
 is_prime(D) when D < 10 ->
     lists:member(D, [2,3,5,7]);
-is_prime(D) ->
+is_prime(D) ->                                                          %%     30
     new_seed(),
     is_prime(D, 100).
 
 is_prime(D, Ntests) ->
-    N = length(integer_to_list(D)) -1,
+    N = length(integer_to_list(D)) -1,                                  %%     35
     is_prime(Ntests, D, N).
 
 is_prime(0, _, _) -> true;  %% <label id="is_prime_1" />
 is_prime(Ntest, N, Len) ->  %% <label id="is_prime_2" />
-    K = rand:uniform(Len),
+    K = rand:uniform(Len),                                              %%     40
     %% A is a random number less than K
     A = make_random_int(K),
     if
 	A < N ->
-	    case lib_lin:pow(A,N,N) of
+	    case lib_lin:pow(A,N,N) of                                      %%     45
 		A -> is_prime(Ntest-1,N,Len);
 		_ -> false
 	    end;
 	true ->
-	    is_prime(Ntest, N, Len)
+	    is_prime(Ntest, N, Len)                                         %%     50
     end. %% <label id="is_prime_3" />
 
 %% make_random_int(N) -> a random integer with N digits.
 make_random_int(N) -> new_seed(), make_random_int(N, 0). %% <label id="make_ran_int1" />
-
+                                                                                            %%  55
 make_random_int(0, D) -> D;
 make_random_int(N, D) ->
     make_random_int(N-1, D*10 + (rand:uniform(10)-1)). %% <label id="make_ran_int2" />
