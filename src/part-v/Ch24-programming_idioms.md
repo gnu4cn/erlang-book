@@ -140,7 +140,12 @@ HTTP、FTP 和 IRC 三者使用了 *完全不同的协议* 在机器间传输文
 
 
 ```erlang
-{{#include ../../projects/ch24-code/counter.erl}}
+-module(counter).
+-export([bump/2, read/1]).
+
+bump(N, {counter,K}) -> {counter, N + K}.
+
+read({counter, N}) -> N.
 ```
 
 
@@ -178,7 +183,7 @@ HTTP、FTP 和 IRC 三者使用了 *完全不同的协议* 在机器间传输文
 >
 > 要为兼容旧代码启用这一历史特性，咱们需要在咱们的模组中，添加一个特定编译选项 `tuple_calls`。该选项指示 Erlang 编译器，允许在特定模组中使用元组模组的调用。
 >
-> 因此，将上面的 `counter.erl` 程序代码，修改成下面这样即可使用元组模组，实现有状态模组这一模式。注意：Erlang shell 下仍不支持元组模组特性。
+> 因此，将上面的 `counter.erl` 程序代码，修改成下面这样即可使用元组模组，实现有状态模组这一模式。
 >
 > ```erlang
 > -module(counter).
@@ -191,8 +196,17 @@ HTTP、FTP 和 IRC 三者使用了 *完全不同的协议* 在机器间传输文
 >
 > test() ->
 >     C = {counter,2},
->     C:read().
+>
+>     %% 由于 C 是个元组，因此这会被转换为调用 `counter:read({counter,2})`，这会返回 `2`。
+>     C:read(),
+>
+>     %% `C:bump(3)` 会被转换为调用 `counter:bump(3, {counter, 2})`，而因此会返回 `{counter, 5}`。
+>     C1 = C:bump(3),
+>     C1:read().
 > ```
+>
+>
+> 而 Erlang shell，即 Erlang 的运行时系统应用，已在 Erlang/OTP 22.0 中，移除了于 21.3 中引入的 `+ztma` 命令行开关。导致 Erlang shell 下无法运行带有元组模组的代码。
 >
 > 参考：
 >
@@ -205,6 +219,15 @@ HTTP、FTP 和 IRC 三者使用了 *完全不同的协议* 在机器间传输文
 > - [SimpleBridge](https://hexdocs.pm/simple_bridge/readme.html#what-can-i-do-with-the-bridge)
 >
 > - [Compiler Release Notes: Improvements and New Features](http://erlang.org/documentation/doc-10.0/lib/compiler-7.2/doc/html/notes.html)
+>
+> - [Erlang/OTP 22: ERTS Release Notes](https://www.erlang.org/docs/22/apps/erts/notes)
+
+请注意其中，模组名字 `counter` 及状态变量，是怎样对元组 `C` 与 `C1` 中的调用代码隐藏的。
+
+
+> **译注**：以下内容参考自 Google AI 答案。
+
+在现代 Erlang 中，“有状态模组” 通常是指将状态封装在进程中，并在进程中管理状态的模组，而不是其函数只对他们的参数与返回值操作，未在调用间保留信息的那些无状态模组。在 Erlang 中实现有状态模组的主要方法，是经由行为的运用，尤其是 `gen_server` 和 `gen_statem` 这两种行为。
 
 
 ## 适配器模式
