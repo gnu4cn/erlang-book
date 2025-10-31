@@ -9,3 +9,16 @@ web_server(Client) ->
             end,
             web_server(Client)
     end.
+
+send1(Term) -> encrypt(compress(term_to_binary(Term))).
+
+receive1(Bin) -> binary_to_term(decompress(decrypt(Bin))).
+
+
+send_code(Mod, Func, Args) ->
+    encrypt(compress(term_to_binary({Mod, Func, Args}))).
+
+receive_code(Bin) ->
+    {Mod, Func, Args} = binary_to_term(decompress(decrypt(Bin))),
+    apply(Mod, Func, Args).
+
