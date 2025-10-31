@@ -229,6 +229,21 @@ read({counter, N}) -> N.
 
 在现代 Erlang 中，“有状态模组” 通常是指将状态封装在进程中，并在进程中管理状态的模组，而不是其函数只对他们的参数与返回值操作，未在调用间保留信息的那些无状态模组。在 Erlang 中实现有状态模组的主要方法，是经由行为的运用，尤其是 `gen_server` 和 `gen_statem` 这两种行为。
 
+- **`gen_server` 行为**
+
+    `gen_server` 行为是 Erlang 中实现有状态进程最常见、最广泛使用的方法。他提供了管理处理请求与维护内部状态类服务器进程的一种健壮框架。
+
+    - **结构**：`gen_server` 模组会实现一组定义服务器如何初始化、如何处理不同类型的消息（同步调用、异步调用及其他消息），以及如何管理其生命周期的回调函数（如 `init/1`、`handle_call/3`、`handle_cast/2`、`handle_info/2`、`terminate/2`、`code_change/3` 等，译注：参见 [`gen_server` 的结构](../part-iv/Ch22-introducing_otp.md#gen_server-回调的结构)）。
+
+    - **状态管理**：`gen_server` 的内部状态，被作为参数传递给这些回调函数，并作为他们返回值的一部分返回，从而允许状态在每次交互下被更新。
+
+    - **示例代码**：
+
+        ```erlang
+        {{#include ../../projects/ch24-code/my_stateful_server.erl}}
+        ```
+
+
 
 ## 适配器模式
 
