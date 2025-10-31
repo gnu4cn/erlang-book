@@ -229,7 +229,7 @@ read({counter, N}) -> N.
 
 在现代 Erlang 中，“有状态模组” 通常是指将状态封装在进程中，并在进程中管理状态的模组，而不是其函数只对他们的参数与返回值操作，未在调用间保留信息的那些无状态模组。在 Erlang 中实现有状态模组的主要方法，是经由行为的运用，尤其是 `gen_server` 和 `gen_statem` 这两种行为。
 
-- **`gen_server` 行为**
++ **`gen_server` 行为**
 
     `gen_server` 行为是 Erlang 中实现有状态进程最常见、最广泛使用的方法。他提供了管理处理请求与维护内部状态类服务器进程的一种健壮框架。
 
@@ -275,7 +275,60 @@ read({counter, N}) -> N.
             {ok, State}.
         ```
 
++ **`gen_statem` 行为**
 
+    `gen_statem` 行为设计用于实现状态机，其中进程的行为取决于其当前状态，及其接收到的事件。他提供了管理复杂的状态转换的一种更有条理的方法。
+
+
+    - **结构**：与 `gen_server` 类似，`gen_statem` 也使用回调函数，但这些回调通常是围绕状态及事件组织的。`callback_mode/0` 函数定义了事件如何被分派给特定于状态的函数（如 `state_functions` 或 `handle_event_function` 等）。
+
+    - **状态与数据**：`gen_statem` 会区分 “状态”（一个表示当前状态的原子）和 “数据”（与状态关联的内部数据）。在状态转换期间，两者都受到管理。
+
+    - **示例代码**（简化版）：
+
+        ```erlang
+        -module(my_state_machine).
+        -behaviour(gen_statem).
+
+        -export([start_link/0, trigger_event/1]).
+        -export([init/1, callback_mode/0, locked/3, open/3]).
+
+        start_link() ->
+            gen_statem:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+        trigger_event(Event) ->
+            gen_statem:cast(?MODULE, Event).
+
+        init([]) ->
+            process_flag(trap_exit, true),
+            {ok, locked, #{}}. % Initial state: locked, empty data
+
+        callback_mode() -> state_functions.
+
+        locked(cast, {button, Digit}, Data) ->
+            case Digit of
+                1 -> {next_state, open, Data};
+                _ -> {keep_state, Data}
+            end;
+        locked(_EventType, _EventContent, Data) ->
+            {keep_state, Data}.
+
+        open(cast, close_button, Data) ->
+            {next_state, locked, Data};
+        open(_EventType, _EventContent, Data) ->
+            {keep_state, Data}.
+        ```
+
++ **在 `gen_server` 与 `gen_statem` 间选择**
+
+    - 对主要管理单个、不断变化，并响应各种请求的处理通用服务器进程，使用 `gen_server`；
+    - 在进程行为是显式地由有限状态机定义，而有着清晰的状态和由事件触发的转换时，则使用 `gen_statem`。
+
+
++ **其他方法**（通用有状态模组较少采用）
+
+    - **简单的循环进程**：对于非常基本的状态管理，进程可以实现一个将当前状态作为参数并返回新状态的简单递归循环。这种方式结构性较差，而通常用于内部的流程逻辑；
+    - **元组模组**（复杂/不常用）：正如一些旧资料中提到的，使用一个用到 “元组模组” 的模组名字封装状态是可行的，但与使用行为相比，这是一种更复杂而更不常用的方法。
 
 ## 适配器模式
 
