@@ -273,7 +273,7 @@ fac(N) -> N * fac(N-1).
 >3> attrs:module_info(compile).
 >[{version,"9.0.1"},
 > {options,[]},
-> {source,"c:/Users/ZBT7RX/erlang-book/projects/ch08-code/attrs.erl"}]
+> {source,"c:/Users/hector.peng/erlang-book/projects/ch08-code/attrs.erl"}]
 >4> attrs:module_info(exports).
 >[{fac,1},{module_info,1},{module_info,0}]
 >5> attrs:module_info(imports).

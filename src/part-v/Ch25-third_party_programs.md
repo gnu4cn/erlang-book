@@ -162,4 +162,390 @@ start() -> io:format("Hello my name is Bertie~n").
 >
 > 可见 `rebar3` 与 `rebar` 目录结构相比已发生变化。故这里 `bertie.erl` 所在位置已不同于原书中的 `~/published/bertie/src`。
 
+然后我们使用 `rebar3` 编译所有东西。
+
+```console
+$ rebar3 compile
+===> Verifying dependencies...
+===> Analyzing applications...
+===> Compiling bertie
+```
+
+我们现在有了个完整程序。剩下的就是将其推送回代码库。
+
+
+```console
+$ git add apps/bertie/src
+$ git add commit
+$ git push
+```
+
+### 公布咱们的项目
+
+现在咱们已经编写了咱们代码，并发布在了 GitHub 上。下一步就是公布他。要公布咱们代码最明显方法，是以 [Erlang 邮件列表](http://erlang.org/mailman/listinfo/erlang-questions) 上发布简短公告，或在 Twitter 上使用 `#erlang` 标签。
+
+
+想要使用咱们应用的用户，只需下载咱们的应用，并运行 `rebar compile` 构建咱们的应用。
+
+
+## 将外部程序与我们的代码集成
+
+
+我们已经了解了在 GitHub 上发布咱们作品所需的步骤。现在我们将了解如何把他人的工作成果，纳入我们的项目。作为一个示例，我们将把 `bitcask` 的代码，整合到我们的 `bertie` 项目中。
+
+我们将修改 `bertie`，使他在启动时，打印出已被启动的次数。例如，当他在第 10 次启动时，`bertie` 将通告以下内容：
+
+
+```console
+Bertie has been run 10 times
+```
+
+要达到这一目的，我们将把 `bertie` 已运行次数，存储在一个 `bitcask` 数据库中。在 `bitcask` 中，键和值必须是二进制值。我们将选择键为二进制的 `<<"n">>`，值为 `term_to_binary(N)`，其中 `N` 是 `bertie `的运行次数。现在 `bertie.erl` 的内容如下：
+
+
+```erlang
+-module(bertie).
+-export([start/0]).
+
+start() ->
+    Handle = bitcask:open("bertie_database", [read_write]),
+    N = fetch(Handle),
+    store(Handle, N+1),
+    io:format("Bertie has been run ~p times~n", [N]),
+    bitcask:close(Handle),
+    init:stop().
+
+store(Handle, N) ->
+    bitcask:put(Handle, <<"bertie_database">>, term_to_binary(N)).
+
+fetch(Handle) ->
+    case bitcask:get(Handle, <<"bertie_database">>) of
+        not_found -> 1;
+        {ok, Bin} -> binary_to_term(Bin)
+    end.
+```
+
+要将 `bitcask` 包含在 `bertie` 这个应用中，我们就要创建一个名为 `rebar.config` 的 “依赖项” 文件，并将其保存在 `bertie` 项目的顶层目录中。`rebar.config` 如下：
+
+
+```erlang
+{deps, [
+        {bitcask, ".*", {git, "git://github.com/basho/bitcask.git", "master"}}
+       ]}.
+
+```
+
+我（作者）还添加了个 makefile。
+
+
+```makefile
+all:
+	test -d _build/default/lib/bitcask || rebar3 get-deps
+	rebar3 compile
+	@erl -noshell -pa './_build/default/lib/bitcask/ebin' -pa './_build/default/lib/bertie/ebin' -s bertie start
+```
+
+> **译注**：这里的 Makefile 文件与原文亦有所不同，这是由于 `rebar3` 的目录结构，与旧版的 `rebar` 目录结构已完全不同。
+
+
+当我们首次运行这个 Makefile 时，我们会看到下面的输出：
+
+```console
+$ make
+test -d _build/default/lib || rebar3 get-deps
+===> Verifying dependencies...
+===> Fetching bitcask (from {git,"git@github.com:basho/bitcask.git",
+                   {ref,"d84c8d913713da8f02403431217405f84ee1ba22"}})
+===> Fetching pc v1.15.0
+===> Analyzing applications...
+===> Compiling pc
+===> Fetching eqc_rebar (from {git,"https://github.com/Quviq/eqc-rebar",{branch,"master"}})
+===> Analyzing applications...
+===> Compiling eqc_rebar
+rebar3 compile
+===> Verifying dependencies...
+===> Compiling c_src/bitcask_nifs.c
+===> Compiling c_src/erl_nif_util.c
+===> Compiling c_src/murmurhash.c
+===> Linking /home/hector/published/bertie/_build/default/lib/bitcask/priv/bitcask.so
+===> Analyzing applications...
+===> Compiling bitcask
+===> Analyzing applications...
+===> Compiling bertie
+Bertie has been run 1 times
+```
+
+
+> **译注**：第二次运行时的输出如下。
+>
+> ```console
+> $ make
+> test -d _build/default/lib || rebar3 get-deps
+> rebar3 compile
+> ===> Verifying dependencies...
+> ===> Analyzing applications...
+> ===> Compiling bertie
+> Bertie has been run 2 times
+> ```
+
+`rebar3 get-deps` 命令，从 GitHub 获取了 `bitcask`，并将其存储在 ~~名为 deps 的子目录中~~ `_build/default/lib` 目录下。`bitcask` 本身出于测试目的调用了 `meck`。这就是所谓的递归依赖。Rebar 会递归获取 `bitcask` 可能需要的任何依赖项，并将其存储在 `_build/default/plugins` 子目录下。
+
+
+> **译注**：`_build/default/plugins` 的目录结构如下。
+>
+> ```console
+> $ tree _build/default/plugins
+> _build/default/plugins
+> ├── eqc_rebar
+> │   ├── ebin
+> │   │   ├── eqc_rebar.app
+> │   │   ├── eqc_rebar.beam
+> │   │   └── eqc_rebar_prv.beam
+> │   ├── LICENSE
+> │   ├── README.md
+> │   ├── rebar.config
+> │   └── src
+> │       ├── eqc_rebar.app.src
+> │       ├── eqc_rebar.erl
+> │       └── eqc_rebar_prv.erl
+> └── pc
+>     ├── ebin
+>     │   ├── pc.app
+>     │   ├── pc.beam
+>     │   ├── pc_compilation.beam
+>     │   ├── pc_port_env.beam
+>     │   ├── pc_port_specs.beam
+>     │   ├── pc_prv_clean.beam
+>     │   ├── pc_prv_compile.beam
+>     │   └── pc_util.beam
+>     ├── hex_metadata.config
+>     ├── LICENSE
+>     ├── README.md
+>     ├── rebar.config
+>     ├── rebar.lock
+>     └── src
+>         ├── pc.app.src
+>         ├── pc_compilation.erl
+>         ├── pc.erl
+>         ├── pc_port_env.erl
+>         ├── pc_port_specs.erl
+>         ├── pc_prv_clean.erl
+>         ├── pc_prv_compile.erl
+>         └── pc_util.erl
+>
+> 7 directories, 30 files
+> ```
+
+
+这个 makefile 将 `-pa './_build/default/lib/bitcask/ebin'` 开关添加到命令行，这样当程序启动时，`bertie` 就能自动加载 `bitcask` 的代码。
+
+
+注意：咱们可从 [gnu4cn/bertie](https://github.com/gnu4cn/bertie) 下载这整个示例。假设 `rebar3` 已安装，咱们要做的全部，就只是下载这个项目，然后输入 `make`。
+
+
+## 构造依赖项的本地拷贝
+
+我（作者）的 `bertie` 应用，在 `bertie` 这个应用的本地子目录下，已构造了 `bitcask` 的一份本地拷贝。有时，数个不同应用，会想要使用一些相同依赖项，在这种情形下，我们会在咱们的应用 *之外*，创建一个依赖项目录结构。
+
+
+在我（作者）的一些本地项目中，我把我的所有已下载 `rebar` 依赖项，放在了一处。我把所有这些依赖项，存储在一个名为 `~joe/nobackup/erl_imports` 的顶级目录下。我的机器被如此组织，`nobackup` 目录下的任何文件都不会被备份。由于我感兴趣的文件在 Web 上广泛存在，因此创建本地备份似乎没有必要。
+
+
+文件 `~joe/nobackup/erlang_imports/rebar.config` 列出了我打算使用的所有依赖项，并如下所示：
+
+
+```erlang
+{deps, [
+        {cowboy, ".*", {git, "git@github.com:ninenines/cowboy.git", "master"}},
+        {ranch, ".*", {git, "git@github.com:ninenines/ranch.git", "master"}},
+        {bitcask, ".*", {git, "git@github.com:basho/bitcask.git", {branch, "develop"}}}
+       ]}.
+```
+
+
+要获取这些依赖项，我们就要在我们存储这个配置文件的目录下，执行 `rebar3 get-deps` 命令。
+
+
+```console
+$ rebar3 get-deps
+===> Verifying dependencies...
+===> Fetching eqc_rebar (from {git,"https://github.com/Quviq/eqc-rebar",{branch,"master"}})
+===> Analyzing applications...
+===> Compiling eqc_rebar
+===> Fetching cowboy (from {git,"git@github.com:ninenines/cowboy.git","master"})
+===> WARNING: It is recommended to use {branch, Name}, {tag, Tag} or {ref, Ref}, otherwise updating the dep may not work as expected.
+===> Dependency failure: source for cowboy does not contain a recognizable project and can not be built
+```
+
+> **译注**：可以看出，译者在运行上面的命令时报出了错误。下面的 GitHub issues 中指出，咱们应从 Hex 获取取 `cowboy`。参考 `bitcask` 的 `rebar.config` 文件中从 Hex 获取 `pc` 的配置，我们即可将 `cowboy` 配置为从 Hex 获取（直接在 `deps` 列表中写下库模组名字，即导致该库模组从 [`hexpm`](https://repo.hex.pm) 处获取该模组）。
+>
+> ```erlang
+> {deps, [
+>         {cowboy, "2.10.0"},
+>         {bitcask, ".*", {git, "git@github.com:basho/bitcask.git", {branch, "develop"}}}
+>        ]}.
+> ```
+>
+> 修改成上面这样后，再运行 `rebar3 get-deps` 命令就会成功，其输出如下。
+>
+> ```console
+> $ rebar3 get-deps
+> ===> Verifying dependencies...
+> ===> Fetching bitcask (from {git,"git@github.com:basho/bitcask.git",
+>                    {ref,"d84c8d913713da8f02403431217405f84ee1ba22"}})
+> ===> Fetching pc v1.15.0
+> ===> Analyzing applications...
+> ===> Compiling pc
+> ===> Fetching eqc_rebar (from {git,"https://github.com/Quviq/eqc-rebar",{branch,"master"}})
+> ===> Analyzing applications...
+> ===> Compiling eqc_rebar
+> ===> Fetching cowboy v2.10.0
+> ===> Fetching cowlib v2.12.1
+> ===> Fetching ranch v1.8.0
+> ```
+>
+> 参考：
+>
+> - [Source for cowboy does not contain a recognizable project and can not be built #1700](https://github.com/ninenines/cowboy/issues/1700#issuecomment-3467414880)
+
+
+Rebar 会获取我们在配置文件中指定的那些程序，并递归获取这些程序所依赖的任何程序。
+
+
+在我们获取到这些程序后，我们要使用 `rebar3 compile` 命令，编译他们。
+
+
+```console
+$ rebar3 compile
+==> Verifying dependencies...
+===> Compiling c_src/bitcask_nifs.c
+===> Compiling c_src/erl_nif_util.c
+===> Compiling c_src/murmurhash.c
+===> Linking /home/hector/nobackup/erlang_imports/_build/default/lib/bitcask/priv/bitcask.so
+===> Analyzing applications...
+===> Compiling bitcask
+===> Compiling ranch
+===> Compiling cowlib
+===> Compiling cowboy
+```
+
+
+最后一步是要告诉 Erlang，我们这些依赖项的被存储在何处。这是通过将以下代码行，移至 `${HOME}/.erlang` 这个启动文件完成的：
+
+
+```erlang
+%% Set paths to fix all dependencies
+Home = os:getenv("HOME").
+Dir = Home ++ "/nobackup/erlang_imports/_build/default/lib".
+{ok, L} = file:list_dir(Dir).
+lists:foreach(fun(I) ->
+                Path = Dir ++ "/" ++ I ++ "/ebin",
+                code:add_path(Path)
+              end, L).
+```
+
+> **译注**：以下是命令 `tree -L 3 ~/nobackup/erlang_imports/_build` 的输出。其反映了在新版 `rebar3` 下，依赖项的文件结构。上面加入启动文件的内容，也因此做了相应修改。
+>
+>
+> ```console
+> $ tree -L 3 ~/nobackup/erlang_imports/_build
+> /home/hector/nobackup/erlang_imports/_build
+> └── default
+>     ├── lib
+>     │   ├── bitcask
+>     │   ├── cowboy
+>     │   ├── cowlib
+>     │   └── ranch
+>     └── plugins
+>         ├── eqc_rebar
+>         └── pc
+>
+> 10 directories, 0 files
+> ```
+>
+> 在 Erlang 启动文件添加了上述内容后，`~/published/bertie/Makefile` 这个 makefile 文件，即可更新如下，在 `erl` 命令行上省略 `bitcask` 路径。
+>
+> ```makefile
+> all:
+> 	test -d _build/default/lib || rebar3 get-deps
+> 	rebar3 compile
+> 	@erl -noshell -pa './_build/default/lib/bertie/ebin' -s bertie start
+> ```
+
+
+## 以 Cowboy 构建嵌入式 Web 服务器
+
+
+Cowboy 是个以 Erlang 编写的小型、快速、模组化 HTTP 服务器，可在 [ninenines/cowboy](https://github.com/ninenines/cowboy) 处获取。他受一家名为 [Nine Nines](https://ninenines.eu/) 的公司支持。
+
+
+Cowboy 适合用于构建嵌入式的应用。他没有配置文件，也不产生日志。一切都受 Erlang 控制。
+
+
+我们将构造一个非常简单的 web 服务器，以 `simple_web_server:start(Port)` 命令启动。这会启动一个在 `Port` 上监听命令的 web 服务器，其根目录便是该程序启动所在的目录。
+
+启动一切的那个主函数如下：
+
+
+```erlang
+{{#include ../../projects/ch25-code/simple_web_server.erl}}
+```
+
+
+第 2 至 4 行启动了 OTP 应用程序。第 5 行将这个 web 服务器的 “接受者” 数量设为 10。这意味着这个 web 服务器会使用 10 个并行进程，接受 HTTP 连接请求。同步并行会话的数量，可远高于这个数字。变量 `Dispatch` 包含一个 “调度器模式” 列表。所谓调度模式，会将 URI 路径，映射到处理这单个请求的模组名字。第 9 行中的模式，会将所有请求映射到 `simple_web_server` 这个模组。
+
+> *知识点*：
+>
+> - dispather patterns
+
+
+`cowboy_router:compile(Display)` 会编译调度程序信息，创建出一个高效的调度器/分发器，而 `cowboy:start_http/4` 则会启动这个 web 服务器。
+
+调度器/分发器模式中提到的那些模组名字，都必须提供三个回调例程：`init/3`、`handle/3` 和 `terminate/2`。在咱们的情形中，只有一个名为 `simple_web_server` 的处理器模组。首先是 `init/3`，他会在一个全新连接对这个 web 服务器发起时被调用。
+
+
+```erlang
+{{#include ../../projects/ch25-code/simple_web_server.erl:21:22}}
+```
+
+`init` 会以三个参数调用。第一个说明与服务器建立的连接类型。在这一情形下，其为一个 HTTP 连接。第二个参数就是 cowboy 所说的 *请求对象*。请求对象包含了有关该请求的信息，并将最终包含发送回浏览器的信息。Cowboy 提供了大量用于提取请求对象中信息，及用于把后续将发送到浏览器的信息，存储在请求对象中的函数。`init` 的第三个参数（`Opt`），就是在调用 `cowboy_router:compile/1` 时所给到的那个调度/分配元组的第三个参数。
+
+
+依惯例 `init/3` 会返回元组 `{ok, Req, State}`，这会使 web 服务器接受连接。`Req` 是请求对象，`State` 是个与连接相关的私有状态。当连接被接受时，HTTP 的驱动程序将以 `init` 函数返回的请求对象和状态，调用函数 `handle/2`。`handle/2` 如下所示：
+
+```erlang
+{{#include ../../projects/ch25-code/simple_web_server.erl:24:28}}
+```
+
+
+`handle` 调用了 `cowboy_req:path(Req)`（第 2 行）提取所请求资源的路径。因此，例如当用户请求地址 `http://localhost:1234/this_page.html` 中的某个页面时，那么 `cowboy_req:path(Req)` 将返回路径 `<<"/this_page.html">>`。路径以 Erlang 的二进制值表示。
+
+
+通过调用 `cowboy_req:reply/4`，读取文件的结果（`Response`）即被打包到请求对象中，并成为 `handle/2` 返回值的一部分（第 4 和第 5 行）。
+
+
+读取所请求页面是由 `read_file/1` 完成。
+
+```erlang
+{{#include ../../projects/ch25-code/simple_web_server.erl:30:35}}
+```
+
+由于我们假定了所有文件都是在启动这个 web 服务器的目录下提供的，因此我们在文件名前加上一个点（否则其会以正向斜线开头），以便我们读取到正确的文件。
+
+
+差不多就是这样。现在所发生的事情，取决于套接字建立的方式。当他是个保持活动的连接时，那么 `handle` 将再度被调用。当连接关闭时，那么 `terminate/3` 将被调用。
+
+```erlang
+{{#include ../../projects/ch25-code/simple_web_server.erl:37:38}}
+```
+
+> **译注**：`cowboy` 对 `crypto` 存在依赖，而 `crypto` 又对 `ssl` 等存在递归依赖。
+>
+> 参考:
+>
+> - [Erlang Dependency Not Started Error](https://stackoverflow.com/a/15920037/12288760)
+
+现在我们已经了解了如何构造一个简单服务器，我们将把玩一下其中涉及的基本结构，并构造一个更有用的示例。
+
+
 

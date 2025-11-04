@@ -397,8 +397,8 @@ fonts_in(Str) ->
 
 ```console
 $ dialyzer
-  Checking whether the PLT c:/Users/ZBT7RX/AppData/Local/erlang/Cache/.dialyzer_plt is up-to-date...
-dialyzer: Could not find the PLT: c:/Users/ZBT7RX/AppData/Local/erlang/Cache/.dialyzer_plt
+  Checking whether the PLT c:/Users/hector.peng/AppData/Local/erlang/Cache/.dialyzer_plt is up-to-date...
+dialyzer: Could not find the PLT: c:/Users/hector.peng/AppData/Local/erlang/Cache/.dialyzer_plt
 Use the options:
    --build_plt   to build a new PLT; or
    --add_to_plt  to add to an existing PLT
@@ -571,7 +571,7 @@ factorial(N) -> N*factorial(N-1).
 
 ```console
 $ dialyzer test3.erl
-  Checking whether the PLT c:/Users/ZBT7RX/AppData/Local/erlang/Cache/.dialyzer_plt is up-to-date... yes
+  Checking whether the PLT c:/Users/hector.peng/AppData/Local/erlang/Cache/.dialyzer_plt is up-to-date... yes
   Proceeding with analysis...
 test3.erl:5:1: Function test/0 has no local return
 test3.erl:5:21: The call test3:factorial
@@ -668,7 +668,7 @@ print(H,M,S) ->
 
 ```console
 $ dialyzer types1.erl
-  Checking whether the PLT c:/Users/ZBT7RX/AppData/Local/erlang/Cache/.dialyzer_plt is up-to-date... yes
+  Checking whether the PLT c:/Users/hector.peng/AppData/Local/erlang/Cache/.dialyzer_plt is up-to-date... yes
   Proceeding with analysis... done in 0m0.31s
 done (passed successfully)
 ```
@@ -800,7 +800,7 @@ $ typer types1_bug.erl
 
 ```console
 $ dialyzer types1_bug.erl
-  Checking whether the PLT c:/Users/ZBT7RX/AppData/Local/erlang/Cache/.dialyzer_plt is up-to-date... yes
+  Checking whether the PLT c:/Users/hector.peng/AppData/Local/erlang/Cache/.dialyzer_plt is up-to-date... yes
   Proceeding with analysis...
 types1_bug.erl:5:1: Function f4/1 has no local return
 types1_bug.erl:6:11: The call types1_bug:print

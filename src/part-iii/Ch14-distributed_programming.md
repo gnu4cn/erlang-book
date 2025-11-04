@@ -165,7 +165,7 @@ undefined
 ```erlang
 $ erl -sname gandalf
 ...
-(gandalf@ZBT7RX-L1)1> kvs:start().
+(gandalf@hector.peng-L1)1> kvs:start().
 true
 ```
 
