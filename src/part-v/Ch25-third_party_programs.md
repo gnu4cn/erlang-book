@@ -488,40 +488,47 @@ Cowboy 适合用于构建嵌入式的应用。他没有配置文件，也不产�
 
 
 ```erlang
-{{#include ../../projects/ch25-code/simple_web_server.erl}}
+{{#include ../../projects/ch25-code/simple_web_server.erl:4:20}}
 ```
 
+> **译注**：自本书 2013 年第 2 版以来，Cowboy 接口已然发生了诸多变化。这导致本书原文中这段代码已无法运行。比如在译者使用的 Cowboy 2.10.0 版本下，`cowboy:start_http/4` 已被移除，取而代之的是 `cowboy:start_clear/3` 或 `cowboy:start_tls/3`。
+>
+>
+> 参考：
+>
+> - [[erlang-questions] Programming Erlang: Chap 18, Websockets](https://groups.google.com/g/erlang-programming/c/h5WE4W6RsJA/m/9nleRfdOAwAJ)
+>
+> -[Getting started: Listening for connections](https://ninenines.eu/docs/en/cowboy/2.6/guide/getting_started/#_listening_for_connections)
+>
+> - [`cowboy_req:reply`](https://ninenines.eu/docs/en/cowboy/2.10/manual/cowboy_req.reply/)
 
-第 2 至 4 行启动了 OTP 应用程序。第 5 行将这个 web 服务器的 “接受者” 数量设为 10。这意味着这个 web 服务器会使用 10 个并行进程，接受 HTTP 连接请求。同步并行会话的数量，可远高于这个数字。变量 `Dispatch` 包含一个 “调度器模式” 列表。所谓调度模式，会将 URI 路径，映射到处理这单个请求的模组名字。第 9 行中的模式，会将所有请求映射到 `simple_web_server` 这个模组。
+
+第 5 至 8 行启动了一些 OTP 应用。~~第 5 行将这个 web 服务器的 “接受者” 数量设为 10。这意味着这个 web 服务器会使用 10 个并行进程，接受 HTTP 连接请求。同步并行会话的数量，可远高于这个数字~~（Cowboy 2.0 已经移除 `start_http` 函数，同时新的 `cowboy:start_clear/3` 已不支持此参数）。变量 `Dispatch` 包含一个 “调度器模式” 列表。所谓调度模式，会将 URI 路径，映射到处理这单个请求的模组名字。第 12 行中的模式，会将所有请求映射到 `simple_web_server` 这个模组。
 
 > *知识点*：
 >
 > - dispather patterns
 
 
-`cowboy_router:compile(Display)` 会编译调度程序信息，创建出一个高效的调度器/分发器，而 `cowboy:start_http/4` 则会启动这个 web 服务器。
+[`cowboy_router:compile(Routes)`](https://ninenines.eu/docs/en/cowboy/2.10/manual/cowboy_router.compile/) 会编译调度器信息，创建出高效的调度器/分发器，~~而 `cowboy:start_http/4` 则会启动这个 web 服务器~~（在 Cowboy 2.0 后，该函数已被弃用，而以 `cowboy:start_tls` 与 `cowboy:start_clear` 取而代之）。
 
-调度器/分发器模式中提到的那些模组名字，都必须提供三个回调例程：`init/3`、`handle/3` 和 `terminate/2`。在咱们的情形中，只有一个名为 `simple_web_server` 的处理器模组。首先是 `init/3`，他会在一个全新连接对这个 web 服务器发起时被调用。
+调度器/分发器模式中给出的那些模组名字，都必须提供 ~~三个回调例程：`init/3`、`handle/3` 和 `terminate/2`~~ 回调例程 [`init/2` 这个处理器](https://ninenines.eu/docs/en/cowboy/2.10/guide/handlers/)。在咱们的情形中，只有一个名为 `simple_web_server` 的处理器模组。回调例程 `init/2` 会在一个全新连接对这个 web 服务器发起时被调用。
 
 
 ```erlang
-{{#include ../../projects/ch25-code/simple_web_server.erl:21:22}}
+{{#include ../../projects/ch25-code/simple_web_server.erl:22:28}}
 ```
 
-`init` 会以三个参数调用。第一个说明与服务器建立的连接类型。在这一情形下，其为一个 HTTP 连接。第二个参数就是 cowboy 所说的 *请求对象*。请求对象包含了有关该请求的信息，并将最终包含发送回浏览器的信息。Cowboy 提供了大量用于提取请求对象中信息，及用于把后续将发送到浏览器的信息，存储在请求对象中的函数。`init` 的第三个参数（`Opt`），就是在调用 `cowboy_router:compile/1` 时所给到的那个调度/分配元组的第三个参数。
+`init` 会以两个参数调用。~~第一个说明与服务器建立的连接类型。在这一情形下，其为一个 HTTP 连接~~。第一个参数就是 cowboy 所说的 *请求对象*。请求对象包含了有关该请求的信息，并将最终包含发送回浏览器的信息。Cowboy 提供了大量用于提取请求对象中信息，及用于把后续将发送到浏览器的信息，存储在请求对象中的函数。~~`init` 的第三个参数（`Opt`），就是在调用 `cowboy_router:compile/1` 时所给到的那个调度/分配元组的第三个参数~~ `init` 的第二个参数是定义在路由器配置中的初始状态。
 
 
-依惯例 `init/3` 会返回元组 `{ok, Req, State}`，这会使 web 服务器接受连接。`Req` 是请求对象，`State` 是个与连接相关的私有状态。当连接被接受时，HTTP 的驱动程序将以 `init` 函数返回的请求对象和状态，调用函数 `handle/2`。`handle/2` 如下所示：
-
-```erlang
-{{#include ../../projects/ch25-code/simple_web_server.erl:24:28}}
-```
+依惯例 `init/3` 会返回元组 `{ok, Req, State}`，这会使 web 服务器接受连接。`ok` 表示该处理器运行成功。我们还将修改后的 `Req`，给回到 Cowboy，`State` 是个与连接相关的私有状态，将在到这个处理器的后续回调用中用到。~~当连接被接受时，HTTP 的驱动程序将以 `init` 函数返回的请求对象和状态，调用函数 `handle/2`。`handle/2` 如下所示：~~
 
 
-`handle` 调用了 `cowboy_req:path(Req)`（第 2 行）提取所请求资源的路径。因此，例如当用户请求地址 `http://localhost:1234/this_page.html` 中的某个页面时，那么 `cowboy_req:path(Req)` 将返回路径 `<<"/this_page.html">>`。路径以 Erlang 的二进制值表示。
+~~`handle`~~ `init` 调用了 `cowboy_req:path(Req)`（第 2 行）来提取所请求资源的路径。因此，例如当用户请求地址 `http://localhost:1234/this_page.html` 中的某个页面时，那么 `cowboy_req:path(Req)` 将返回路径 `<<"/this_page.html">>`。路径以 Erlang 的二进制值表示。
 
 
-通过调用 `cowboy_req:reply/4`，读取文件的结果（`Response`）即被打包到请求对象中，并成为 `handle/2` 返回值的一部分（第 4 和第 5 行）。
+通过调用 `cowboy_req:reply/4`，读取文件的结果（`Response`）即被打包到请求对象中，并成为 `init/2` 返回值的一部分（第 4 到第 6 行）。
 
 
 读取所请求页面是由 `read_file/1` 完成。
@@ -533,7 +540,7 @@ Cowboy 适合用于构建嵌入式的应用。他没有配置文件，也不产�
 由于我们假定了所有文件都是在启动这个 web 服务器的目录下提供的，因此我们在文件名前加上一个点（否则其会以正向斜线开头），以便我们读取到正确的文件。
 
 
-差不多就是这样。现在所发生的事情，取决于套接字建立的方式。当他是个保持活动的连接时，那么 `handle` 将再度被调用。当连接关闭时，那么 `terminate/3` 将被调用。
+差不多就是这样。现在所发生的事情，取决于套接字建立的方式。当他是个保持活动的连接时，那么 `init` 将再度被调用。当连接关闭时，那么 `terminate/3` 将被调用。
 
 ```erlang
 {{#include ../../projects/ch25-code/simple_web_server.erl:37:38}}
@@ -548,4 +555,4 @@ Cowboy 适合用于构建嵌入式的应用。他没有配置文件，也不产�
 现在我们已经了解了如何构造一个简单服务器，我们将把玩一下其中涉及的基本结构，并构造一个更有用的示例。
 
 
-
+我们即将编写一个从浏览器到 Erlang 再返回的 JSON 循环程序。这个示例非常有趣，因为它展示了如何将浏览器和 Erlang 连接起来。我们从浏览器中的 JavaScript 对象开始。我们将其作为 JSON 消息编码发送给 Erlang。我们在 Erlang 中对该消息进行解码，使其成为 Erlang 数据结构，然后将其发送回浏览器，并将其变回 JavaScript 对象。如果一切顺利，对象将在往返过程中存活下来，并以开始时的状态结束。
