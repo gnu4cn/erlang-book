@@ -741,3 +741,36 @@ $ erl -boot start_sasl -config elog4 -s cgi_web_server start_from_shell 8080
 5. 请修改这个 web 服务器，实现那些经由 CGI 接口调用模组的动态重编译。在我们的示例中，`echo.erl` 模组在其可被调用前，就必须被编译。当某个模组经由 CGI 接口被调用时，要读取 beam 文件上的时间戳，并将其与相应 `.erl` 文件上的时间戳比较。然后在必要时重新编译即重新加载该 Erlang 代码；
 
 6. Rebar 是以 “自包含” 二进制文件形式发布的 Erlang 程序优秀范例。请将 rebar 的可执行文件，拷贝复制到某个暂存目录，并将其重命名为 `rebar.zip`。Rebar 实际上就是个 zip 文件。将其解压缩并检查内容。请从 cowboy 的示例代码，构造咱们自己的自执行二进制文件。
+
+> **译注**：`rebar3` 解压后的目录结构如下所示。
+>
+> ```console
+> $ tree -L 2
+> .
+> ├── bbmustache
+> │   └── ebin
+> ├── certifi
+> │   └── ebin
+> ├── cf
+> │   └── ebin
+> ├── cth_readable
+> │   └── ebin
+> ├── erlware_commons
+> │   └── ebin
+> ├── eunit_formatters
+> │   └── ebin
+> ├── getopt
+> │   └── ebin
+> ├── providers
+> │   └── ebin
+> ├── rebar
+> │   ├── ebin
+> │   └── priv
+> ├── relx
+> │   ├── ebin
+> │   └── priv
+> └── ssl_verify_fun
+>     └── ebin
+>
+> 25 directories, 0 files
+> ```

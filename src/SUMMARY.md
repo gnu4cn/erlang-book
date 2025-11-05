@@ -46,3 +46,4 @@
 + [构建应用](part-v.md)
     - [编程习语](part-v/Ch24-programming_idioms.md)
     - [第三方程序](part-v/Ch25-third_party_programs.md)
+    - [多核心 CPU 编程](part-v/Ch26-programming_multicore_CPUs.md)
