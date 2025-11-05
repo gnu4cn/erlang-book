@@ -498,7 +498,7 @@ Cowboy 适合用于构建嵌入式的应用。他没有配置文件，也不产�
 >
 > - [[erlang-questions] Programming Erlang: Chap 18, Websockets](https://groups.google.com/g/erlang-programming/c/h5WE4W6RsJA/m/9nleRfdOAwAJ)
 >
-> -[Getting started: Listening for connections](https://ninenines.eu/docs/en/cowboy/2.6/guide/getting_started/#_listening_for_connections)
+> - [Getting started: Listening for connections](https://ninenines.eu/docs/en/cowboy/2.6/guide/getting_started/#_listening_for_connections)
 >
 > - [`cowboy_req:reply`](https://ninenines.eu/docs/en/cowboy/2.10/manual/cowboy_req.reply/)
 
@@ -551,8 +551,62 @@ Cowboy 适合用于构建嵌入式的应用。他没有配置文件，也不产�
 > 参考:
 >
 > - [Erlang Dependency Not Started Error](https://stackoverflow.com/a/15920037/12288760)
+>
+> 运行这个简单 web 服务器，并使用 `curl` 发起请求的输出如下。
+>
+> ```erlang
+> $ erl -boot start_sasl -config elog4
+> ...
+> 1> ls().
+> elog4.config               index.html
+> simple_web_server.beam     simple_web_server.erl
+>
+> ok
+> 2> simple_web_server:start().
+> {ok,<0.127.0>}
+> ```
+>
+> ```console
+> $ curl http://localhost:8080/index.html -v
+> * Host localhost:8080 was resolved.
+> * IPv6: ::1
+> * IPv4: 127.0.0.1
+> *   Trying [::1]:8080...
+> * connect to ::1 port 8080 from ::1 port 60852 failed: 连接被拒绝
+> *   Trying 127.0.0.1:8080...
+> * Established connection to localhost (127.0.0.1 port 8080) from 127.0.0.1 port 36982
+> * using HTTP/1.x
+> > GET /index.html HTTP/1.1
+> > Host: localhost:8080
+> > User-Agent: curl/8.16.0
+> > Accept: */*
+> >
+> * Request completely sent off
+> < HTTP/1.1 200 OK
+> < content-length: 22
+> < content-type: text/plain
+> < date: Tue, 04 Nov 2025 08:55:27 GMT
+> < server: Cowboy
+> <
+> <h1>Hello World!</h1>
+> * Connection #0 to host localhost:8080 left intact
+> ```
 
 现在我们已经了解了如何构造一个简单服务器，我们将把玩一下其中涉及的基本结构，并构造一个更有用的示例。
 
 
-我们即将编写一个从浏览器到 Erlang 再返回的 JSON 循环程序。这个示例非常有趣，因为它展示了如何将浏览器和 Erlang 连接起来。我们从浏览器中的 JavaScript 对象开始。我们将其作为 JSON 消息编码发送给 Erlang。我们在 Erlang 中对该消息进行解码，使其成为 Erlang 数据结构，然后将其发送回浏览器，并将其变回 JavaScript 对象。如果一切顺利，对象将在往返过程中存活下来，并以开始时的状态结束。
+我们即将编写一个从浏览器到 Erlang 再返回的 JSON 往返程序。这个示例非常有趣，因为他展示了如何将浏览器与 Erlang 连接起来。我们会以浏览器中的 JavaScript 对象开始。我们会将其编码为 JSON 消息，发送给 Erlang。我们会在 Erlang 下解码该消息，这里器会成为一种 Erlang 的数据结构，然后将其发送回浏览器，并将其变回一个 JavaScript 对象。当一切顺利时，这个对象将在这个往返过程下存活下来，并以器开始时的样子结束。
+
+我们将从 Erlang 代码开始，将其构造得比前一示例稍微通用一些。我们将增加一项元调用设施，以便我们可从浏览器中，调用任意的 Erlang 函数。当浏览器以一个 `http://Host/cgi?mod=Modname&Func=Funcname` 形式 URI，请求某个页面时，我们希望在 Erlang web 服务器上，调用函数 `Mod:Func(Args)`。其中 `Args` 假设是个 JSON 的数据结构。
+
+> **译注**：
+>
+> - a meta-call facility
+
+
+完成这一目的的代码如下：
+
+```erlang
+{{#include ../../projects/ch25-code/simple_web_server.erl:4:20}}
+```
+
