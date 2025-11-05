@@ -595,7 +595,7 @@ Cowboy 适合用于构建嵌入式的应用。他没有配置文件，也不产�
 
 我们即将编写一个从浏览器到 Erlang 再返回的 JSON 往返程序。这个示例非常有趣，因为他展示了如何将浏览器与 Erlang 连接起来。我们会以浏览器中的 JavaScript 对象开始。我们会将其编码为 JSON 消息，发送给 Erlang。我们会在 Erlang 下解码该消息，这里器会成为一种 Erlang 的数据结构，然后将其发送回浏览器，并将其变回一个 JavaScript 对象。当一切顺利时，这个对象将在这个往返过程下存活下来，并以器开始时的样子结束。
 
-我们将从 Erlang 代码开始，将其构造得比前一示例稍微通用一些。我们将增加一项元调用设施，以便我们可从浏览器中，调用任意的 Erlang 函数。当浏览器以一个 `http://Host/cgi?mod=Modname&Func=Funcname` 形式 URI，请求某个页面时，我们希望在 Erlang web 服务器上，调用函数 `Mod:Func(Args)`。其中 `Args` 假设是个 JSON 的数据结构。
+我们将从 Erlang 代码开始，将其构造得比前一示例稍微通用一些。我们将增加一项元调用设施，以便我们可从浏览器中，调用任意的 Erlang 函数。当浏览器以一个 `http://Host/cgi?mod=Modname&func=Funcname` 形式 URI，请求某个页面时，我们希望在 Erlang web 服务器上，调用函数 `Mod:Func(Args)`。其中 `Args` 假设是个 JSON 的数据结构。
 
 > **译注**：
 >
@@ -605,6 +605,139 @@ Cowboy 适合用于构建嵌入式的应用。他没有配置文件，也不产�
 完成这一目的的代码如下：
 
 ```erlang
-{{#include ../../projects/ch25-code/simple_web_server.erl:4:20}}
+{{#include ../../projects/ch25-code/cgi_web_server.erl:19:39}}
 ```
 
+这段代码与本章前面给出的代码类似。唯一不同的是，~~我们调用 `cowboy_req:qs` 来分解查询字符串，调用 `cowboy_req:body` 来提取 HTTP 请求的正文~~ 我们调用了 [`cowboy_req:parse_qs/1`](https://ninenines.eu/docs/en/cowboy/2.10/manual/cowboy_req.parse_qs/) 解析查询字串，调用了 [`cowboy_req:read_body/1`](https://ninenines.eu/docs/en/cowboy/2.10/manual/cowboy_req.read_body/) 读取请求正文。我们调用了 `mochiweb2` 库（可从 [mochi/mochiweb](https://github.com/mochi/mochiweb) 处获取）中的编码及解码例程，在 JSON 字符串与 Erlang 项之间转换。处理调用的代码如下：
+
+
+```erlang
+{{#include ../../projects/ch25-code/cgi_web_server.erl:41:44}}
+```
+
+下面是回显代码：
+
+```erlang
+{{#include ../../projects/ch25-code/echo.erl}}
+```
+
+我们已完成 Erlang 代码。现在要完成浏览器中相应的代码。这只需要几行的 JavaScript，及对 jQuery 库数个调用。
+
+> **译注**：在以上服务器侧 Erlang 代码下，运行服务器及使用 `curl` 向服务器发送请求的输出如下。
+>
+> ```erlang
+> $ erl -boot start_sasl -config elog4
+> ...
+> 1> cgi_web_server:start().
+> {ok,<0.126.0>}
+> echo: [{<<"Name">>,<<"Hector PENG">>},{<<"Height">>,181}]
+> ```
+>
+>
+> ```console
+> $ curl --ipv4 -v "http://localhost:8080/cgi?mod=echo&func=me" -H "Content-Type:application/json" -X POST --data '{"Name": "Hector PENG", "Height": 181}'
+> Note: Unnecessary use of -X or --request, POST is already inferred.
+> * Host localhost:8080 was resolved.
+> * IPv6: ::1
+> * IPv4: 127.0.0.1
+> *   Trying 127.0.0.1:8080...
+> * Established connection to localhost (127.0.0.1 port 8080) from 127.0.0.1 port 42290
+> * using HTTP/1.x
+> > POST /cgi?mod=echo&func=me HTTP/1.1
+> > Host: localhost:8080
+> > User-Agent: curl/8.16.0
+> > Accept: */*
+> > Content-Type:application/json
+> > Content-Length: 38
+> >
+> * upload completely sent off: 38 bytes
+> < HTTP/1.1 200 OK
+> < content-length: 35
+> < content-type: text/json
+> < date: Wed, 05 Nov 2025 06:45:32 GMT
+> < server: Cowboy
+> <
+> * Connection #0 to host localhost:8080 left intact
+> {"Name":"Hector PENG","Height":181}%
+> ```
+
+```html
+{{#include ../../projects/ch25-code/test2.html}}
+```
+
+现在，我们将在 `1234` 端口上启动这个 web 服务器；我们可以在 shell 下完成此操作。
+
+
+```erlang
+$ erl -boot start_sasl -config elog4
+Erlang/OTP 28 [erts-16.0.3] [source] [64-bit] [smp:12:12] [ds:12:12:10] [async-threads:1] [jit:ns]
+
+Eshell V16.0.3 (press Ctrl+G to abort, type help(). for help)
+1> cgi_web_server:start().
+{ok,<0.126.0>}
+```
+
+服务器启动后，我们即可在浏览器中输入地址 `http://localhost:1234/test2.html`，然后我们将看到上面有个按钮的页面。当我们单击该按钮后时，测试即被执行，浏览器就会显示 Erlang 发回的数据（[图 7，*发送自 Erlang 的 JSON 项](#fig-7)）。
+
+
+而下面即是我们在 Erlang shell 下中所看到的内容：
+
+
+```erlang
+echo: [{<<"int">>,1234},
+       {<<"string">>,<<"abcd">>},
+       {<<"array">>,[1,2,3,<<"abc">>]},
+       {<<"map">>,
+        {struct,[{<<"one">>,<<"abc">>},
+                 {<<"two">>,1},
+                 {<<"three">>,<<"abc">>}]}}]
+```
+
+这是 `mochijson2:decode/1` 返回的 Erlang 解析树。正如咱们可见，数据在两个系统之间得以正确传输。
+
+
+*注意*：并非所有 JSON 项都能在浏览器和 Erlang 之间的往返中存活。JavaScript 的整数精度有限，而 Erlang 则有着大数字，因此在处理大整数时，我们可能会遇到问题。同样，浮点数可能在转换过程中失去精度。
+
+![Erlang 发出的 JSON 项](../images/JSON_term_from_Erlang.png)
+
+
+<a name="fig-7"></a>
+**图 7** -- **Erlang 发出的 JSON 项**
+
+
+作为自 Erlang shell 启动这个 web 服务器的替代做法，我们可能还希望从 makefile，或命令行启动该服务器。在这种情况下，我们需要添加一个将 Erlang 从 shell 下接收到的参数（一个原子的列表），转换为启动该服务器所需形式的例程。
+
+
+```erlang
+{{#include ../../projects/ch25-code/cgi_web_server.erl:57:59}}
+```
+
+
+随后，例如，要启动一个在端口 5000 上监听的服务器，我们可执行以下命令：
+
+```console
+$ erl -boot start_sasl -config elog4 -s cgi_web_server start_from_shell 8080
+```
+
+本章介绍了如何将 `rebar` 用于简单的项目管理。我们展示了怎样在 GitHub 上创建一个新项目，并使用 `rebar` 对其管理，以及如何包含 GitHub 上的一些项目，并将其纳入我们自己的工作。我们举了一个有关如何开始使用 `cowboy` 构建专门 web 服务器的简单示例。[第 18 章，*使用 Websockets 和 Erlang 浏览*](../part-iv/Ch18-browsing_with_websockets_and_erlang.md) 中构建的 Web 服务器，与本章给出的代码基本相似。
+
+
+第二个 `cowboy` 的示例，使用 `mochiweb` 中的编码和解码例程，将 JSON 项转换为 Erlang 的结构。当映射出现于 Erlang R17 版本中时，我（作者）将修改本书中的代码，以反映这点。
+
+
+在下一章中，我们将了解多核心计算机，并探讨在多核心计算机上运行代码的一些并行化技术。当我们运行于多核心 CPU 上时，并发程序会变成并行程序，同时运行速度应会更快 -- 我们将看看事实是否如此。
+
+
+## 练习
+
+1. 请在 GitHub 上注册一个账号，然后按照本章开头的步骤，创建咱们自己的项目；
+
+2. 第二个 `cowboy` 示例可能不安全。用户可经由那个 CGI 调用接口，请求任意 Erlang 模组的执行。请重新设计接口，只允许调用一组预定义的模组；
+
+3. 请完成一个 cowboy 示例的安全审计。这段代码存在数个安全问题。例如，请求的文件值未被检查，因此访问该 web 服务器目录结构之外的文件即有可能。请查找并修复这些安全问题；
+
+4. 任何主机都可以连接到这个 cowboy 服务器。请修改代码，从而只允许来自一些已知 IP 地址主机的连接。要将这些主机存储在某种形式的持久数据库中，例如 Mnesia 或 `bitcask`。要记录从特定主机发起连接的次数。请构造一个特定时间内连接频率过高的主机黑名单；
+
+5. 请修改这个 web 服务器，实现那些经由 CGI 接口调用模组的动态重编译。在我们的示例中，`echo.erl` 模组在其可被调用前，就必须被编译。当某个模组经由 CGI 接口被调用时，要读取 beam 文件上的时间戳，并将其与相应 `.erl` 文件上的时间戳比较。然后在必要时重新编译即重新加载该 Erlang 代码；
+
+6. Rebar 是以 “自包含” 二进制文件形式发布的 Erlang 程序优秀范例。请将 rebar 的可执行文件，拷贝复制到某个暂存目录，并将其重命名为 `rebar.zip`。Rebar 实际上就是个 zip 文件。将其解压缩并检查内容。请从 cowboy 的示例代码，构造咱们自己的自执行二进制文件。
