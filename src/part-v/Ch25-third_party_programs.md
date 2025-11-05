@@ -567,14 +567,12 @@ Cowboy 适合用于构建嵌入式的应用。他没有配置文件，也不产�
 > ```
 >
 > ```console
-> $ curl http://localhost:8080/index.html -v
+> $ curl --ipv4 http://localhost:8080/index.html -v
 > * Host localhost:8080 was resolved.
 > * IPv6: ::1
 > * IPv4: 127.0.0.1
-> *   Trying [::1]:8080...
-> * connect to ::1 port 8080 from ::1 port 60852 failed: 连接被拒绝
 > *   Trying 127.0.0.1:8080...
-> * Established connection to localhost (127.0.0.1 port 8080) from 127.0.0.1 port 36982
+> * Established connection to localhost (127.0.0.1 port 8080) from 127.0.0.1 port 52938
 > * using HTTP/1.x
 > > GET /index.html HTTP/1.1
 > > Host: localhost:8080
@@ -585,7 +583,7 @@ Cowboy 适合用于构建嵌入式的应用。他没有配置文件，也不产�
 > < HTTP/1.1 200 OK
 > < content-length: 22
 > < content-type: text/plain
-> < date: Tue, 04 Nov 2025 08:55:27 GMT
+> < date: Wed, 05 Nov 2025 01:24:32 GMT
 > < server: Cowboy
 > <
 > <h1>Hello World!</h1>

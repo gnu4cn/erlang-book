@@ -5,10 +5,10 @@ start() ->                                                      %% Line 1
     start(8080).
 
 start(Port) ->
-    ok = application:start(crypto),                             %%      5
-    {ok, _} = application:ensure_all_started(ranch),
-    ok = application:start(cowlib),
-    ok = application:start(cowboy),
+    %% ok = application:start(crypto),                          %%      5
+    %% {ok, _} = application:ensure_all_started(ranch),
+    %% ok = application:start(cowlib),
+    {ok, _} = application:ensure_all_started(cowboy),
     Dispatch = cowboy_router:compile(
                  [                                              %%     10
                   %% {URIHost, list(URIPath, Handler, Opts)}
