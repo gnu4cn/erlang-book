@@ -254,7 +254,8 @@ map(fun(I) -> 2*I end, L)
 > 其中 `lib_misc:fac/1` 为：
 >
 > ```erlang
-> {{#include ../../projects/ch26-code/lib_misc.erl:249:250}}
+> fac(0) -> 1;
+> fac(N) -> N * fac(N-1).
 > ```
 >
 > 但是我们不能在 Erlang shell 下，执行以下命令会报出相应错误。
