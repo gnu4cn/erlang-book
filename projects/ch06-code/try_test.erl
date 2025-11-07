@@ -13,10 +13,10 @@ generate_exception(4) -> {'EXIT', a};
 generate_exception(5) -> error(a).
 
 
-demo1() -> 
+demo1() ->
     [catcher(I) || I <- [1,2,3,4,5]].
 
-demo2() -> 
+demo2() ->
     [{I, (catch generate_exception(I))} || I <- [1,2,3,4,5]].
 
 catcher(N) ->

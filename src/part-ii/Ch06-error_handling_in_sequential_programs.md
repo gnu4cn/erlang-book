@@ -272,7 +272,9 @@ catcher(N) ->
 当 `catch` 语句内部某个异常发生时，他会被转换为一个描述该错误的 `{`EXIT`, ...}` 元组。为演示这点，我们可在一个 `catch` 表达式中，调用 `generate_exception`。
 
 
-[`try_test.erl`](http://media.pragprog.com/titles/jaerlang2/code/try_test.erl)
+```erlang
+{{#include ../../projects/ch06-code/try_test.erl:19:20}}
+```
 
 运行这段代码，我们会得到以下内容：
 

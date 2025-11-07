@@ -1,7 +1,9 @@
 -module(lib_misc).
 -include_lib("kernel/include/file.hrl").
--import(lists, [map/2]).
+-import(lists, [map/2, foreach/2]).
 -export([
+         fac/1,
+         pmap1/2,
          pmap/2,
          glurk/2,
          deliberate_error/1,
@@ -54,7 +56,7 @@ perms(L)  -> [[H|T] || H <- L, T <- perms(L -- [H])].
 
 
 max(X, Y) when X > Y -> X;
-max(X, Y) -> Y.
+max(_X, Y) -> Y.
 
 
 filter(P, [H|T]) ->
@@ -62,7 +64,7 @@ filter(P, [H|T]) ->
         true  -> [H|filter(P, T)];
         false -> filter(P, T)
     end;
-filter(P, []) -> [].
+filter(_P, []) -> [].
 
 
 odds_and_evens(L) ->
@@ -210,6 +212,7 @@ pmap(F, L) ->
     %% make_ref() returns a unique reference
     %%   we'll match on this later
     Ref = erlang:make_ref(),
+    io:format("Ref: ~p~n", [Ref]),
     Pids = map(fun(I) ->
                        spawn(fun() -> do_f(S, Ref, F, I) end)
                end, L),
@@ -225,4 +228,23 @@ gather([Pid|T], Ref) ->
     end;
 gather([], _) -> [].
 
+pmap1(F, L) ->
+    S = self(),
+    Ref = erlang:make_ref(),
+    foreach(fun(I) ->
+                    spawn(fun() -> do_f1(S, Ref, F, I) end)
+            end, L),
+    %% gather the results
+    gather1(length(L), Ref, []).
 
+do_f1(Parent, Ref, F, I) ->
+    Parent ! {Ref, (catch F(I))}.
+
+gather1(0, _, L) -> L;
+gather1(N, Ref, L) ->
+    receive
+        {Ref, Ret} -> gather1(N-1, Ref, [Ret|L])
+    end.
+
+fac(0) -> 1;
+fac(N) -> N * fac(N-1).
