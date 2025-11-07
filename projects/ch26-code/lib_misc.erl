@@ -211,7 +211,7 @@ pmap(F, L) ->
     %%   we'll match on this later
     Ref = erlang:make_ref(),
     Pids = map(fun(I) ->
-               spawn(fun() -> do_f(S, Ref, F, I) end)
+                       spawn(fun() -> do_f(S, Ref, F, I) end)
                end, L),
     %% gather the results
     gather(Pids, Ref).
