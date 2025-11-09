@@ -212,7 +212,6 @@ pmap(F, L) ->
     %% make_ref() returns a unique reference
     %%   we'll match on this later
     Ref = erlang:make_ref(),
-    io:format("Ref: ~p~n", [Ref]),
     Pids = map(fun(I) ->
                        spawn(fun() -> do_f(S, Ref, F, I) end)
                end, L),
