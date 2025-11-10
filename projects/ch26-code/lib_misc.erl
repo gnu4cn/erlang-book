@@ -1,7 +1,9 @@
 -module(lib_misc).
 -include_lib("kernel/include/file.hrl").
--import(lists, [map/2, foreach/2]).
+-import(lists, [map/2, foreach/2, reverse/1]).
 -export([
+         foreachWordInFile/2,
+         foreachWordInString/2,
          fib/1,
          fac/1,
          pmap1/2,
@@ -254,3 +256,41 @@ fac(N) -> N * fac(N-1).
 fib(0) -> 1;
 fib(1) -> 1;
 fib(N) -> fib(N-1) + fib(N-2).
+
+%% evalute F(Word) for each word in the file File
+foreachWordInFile(File, F) ->
+    case file:read_file(File) of
+	{ok, Bin} -> foreachWordInString(binary_to_list(Bin), F);
+	_         -> void
+    end.
+
+foreachWordInString(Str, F) ->
+    case get_word(Str) of
+	no ->
+	    void;
+	{Word, Str1} ->
+	    F(Word),
+	    foreachWordInString(Str1, F)
+    end.
+
+isWordChar(X) when $A=< X, X=<$Z -> true;
+isWordChar(X) when $0=< X, X=<$9 -> true;
+isWordChar(X) when $a=< X, X=<$z -> true;
+isWordChar(_)  -> false.
+
+get_word([H|T]) ->
+    case isWordChar(H) of
+	true  -> collect_word(T, [H]);
+	false -> get_word(T)
+    end;
+get_word([]) ->
+    no.
+
+collect_word([H|T]=All, L) ->
+    case isWordChar(H) of
+	true  -> collect_word(T, [H|L]);
+	false -> {reverse(L), All}
+    end;
+collect_word([], L) ->
+    {reverse(L), []}.
+
