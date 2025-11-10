@@ -2,6 +2,7 @@
 -include_lib("kernel/include/file.hrl").
 -import(lists, [map/2, foreach/2]).
 -export([
+         fib/1,
          fac/1,
          pmap1/2,
          pmap/2,
@@ -247,3 +248,9 @@ gather1(N, Ref, L) ->
 
 fac(0) -> 1;
 fac(N) -> N * fac(N-1).
+
+
+%% recursive (inefficent) fibonacci
+fib(0) -> 1;
+fib(1) -> 1;
+fib(N) -> fib(N-1) + fib(N-2).
