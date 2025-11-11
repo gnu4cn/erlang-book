@@ -1,0 +1,4 @@
+Erlang/OTP 28 [erts-16.0.3] [source] [64-bit] [smp:12:12] [ds:12:12:10] [async-threads:1] [jit:ns]
+
+Eshell V16.0.3 (press Ctrl+G to abort, type help(). for help)
+{error,{badmatch,{error,enoent}},[{sherlock_lib,file2term,1,[{file,"/home/hector/erlang-book/projects/ch27-code/src/sherlock_lib.erl"},{line,17}]},{sherlock_mails,search_mails_regexprs,4,[{file,"/home/hector/erlang-book/projects/ch27-code/src/sherlock_mails.erl"},{line,141}]},{sherlock_mails,test_search,0,[{file,"/home/hector/erlang-book/projects/ch27-code/src/sherlock_mails.erl"},{line,38}]},{init,start_it,1,[]},{init,start_em,1,[]},{init,do_boot,3,[]}]}

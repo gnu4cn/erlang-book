@@ -1,0 +1,11 @@
+{application,sherlock,
+             [{description,[]},
+              {vsn,"1"},
+              {registered,[]},
+              {applications,[kernel,stdlib]},
+              {mod,{sherlock_app,[]}},
+              {env,[]},
+              {modules,[mochiweb_html,sherlock,sherlock_app,sherlock_best,
+                        sherlock_get_mails,sherlock_lib,sherlock_mails,
+                        sherlock_parse_mails,sherlock_similar,sherlock_tfidf,
+                        text_analyzers]}]}.
