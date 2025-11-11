@@ -528,7 +528,104 @@ $ erl -smp +S N
 
 
 > **译注**：这里因应译者测试代码不同于原书中的组织方式，而做了相应修改。
-
+>
+> `lib_find.erl`：
+>
+> ```erlang
+> -module(lib_find).
+> -export([files/3, files/5]).
+> -import(lists, [reverse/1]).
+>
+> -include_lib("kernel/include/file.hrl").
+>
+> files(Dir, Re, Flag) ->
+>     Re1 = xmerl_regexp:sh_to_awk(Re),
+>     reverse(files(Dir, Re1, Flag, fun(File, Acc) -> [File|Acc] end, [])).
+>
+> files(Dir, Reg, Recursive, Fun, Acc) ->
+>     case file:list_dir(Dir) of
+>         {ok, Files} -> find_files(Files, Dir, Reg, Recursive, Fun, Acc);
+>         {error, _} -> Acc
+>     end.
+>
+> find_files([File|T], Dir, Reg, Recursive, Fun, Acc0) ->
+>     FullName = filename:join([Dir, File]),
+>     case file_type(FullName) of
+>         regular ->
+>             case re:run(FullName, Reg, [{capture,none}]) of
+>                 match ->
+>                     Acc = Fun(FullName, Acc0),
+>                     find_files(T, Dir, Reg, Recursive, Fun, Acc);
+>                 nomatch ->
+>                     find_files(T, Dir, Reg, Recursive, Fun, Acc0)
+>             end;
+>         directory ->
+>             case Recursive of
+>                 true ->
+>                     Acc1 = files(FullName, Reg, Recursive, Fun, Acc0),
+>                     find_files(T, Dir, Reg, Recursive, Fun, Acc1);
+>                 false ->
+>                     find_files(T, Dir, Reg, Recursive, Fun, Acc0)
+>             end;
+>         error ->
+>             find_files(T, Dir, Reg, Recursive, Fun, Acc0)
+>     end;
+> find_files([], _, _, _, _, A) ->
+>     A.
+>
+> file_type(File) ->
+>     case file:read_file_info(File) of
+>         {ok, Facts} ->
+>             case Facts#file_info.type of
+>                 regular   -> regular;
+>                 directory -> directory;
+>                 _         -> error
+>             end;
+>         _ ->
+>             error
+>     end.
+> ```
+>
+> `lib_misc:foreachWordInFile/2`：
+>
+> ```erlang
+> %% evalute F(Word) for each word in the file File
+> foreachWordInFile(File, F) ->
+>     case file:read_file(File) of
+> 	{ok, Bin} -> foreachWordInString(binary_to_list(Bin), F);
+> 	_         -> void
+>     end.
+>
+> foreachWordInString(Str, F) ->
+>     case get_word(Str) of
+> 	no ->
+> 	    void;
+> 	{Word, Str1} ->
+> 	    F(Word),
+> 	    foreachWordInString(Str1, F)
+>     end.
+>
+> isWordChar(X) when $A=< X, X=<$Z -> true;
+> isWordChar(X) when $0=< X, X=<$9 -> true;
+> isWordChar(X) when $a=< X, X=<$z -> true;
+> isWordChar(_)  -> false.
+>
+> get_word([H|T]) ->
+>     case isWordChar(H) of
+> 	true  -> collect_word(T, [H]);
+> 	false -> get_word(T)
+>     end;
+> get_word([]) ->
+>     no.
+>
+> collect_word([H|T]=All, L) ->
+>     case isWordChar(H) of
+> 	true  -> collect_word(T, [H|L]);
+> 	false -> {reverse(L), All}
+>     end;
+> collect_word([], L) ->
+>     {reverse(L), []}.
+> ```
 
 当我（作者）运行这个程序时，代码目录中有 102 个 Erlang 模组（注：译者运行时有 141 个）； `mapreduce` 创建了 102 个并行进程，每个进程都会发送一个键值对数据对，到化简进程。在某个一百核心的处理器上，这应运行良好（当磁盘可以跟上时）。
 
