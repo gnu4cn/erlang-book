@@ -58,4 +58,57 @@
 ## 与 Sherlock 的一次对话
 
 
+在这一小节中，我们将拿 Sherlock 来试用一下。首先，我们必须经由获取及分析 Erlang 邮件列表归档中的数据，初始化 Sherlock。完成此操作后，我们就将能够以各种方式，查询这些数据。
+
+> **译注**：Sherlock 程序的源码可在 [`julienXX/erlang_exercices`](https://github.com/julienXX/erlang_exercices) 处下载。
+>
+> 代码目录结构为：
+>
+>
+> ```console
+> $ tree -L 2 ~/erlang-book/projects/ch27-code
+> /home/hector/erlang-book/projects/ch27-code
+> ├── _build
+> │   └── default
+> ├── elog4.config
+> ├── erl_crash.dump
+> ├── LOG
+> ├── LOG_test
+> ├── Makefile
+> ├── rebar.lock
+> └── src
+>     ├── mochiweb_html.erl
+>     ├── sherlock_app.erl
+>     ├── sherlock.app.src
+>     ├── sherlock_best.erl
+>     ├── sherlock.erl
+>     ├── sherlock_get_mails.erl
+>     ├── sherlock.hrl
+>     ├── sherlock_lib.erl
+>     ├── sherlock_mails.erl
+>     ├── sherlock_parse_mails.erl
+>     ├── sherlock_similar.erl
+>     ├── sherlock_tfidf.erl
+>     └── text_analyzers.erl
+>
+> 4 directories, 19 files
+> ```
+>
+> 这里已将 Makefile 根据现代 `rebar3` 构建工具做了修改。
+>
+> ```Makefile
+> test_search:
+> 	rebar3 compile
+> 	erl -pa ./_build/default/lib/sherlock/ebin -s sherlock_mails test_search -s init stop > LOG_test
+>
+> test_build:
+> 	rebar compile
+> 	erl -pa ./_build/default/lib/sherlock/ebin -s sherlock_mails test_build -s init stop > LOG_build
+> ```
+>
+> 在 `~/erlang-book/projects/ch27-code` 目录下，运行 `erl -boot start_sasl -config elog4 -smp +S 4 -pa _build/default/lib/sherlock/ebin` 命令，即可在 Erlang shell 下，执行这个程序的函数。
+
+
+### 获取及预处理数据
+
 
