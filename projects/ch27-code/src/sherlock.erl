@@ -1,9 +1,9 @@
 %% ---
 %%  Excerpted from "Programming Erlang, Second Edition",
 %%  published by The Pragmatic Bookshelf.
-%%  Copyrights apply to this code. It may not be used to create training material, 
+%%  Copyrights apply to this code. It may not be used to create training material,
 %%  courses, books, articles, and the like. Contact us if you are in doubt.
-%%  We make no guarantees that this code is fit for any purpose. 
+%%  We make no guarantees that this code is fit for any purpose.
 %%  Visit http://www.pragmaticprogrammer.com/titles/jaerlang2 for more book information.
 %%---
 -module(sherlock).
@@ -33,7 +33,16 @@ process_all_years() ->
     T2 = erlang:now(),
     N = lists:sum(L),
     Tdiff = tdiff(T1, T2),
-    io:format("~w files in ~w seconds (~5.1f files/second)~n",[N,Tdiff, N/Tdiff]).
+    io:format("~w files in ~w seconds (~.2f files/second)~n",[N,Tdiff, N/Tdiff]).
+
+process_all_years_parall() ->
+    T1 = erlang:now(),
+    L = lib_misc:pmap(fun(I) -> process_year(I) end, mail_years()),
+    T2 = erlang:now(),
+    N = lists:sum(L),
+    Tdiff = tdiff(T1, T2),
+    io:format("~w files in ~w seconds (~.2f files/second)~n",[N,Tdiff, N/Tdiff]).
+
 
 tdiff({Mega1,S1,_},{Mega2,S2,_}) ->
     (Mega2-Mega1)*1000000 + S2 - S1.
