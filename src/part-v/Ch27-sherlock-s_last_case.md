@@ -577,4 +577,5 @@ Sherlock 的全部代码，都存储在本书主页的 `code/sherlock` 目录中
     `sherlock_mail:search_mails_regexp/4` 会迭代条目 `MAIL/Year/mails.bin`，并对 `#post` 记录中的各个元素，执行正则表达式的检索。
 
 
+## 练习
 

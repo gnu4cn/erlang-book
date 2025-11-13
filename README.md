@@ -6,6 +6,8 @@ Erlang 貌似一门很有趣的语言，Elixir 也是很热门的讨论。因此
 此项目以该门语言发明人 [Joe Armstrong](https://en.wikipedia.org/wiki/Joe_Armstrong_(programmer)) 编写的 [Programming Erlang(2nd edition)](https://pragprog.com/titles/jaerlang2/programming-erlang-2nd-edition/) 为英文原文。
 
 
+在线阅读：[erl.xfoss.com](https://erl.xfoss.com)
+
 
 
 ## 参考资料
