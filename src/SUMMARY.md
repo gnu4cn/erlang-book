@@ -48,3 +48,5 @@
     - [第三方程序](part-v/Ch25-third_party_programs.md)
     - [多核心 CPU 编程](part-v/Ch26-programming_multicore_CPUs.md)
     - [福尔摩斯的最后一案](part-v/Ch27-sherlock-s_last_case.md)
+
+- [附录 1，OTP 模板](appendix/ap01-otp_templates.md)
