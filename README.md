@@ -8,7 +8,7 @@ Erlang 貌似一门很有趣的语言，Elixir 也是很热门的讨论。因此
 
 **在线阅读**：[erl.xfoss.com](https://erl.xfoss.com)
 
-## 译本说明
+## 说明
 
 
 
