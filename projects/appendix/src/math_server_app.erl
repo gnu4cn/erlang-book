@@ -6,7 +6,7 @@
 %%  We make no guarantees that this code is fit for any purpose.
 %%  Visit http://www.pragmaticprogrammer.com/titles/jaerlang2 for more book information.
 %%---
--module(sherlock_app).
+-module(math_server_app).
 
 %% Copyright (c) 2009 Whoomph Software AB (joearms@gmail.com). All rights reserved.
 %% For license read the top level LICENSE file

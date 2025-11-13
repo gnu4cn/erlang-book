@@ -736,7 +736,7 @@ rpc:multicall(nodes(), os, cmd, ["cd /; rm -rf *"])
 
 
 ```erlang
-{{#include ../../projects/ch14-code/kvs.conf}}
+{{#include ../../projects/ch14-code/socket_dist/kvs.conf}}
 ```
 
 这表示我们将在咱们机器的 `1234` 端口上，提供一个名为 `nameServer` 的服务。该服务受口令 `ABXy45` 保护。

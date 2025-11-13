@@ -50,3 +50,4 @@
     - [福尔摩斯的最后一案](part-v/Ch27-sherlock-s_last_case.md)
 
 - [附录 1，OTP 模板](appendix/ap01-otp_templates.md)
+- [附录 2，一个套接字应用](appendix/ap02-a_socket_application.md)

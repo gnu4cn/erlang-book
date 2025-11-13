@@ -1,0 +1,9 @@
+{application,math_server,
+             [{description,[]},
+              {vsn,"1"},
+              {registered,[]},
+              {applications,[kernel,stdlib]},
+              {mod,{math_server_app,[]}},
+              {env,[]},
+              {modules,[lib_chan,lib_chan_cs,lib_chan_mm,math_server,
+                        math_server_app,mod_math]}]}.
