@@ -2,7 +2,5 @@
 
 
 ```erlang
-{{#include ../../projects/appendix/gen_server_template.full}}
+{{#include ../../../projects/appendix/gen_server_template.full}}
 ```
-
-

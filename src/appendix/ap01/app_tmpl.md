@@ -2,6 +2,6 @@
 
 
 ```erlang
-{{#include ../../projects/appendix/application_template.full}}
+{{#include ../../../projects/appendix/application_template.full}}
 ```
 

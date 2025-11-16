@@ -21,7 +21,7 @@
 
 
 ```erlang
-{{#include ../../projects/appendix/src/config1}}
+{{#include ../../../projects/appendix/config1}}
 ```
 
 这个配置文件有数个如下形式的 `service` 元组：
@@ -42,7 +42,7 @@
 这个数学服务器的代码看起来像下面这样：
 
 ```erlang
-{{#include ../../projects/appendix/src/mod_math.erl}}
+{{#include ../../../projects/appendix/src/mod_math.erl}}
 ```
 
 当某个客户端连接到端口 2233 并请求名为 `math` 的服务时，`lib_auth` 将认证该客户端。当口令正确时，就通过调用函数 `mod_math:run(MM, ArgC, ArgS)`，生成一个处理器进程。其中 `MM` 是 *中间人* 的 PID，`ArgC` 来自客户端，`ArgS` 来自配置文件。

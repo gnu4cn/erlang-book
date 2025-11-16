@@ -69,4 +69,6 @@
     - [`lib_chan` 的代码](appendix/ap02/lib_chan-code.md)
 
 
-- [附录 3，一种简单执行环境](appendix/ap03-a_simple_execution_environment.md)
++ [附录 3，一种简单执行环境](appendix/ap03-a_simple_execution_environment.md)
+    - [Erlang 如何启动](appendix/ap03/erlang-starts.md)
+    - [在 SEE 下运行一些测试程序](appendix/ap03/running_tests.md)

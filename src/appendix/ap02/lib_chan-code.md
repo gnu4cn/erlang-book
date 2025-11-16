@@ -7,26 +7,26 @@
 ## `lib_chan`
 
 ```erlang
-{{#include ../../projects/appendix/src/lib_chan.erl}}
+{{#include ../../../projects/appendix/src/lib_chan.erl}}
 ```
 
 ## `lib_chan_cs`
 
 ```erlang
-{{#include ../../projects/appendix/src/lib_chan_cs.erl}}
+{{#include ../../../projects/appendix/src/lib_chan_cs.erl}}
 ```
 
 
 ## `lib_chan_mm`
 
 ```erlang
-{{#include ../../projects/appendix/src/lib_chan_mm.erl}}
+{{#include ../../../projects/appendix/src/lib_chan_mm.erl}}
 ```
 
 
 ## `lib_chan_auth`
 
 ```erlang
-{{#include ../../projects/appendix/src/lib_chan_auth.erl}}
+{{#include ../../../projects/appendix/src/lib_chan_auth.erl}}
 ```
 
