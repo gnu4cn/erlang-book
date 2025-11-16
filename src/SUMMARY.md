@@ -7,10 +7,13 @@
 
 [入门](getting_started.md)
 
+
+---
 + [为何是 Erlang？](part-i.md)
     - [并发介绍](part-i/Ch01_introducing-concurrency.md)
     - [Erlang 旋风之旅](part-i/Ch02_a-whirlwind-tour-of-erlang.md)
 
+---
 + [顺序编程](part-ii.md)
     - [基本概念](part-ii/Ch03-basic_concepts.md)
     - [模组与函数](part-ii/Ch04-modules_and_functions.md)
@@ -22,6 +25,7 @@
     - [编译与运行咱们的程序](part-ii/Ch10-compiling_and_running_your_program.md)
 
 
+---
 + [并发与分布式程序](part-iii.md)
     - [真实世界的并发](part-iii/Ch11-real-world_concurrency.md)
     - [并发编程](part-iii/Ch12-concurrent_programming.md)
@@ -30,6 +34,7 @@
 
 
 
+---
 + [编程库与框架](part-iv.md)
     - [接口技术](part-iv/Ch15-interfacing_techniques.md)
     - [文件编程](part-iv/Ch16-programming_with_files.md)
@@ -43,15 +48,25 @@
 
 
 
+---
 + [构建应用](part-v.md)
     - [编程习语](part-v/Ch24-programming_idioms.md)
     - [第三方程序](part-v/Ch25-third_party_programs.md)
     - [多核心 CPU 编程](part-v/Ch26-programming_multicore_CPUs.md)
     - [福尔摩斯的最后一案](part-v/Ch27-sherlock-s_last_case.md)
 
-- [附录 1，OTP 模板](appendix/ap01-otp_templates.md)
-    - [通用服务器模板](appendix/ap01-otp_templates.md#通用服务器模板)
-    - [监控器模板](appendix/ap01-otp_templates.md#监控器模板)
-    - [应用模板](appendix/ap01-otp_templates.md#应用模板)
-- [附录 2，一个套接字应用](appendix/ap02-a_socket_application.md)
+---
+
++ [附录 1，OTP 模板](appendix/ap01-otp_templates.md)
+    - [通用服务器模板](appendix/ap01/gen_server_tmpl.md)
+    - [监控器模板](appendix/ap01/supervisor_tmpl.md)
+    - [应用模板](appendix/ap01/app_tmpl.md)
+
+
++ [附录 2，一个套接字应用](appendix/ap02-a_socket_application.md)
+    - [一个示例](appendix/ap02/an_example.md)
+    - [`lib_chan` 工作原理](appendix/ap02/lib_chan-works.md)
+    - [`lib_chan` 的代码](appendix/ap02/lib_chan-code.md)
+
+
 - [附录 3，一种简单执行环境](appendix/ap03-a_simple_execution_environment.md)
