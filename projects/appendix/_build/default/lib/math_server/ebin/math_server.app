@@ -6,4 +6,5 @@
               {mod,{math_server_app,[]}},
               {env,[]},
               {modules,[lib_chan,lib_chan_auth,lib_chan_cs,lib_chan_mm,
-                        lib_md5,math_server,math_server_app,mod_math]}]}.
+                        lib_md5,math_server,math_server_app,mod_math,see,
+                        see_test1]}]}.

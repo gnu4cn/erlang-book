@@ -50,4 +50,8 @@
     - [福尔摩斯的最后一案](part-v/Ch27-sherlock-s_last_case.md)
 
 - [附录 1，OTP 模板](appendix/ap01-otp_templates.md)
+    - [通用服务器模板](appendix/ap01-otp_templates.md#通用服务器模板)
+    - [监控器模板](appendix/ap01-otp_templates.md#监控器模板)
+    - [应用模板](appendix/ap01-otp_templates.md#应用模板)
 - [附录 2，一个套接字应用](appendix/ap02-a_socket_application.md)
+- [附录 3，一种简单执行环境](appendix/ap03-a_simple_execution_environment.md)
