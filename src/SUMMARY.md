@@ -74,3 +74,4 @@
     - [在 SEE 下运行一些测试程序](appendix/ap03/running_tests.md)
     - [SEE 的 API](appendix/ap03/SEE_API.md)
     - [SEE 实现细节](appendix/ap03/impl_details.md)
+    - [Erlang 中代码如何被加载的](appendix/ap03/how_code_gets_loaded.md)

@@ -5,7 +5,7 @@
               {applications,[kernel,stdlib]},
               {mod,{math_server_app,[]}},
               {env,[]},
-              {modules,[lib_chan,lib_chan_auth,lib_chan_cs,lib_chan_mm,
-                        lib_md5,math_server,math_server_app,mod_math,my_code,
-                        otp_test1,see,see_test1,see_test2,see_test3,
-                        see_test4]}]}.
+              {modules,[error_handler,lib_chan,lib_chan_auth,lib_chan_cs,
+                        lib_chan_mm,lib_md5,math_server,math_server_app,
+                        mod_math,my_code,otp_test1,see,see_test1,see_test2,
+                        see_test3,see_test4]}]}.

@@ -285,12 +285,11 @@ preloaded() ->
 make_scripts() ->
     {ok, Cwd} = file:get_cwd(),
     Script =
-    {script,{"see","1.0"},
+    {script,{"see","0.1.0"},
      [{preLoaded,preloaded()},
       {progress,preloaded},
       {path, [Cwd ++ "/_build/default/lib/math_server/ebin",
-             "/usr/lib/erlang/lib/stdlib-7.0.3/ebin",
-             "/usr/lib/erlang/lib/kernel-10.3.2/ebin"
+              "/usr/lib/erlang/lib/stdlib-7.0.3/ebin"
              ]},
       {primLoad,
        [lists,
