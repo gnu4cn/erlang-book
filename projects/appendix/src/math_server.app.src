@@ -1,6 +1,6 @@
 {application, math_server,
  [
-  {description, ""},
+  {description, "Appendix programs"},
   {vsn, "1"},
   {registered, []},
   {applications, [
