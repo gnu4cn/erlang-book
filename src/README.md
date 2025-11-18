@@ -12,6 +12,19 @@ Erlang 貌似一门很有趣的语言，Elixir 也是很热门的讨论。因此
 - [The Rise & Fall of Erlang at Ericsson AB](https://iknek.github.io/blog/the-erlang-story/)
 - [joearms.github.io](https://joearms.github.io/)
 
+## 说明
+
+自原版发布的 2013 年以来，语言本身已发展到 Erlang/OTP 28 (2025 年)，同时用到的第三方程序/框架也已经改变很多，比如：
+
+- Cowboy 的许多接口已经改变；
+- Rebar 的构建目录接口已经改变；
+- 元组模组已默认关闭；
+- ...
+
+
+这导致本书中的一些示例代码无法工作。为让这些示例代码工作，译者已将他们根据新的 Erlang/OTP 语言，与用到的第三方程序更新加以修改。
+
+
 
 ## 目录
 
