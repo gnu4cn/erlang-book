@@ -1,9 +1,9 @@
 /***
  * Excerpted from "Programming Erlang, Second Edition",
  * published by The Pragmatic Bookshelf.
- * Copyrights apply to this code. It may not be used to create training material,
+ * Copyrights apply to this code. It may not be used to create training material, 
  * courses, books, articles, and the like. Contact us if you are in doubt.
- * We make no guarantees that this code is fit for any purpose.
+ * We make no guarantees that this code is fit for any purpose. 
  * Visit http://www.pragmaticprogrammer.com/titles/jaerlang2 for more book information.
 ***/
 function connect(host, port, mod){
@@ -11,40 +11,40 @@ function connect(host, port, mod){
     make_live_inputs();
     var ws = 'ws://' + host + ':' + port + '/websocket/' + mod;
     start_session(ws);
-
+    
 }
 
 function onClose(evt) {
     // change the color of the display when the socket closes
     // so we can see it closed
     document.body.style.backgroundColor='#aabbcc';
-}
-
+}  
+  
 function onMessage(evt) {
     var json = JSON.parse(evt.data);
     do_cmds(json);
 }
-
-function onError(evt) {
-    // if we get an error change the color of the display so we
+  
+function onError(evt) { 
+    // if we get an error change the color of the display so we 
     // can see we got an error
     document.body.style.backgroundColor='orange';
-}
-
+}  
+  
 function send(msg) {
     websocket.send(msg);
 }
-
+  
 function start_session(wsUri){
-    websocket           = new WebSocket(wsUri);
+    websocket           = new WebSocket(wsUri); 
     websocket.onopen    = onOpen;
     websocket.onclose   = onClose;
-    websocket.onmessage = onMessage;
+    websocket.onmessage = onMessage; 
     websocket.onerror   = onError;
     return(false);
-}
-
-function onOpen(evt) {
+}  
+    
+function onOpen(evt) { 
     // console.log("connected");
 }
 
@@ -89,16 +89,16 @@ function make_live_inputs(){
 			    read_entry(e, id);
 			};
 		    });
-
+	    
 	});
 }
-
+	
 function read_entry(x, id){
     var val = x.val();
     x.val(" ");
     send_json({'entry':id, txt:val});
 }
-
+    
 // browser commands
 
 function append_div(o){

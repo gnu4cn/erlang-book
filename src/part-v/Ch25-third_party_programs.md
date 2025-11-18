@@ -677,7 +677,7 @@ Eshell V16.0.3 (press Ctrl+G to abort, type help(). for help)
 {ok,<0.126.0>}
 ```
 
-服务器启动后，我们即可在浏览器中输入地址 `http://localhost:1234/test2.html`，然后我们将看到上面有个按钮的页面。当我们单击该按钮后时，测试即被执行，浏览器就会显示 Erlang 发回的数据（[图 7，*发送自 Erlang 的 JSON 项](#fig-7)）。
+服务器启动后，我们即可在浏览器中输入地址 `http://localhost:1234/test2.html`，然后我们将看到上面有个按钮的页面。当我们单击该按钮后时，测试即被执行，浏览器就会显示 Erlang 发回的数据（[图 7，*发送自 Erlang 的 JSON 项*](#fig-7)）。
 
 
 而下面即是我们在 Erlang shell 下中所看到的内容：
