@@ -137,7 +137,7 @@ Erlang 代码在 `start(Browser)` 处开始执行；`Browser` 是个代表浏览
 
 
 ```erlang
-{{#include ../../projects/ch18-code/shell1.erl:12:26}}
+{{#include ../../projects/ch18-code/shell1.erl:4:18}}
 ```
 
 
@@ -145,7 +145,7 @@ Erlang 代码在 `start(Browser)` 处开始执行；`Browser` 是个代表浏览
 
 
 ```erlang
-{{#include ../../projects/ch18-code/shell1.erl:28:41}}
+{{#include ../../projects/ch18-code/shell1.erl:20:33}}
 ```
 
 现在，我们就有了个运行在浏览器中的 Erlang shell。诚然，这只是个非常基本的 shell，但他演示了构建更复杂 shell 的所有必要技术。
@@ -170,7 +170,7 @@ Erlang 代码在 `start(Browser)` 处开始执行；`Browser` 是个代表浏览
 
 
 ```javascript
-{{#include ../../projects/ch18-code/chat1.html:33:37}}
+{{#include ../../projects/ch18-code/chat1.html:23:27}}
 ```
 
 这段代码将一个事件处理程序，挂接到这个 "Join" 按钮上。在这个 "Join" 按钮被点击时，我们会读取昵称这个输入字段，将一条 `join` 消息发送给 Erlang，并清除输入框。
@@ -277,7 +277,7 @@ IRC 控制器的代码非常简单。
 在浏览器收到 websocket 上的一条消息时，即被激活的 `websocket.js` 中的代码，是一个名为 `onMessage` 的回调例程。其由以下代码建立：
 
 ```javascript
-{{#include ../../projects/ch18-code/websock.js:38:45}}
+{{#include ../../projects/ch18-code/websock.js:30:37}}
 ```
 
 
@@ -285,9 +285,9 @@ IRC 控制器的代码非常简单。
 
 
 ```javascript
-{{#include ../../projects/ch18-code/websock.js:23:26}}
+{{#include ../../projects/ch18-code/websock.js:15:18}}
 
-{{#include ../../projects/ch18-code/websock.js:51:62}}
+{{#include ../../projects/ch18-code/websock.js:43:54}}
 ```
 
 

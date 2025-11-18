@@ -1,22 +1,14 @@
-%% ---
-%%  Excerpted from "Programming Erlang, Second Edition",
-%%  published by The Pragmatic Bookshelf.
-%%  Copyrights apply to this code. It may not be used to create training material, 
-%%  courses, books, articles, and the like. Contact us if you are in doubt.
-%%  We make no guarantees that this code is fit for any purpose. 
-%%  Visit http://www.pragmaticprogrammer.com/titles/jaerlang2 for more book information.
-%%---
 -module(websockets).
 
 -export([start_link/1,
-	 start_embedded/1,
-	 init/3,      websocket_init/3,
-	 handle/2,    websocket_handle/3, 
-	 terminate/2, websocket_terminate/3,
-	 websocket_info/3,
-	 append_div/3,
-	 fill_div/3
-	]).
+         start_embedded/1,
+         init/3,      websocket_init/3,
+         handle/2,    websocket_handle/3,
+         terminate/2, websocket_terminate/3,
+         websocket_info/3,
+         append_div/3,
+         fill_div/3
+        ]).
 
 %% env has only one parameter - reserved for future expansion
 
@@ -27,61 +19,61 @@ start_embedded(Port) ->
     ok   = application:start(cowboy),
     web_server_start(Port, "zip"),
     receive
-	after 
-	    infinity ->
-		true
-	end.
+    after
+        infinity ->
+            true
+    end.
 
 start_link([PortAtom, DirAtom]=Z) ->
     io:format("Here Z=~p~n",[Z]),
     %% io:format("code:~p~n",[code:get_path()]),
-    ok   = application:start(ranch),  
+    ok   = application:start(ranch),
     ok   = application:start(cowboy),
 
     Port = list_to_integer(atom_to_list(PortAtom)),
     Dir  = atom_to_list(DirAtom),
     ok  = web_server_start(Port, Dir),
     receive
-	after 
-	    infinity ->
-		true
-	end.
+    after
+        infinity ->
+            true
+    end.
 
 web_server_start(Port, Dir) ->
     E0 = #env{root=Dir},
-    Dispatch = [{'_', [{'_', ?MODULE, E0}]}],  
+    Dispatch = [{'_', [{'_', ?MODULE, E0}]}],
     %% server is the name of this module
     NumberOfAcceptors = 100,
-    Status = 
-	cowboy:start_http(my_named_thing,
-			  NumberOfAcceptors,
-			  [{port, Port}],
-			  [{dispatch, Dispatch}]),
+    Status =
+    cowboy:start_http(my_named_thing,
+                      NumberOfAcceptors,
+                      [{port, Port}],
+                      [{dispatch, Dispatch}]),
     case Status of
-	{error, _} ->
-	    io:format("websockets could not be started -- "
-		      "port ~p probably in use~n", [Port]),
-	    init:stop();
-	{ok, _Pid} ->
-	    io:format("websockets started on port:~p~n",[Port])
+        {error, _} ->
+            io:format("websockets could not be started -- "
+                      "port ~p probably in use~n", [Port]),
+            init:stop();
+        {ok, _Pid} ->
+            io:format("websockets started on port:~p~n",[Port])
     end.
 
-init(_, Req, E0) ->   
+init(_, Req, E0) ->
     Resource = path(Req),
     io:format("init Resource =~p Env=~p~n",[Resource, E0]),
     case Resource of
-	["/", "websocket",_] ->
-	    %% The upgrade return value will cause cowboy
-	    %% to call this module at the entry point
-	    %% websocket_init
-	    {upgrade, protocol, cowboy_websocket};
-	_ ->
-	    {ok, Req, E0}
+        ["/", "websocket",_] ->
+            %% The upgrade return value will cause cowboy
+            %% to call this module at the entry point
+            %% websocket_init
+            {upgrade, protocol, cowboy_websocket};
+        _ ->
+            {ok, Req, E0}
     end.
 
-terminate(_, _) ->  
+terminate(_, _) ->
     ok.
-    
+
 handle(Req, Env) ->
     Resource = path(Req),
     io:format("server_file:~p~n",[Resource]),
@@ -94,26 +86,26 @@ serve_file(["/"|F], Req, Env) ->
     %% with no path this file is in the "site" directory
     File = filename:join([Env#env.root| F]),
     Val = file:read_file(File),
-    case Val of 
-	{error, _} ->
-	    io:format("*** no page called ~p~n",[F]),
-	    reply_html(pre({no_page_called,File}), Req, Env);
-	{ok, Bin} ->
-	    Ext = filename:extension(File),
-	    {ok, Req1} = send_page(classify_extension(Ext), Bin, Req),
-	    {ok, Req1, Env}
+    case Val of
+        {error, _} ->
+            io:format("*** no page called ~p~n",[F]),
+            reply_html(pre({no_page_called,File}), Req, Env);
+        {ok, Bin} ->
+            Ext = filename:extension(File),
+            {ok, Req1} = send_page(classify_extension(Ext), Bin, Req),
+            {ok, Req1, Env}
     end.
 
 list_dir(Root, Req, Env) ->
     {ok, Files} = file:list_dir(Root),
     L1 = [["<li><a href='",I,"'>",I,"</a></li>"] || I <- lists:sort(Files)],
     reply_html(["<h1> Directory ",Root, "</h1>",
-		"<ul>",L1,"</ul>"], Req, Env).
+                "<ul>",L1,"</ul>"], Req, Env).
 
 send_page(Type, Data, Req) ->
     cowboy_req:reply(200, [{<<"Content-Type">>,
-			    list_to_binary(mime_type(Type))}],
-		     Data, Req).
+                            list_to_binary(mime_type(Type))}],
+                     Data, Req).
 
 classify_extension(".gif") -> gif;
 classify_extension(".jpg") -> jpg;
@@ -162,8 +154,8 @@ reply_html(Obj, Req, Env) ->
 %% websocket stuff
 
 websocket_init(_Transport, Req, _Env) ->
-         io:format("Initialising a web socket:(~p)(~p)(~p)",
-		   [_Transport, _Env, path(Req)]),
+    io:format("Initialising a web socket:(~p)(~p)(~p)",
+              [_Transport, _Env, path(Req)]),
     ["/", "websocket", ModStr] = path(Req),
     %% Args = args(Req),
     Req1 = cowboy_req:compact(Req),
@@ -176,13 +168,13 @@ websocket_init(_Transport, Req, _Env) ->
 websocket_handle({text, Msg}, Req, Pid) ->
     %% This is a Json message from the browser
     case catch mochijson2:decode(Msg) of
-	{'EXIT', _Why} ->
-	    Pid ! {invalidMessageNotJSON, Msg};
-	{struct, X} = Z ->
-	    X1 = atomize(Z),
-	    Pid ! {self(), X1};
-	Other ->
-	    Pid ! {invalidMessageNotStruct, Other}
+        {'EXIT', _Why} ->
+            Pid ! {invalidMessageNotJSON, Msg};
+        {struct, _X} = Z ->
+            X1 = atomize(Z),
+            Pid ! {self(), X1};
+        Other ->
+            Pid ! {invalidMessageNotStruct, Other}
     end,
     {ok, Req, Pid}.
 
@@ -213,8 +205,8 @@ rpc(Pid, M) ->
     S = self(),
     Pid ! {S, M},
     receive
-	{Pid, Reply} ->
-	    Reply
+        {Pid, Reply} ->
+            Reply
     end.
 
 %%----------------------------------------------------------------------
@@ -230,15 +222,15 @@ atomize(X) ->
 
 append_div(Ws, Div, X) ->
     Bin = list_to_binary(X),
-    send_websocket(Ws, 
-		   [{cmd,append_div},{id,Div},{txt,Bin}]).
+    send_websocket(Ws,
+                   [{cmd,append_div},{id,Div},{txt,Bin}]).
 
 fill_div(Ws, Div, X) ->
     io:format("websockets X=~p~n",[X]),
     Bin = list_to_binary(X),
-    send_websocket(Ws, 
-		   [{cmd,fill_div},{id,Div},{txt,Bin}]).
-    
+    send_websocket(Ws,
+                   [{cmd,fill_div},{id,Div},{txt,Bin}]).
+
 
 send_websocket(Ws, X) ->
     Ws ! {send, list_to_binary(mochijson2:encode([{struct,X}]))}.
