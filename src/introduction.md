@@ -82,7 +82,7 @@ Erlang 属于 *函数式编程语言* 家族。函数式编程禁止带有副作
 ## 路线图
 
 
-在学会走路前是没办法跑起来的，我们要循序渐进。Erlang 程序是由许多同时运行的小的顺序程序组成的，Erlang programs are made up from lots of small sequential programs running at the same time。在咱们能编写并发代码前，我们需要能够编写出顺序代码。这意味着我们要到 [第 11 章 真实世界的并发，Real-World Concurrency](Ch11-real-world_concurrency.md)，才会涉及编写并发程序的细节。
+在学会走路前是没办法跑起来的，我们要循序渐进。Erlang 程序是由许多同时运行的小的顺序程序组成的，Erlang programs are made up from lots of small sequential programs running at the same time。在咱们能编写并发代码前，我们需要能够编写出顺序代码。这意味着我们要到 [第 11 章 真实世界的并发，Real-World Concurrency](./part-iii/Ch11-real-world_concurrency.md)，才会涉及编写并发程序的细节。
 
 - 第一部分简要介绍了并发编程的核心思想，并对 Erlang 进行了旋风式的介绍；
 - 第二部分详细介绍了顺序的 Erlang 编程，还讲述了构建 Erlang 程序的一些类型与方法；
@@ -128,7 +128,7 @@ total([]) -> 0.
 
 获得帮助的最佳方法，是先尝试 Google；如果 Google 无法提供帮助，请向 Erlang 邮件列表发送邮件 <sup>3</sup>。咱们也可尝试在 irc.freenode.net 上的 #erlounge，或 #erlang 下获取更快的回复。
 
-有时，咱们问题的答案可能就在 Erlang 邮件列表的旧贴中，但咱们就是找不到。在 [第 27 章 “夏洛克的最后一案”](Ch27-sherlock-s_last_case.md) 中，有个咱们可在本地运行的程序，他可以对 Erlang 邮件列表中的所有旧贴，进行复杂的检索。
+有时，咱们问题的答案可能就在 Erlang 邮件列表的旧贴中，但咱们就是找不到。在 [第 27 章 “夏洛克的最后一案”](./part-v/Ch27-sherlock-s_last_case.md) 中，有个咱们可在本地运行的程序，他可以对 Erlang 邮件列表中的所有旧贴，进行复杂的检索。
 
 
 因此，事不宜迟，我（作者）要感谢帮助我写这本书（和第一版）的好人，咱们可以跳到第1章，在那里我们将参加 Erlang 的闪电之旅。
